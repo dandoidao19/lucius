@@ -62,7 +62,10 @@ export function useCaixaUniversal() {
 
         const saldoAteOntemLoja = transacoesLoja
           .filter(t => t.status === 'pago' && t.data_pagamento && t.data_pagamento <= ontem)
-          .reduce((acc, t) => acc + (t.tipo === 'entrada' ? (t.valor_pago ?? t.total ?? 0) : -(t.valor_pago ?? t.total ?? 0)), 0);
+        .reduce((acc, t) => {
+          const valor = t.valor_pago ?? t.total ?? 0;
+          return acc + (t.tipo === 'entrada' ? valor : -valor);
+        }, 0);
 
         const saldoAteOntemCasa = lancamentosCasa
           .filter(l => l.status === 'realizado' && l.data_lancamento && l.data_lancamento <= ontem)

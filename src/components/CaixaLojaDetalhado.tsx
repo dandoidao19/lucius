@@ -134,7 +134,7 @@ export default function CaixaLojaDetalhado({
       let saidas = 0
 
       dados.lancamentosLoja.forEach(lancamento => {
-        if (lancamento.status === 'realizado' && lancamento.data_lancamento === hoje) {
+        if (lancamento.status === 'pago' && lancamento.data_pagamento === hoje) {
           if (lancamento.tipo === 'entrada') {
             entradas += lancamento.valor
           } else {
