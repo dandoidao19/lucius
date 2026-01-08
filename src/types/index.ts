@@ -108,7 +108,11 @@ export interface Lancamento {
   data_lancamento: string
   data_prevista: string
   centro_custo_id: string
+  data?: string;
   status: string
+  valor_pago?: number
+  total?: number
+  data_pagamento?: string
   parcelamento?: { atual: number; total: number }
   recorrencia?: any
   caixa_id?: string

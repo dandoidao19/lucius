@@ -152,12 +152,27 @@ export default function CaixaCasaDetalhado({
       let displayStart = ''
       let displayEnd = ''
 
+      const todosLancamentos = dados.lancamentosCasa.map(l => ({
+        ...l,
+        data: l.status === 'realizado' ? l.data_lancamento : l.data_prevista,
+      }));
+
       if (mostrandoHistorico) {
-        // ... (lógica de cálculo para histórico)
-      } else if (mostrandoMes && mesFiltro) {
-        // ... (lógica de cálculo para mês)
+        const { series } = buildCumulativeSeries(todosLancamentos);
+        novoResultado = series;
       } else {
-        // ... (lógica de cálculo para 10 dias)
+        if (mostrandoMes && mesFiltro) {
+          const [ano, mes] = mesFiltro.split('-')
+          displayStart = `${ano}-${mes}-01`
+          const ultimoDia = new Date(parseInt(ano), parseInt(mes), 0).getDate()
+          displayEnd = `${ano}-${mes}-${String(ultimoDia).padStart(2, '0')}`
+        } else {
+          displayStart = getDataAtualBrasil()
+          displayEnd = calcularDataNDias(displayStart, 9)
+        }
+
+        const { series } = buildCumulativeSeries(todosLancamentos, displayEnd);
+        novoResultado = series.filter(s => s.data >= displayStart && s.data <= displayEnd);
       }
 
       setCaixaPrevisto(novoResultado)
