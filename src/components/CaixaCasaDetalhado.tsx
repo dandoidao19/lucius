@@ -31,7 +31,6 @@ export default function CaixaCasaDetalhado({
   const [mostrandoMes, setMostrandoMes] = useState(false)
   const [mostrandoHistorico, setMostrandoHistorico] = useState(false)
   const [mesFiltro, setMesFiltro] = useState('')
-  const [ultimaAtualizacao, setUltimaAtualizacao] = useState(0)
 
   const carregandoRef = useRef(false)
   const lastLoadRef = useRef(0)
@@ -338,7 +337,6 @@ export default function CaixaCasaDetalhado({
       }
 
       setCaixaPrevisto(novoResultado)
-      setUltimaAtualizacao(Date.now())
     } catch (error) {
       console.error('Erro ao carregar caixa previsto:', error)
     } finally {
@@ -351,13 +349,6 @@ export default function CaixaCasaDetalhado({
     calcularHoje()
     carregarCaixaPrevisto()
   }, [mostrando10Dias, mostrandoMes, mostrandoHistorico, mesFiltro, carregarCaixaPrevisto, calcularHoje])
-
-  useEffect(() => {
-    if (dados.ultimaAtualizacao > ultimaAtualizacao) {
-      calcularHoje()
-      carregarCaixaPrevisto()
-    }
-  }, [dados.ultimaAtualizacao, calcularHoje, carregarCaixaPrevisto, ultimaAtualizacao])
 
   const handleMudarParaMes = () => {
     setMostrando10Dias(false)
@@ -453,7 +444,6 @@ export default function CaixaCasaDetalhado({
           <div className="overflow-x-auto">
             <div className="text-[10px] text-gray-500 mb-1">
               Mostrando {caixaPrevisto.length} dias
-              <span className="ml-2 text-blue-500">✓ {new Date(ultimaAtualizacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <table className="w-full text-xs border-collapse">
               <thead>
