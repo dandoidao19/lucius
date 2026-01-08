@@ -1013,87 +1013,32 @@ export default function CasaModulo() {
             ) : lancamentosFiltrados.length === 0 ? (
               <p className="text-xs text-gray-500 text-center py-2">📭 Nenhum lançamento encontrado</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full table-fixed text-xs">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="w-1/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Data</th>
-                      <th className="w-1/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Status</th>
-                      <th className="w-2/12 px-1 py-1 text-right font-medium text-gray-700 border-b text-xs">Valor</th>
-                      <th className="w-4/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Descrição</th>
-                      <th className="w-2/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">CDC</th>
-                      <th className="w-2/12 px-1 py-1 text-center font-medium text-gray-700 border-b text-xs">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lancamentosFiltrados.map((lancamento) => (
-                      <tr 
-                        key={lancamento.id} 
-                        className="border-b hover:bg-gray-50 transition-colors bg-white"
-                      >
-                        <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
-                          {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento)}
-                        </td>
-                        <td className="px-1 py-1">
-                          {lancamento.status === 'realizado' ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-bold text-white bg-green-600">
-                              ✓ Pago
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
-                              Previsto
-                            </span>
-                          )}
-                        </td>
-                        <td className={`px-1 py-1 text-right font-medium whitespace-nowrap text-xs ${
-                          lancamento.status === 'realizado' 
-                            ? lancamento.tipo === 'entrada'
-                              ? 'text-white font-bold bg-green-600'
-                              : 'text-white font-bold bg-red-600'
-                            : lancamento.tipo === 'entrada' 
-                              ? 'text-green-600'
-                              : 'text-red-600'
-                        }`}>
-                          {lancamento.tipo === 'entrada' ? '+' : '-'} R$ {lancamento.valor.toFixed(2)}
-                        </td>
-                        <td className="px-1 py-1 text-xs text-gray-700 truncate">
-                          {lancamento.descricao}
-                        </td>
-                        <td className="px-1 py-1 text-xs text-gray-600 truncate">
-                          {lancamento.centros_de_custo?.nome || '-'}
-                        </td>
-                        <td className="px-1 py-1 text-center">
-                          <div className="flex gap-1 justify-center">
-                            <button
-                              onClick={() => iniciarEdicao(lancamento)}
-                              className="text-blue-500 hover:text-blue-700 font-bold"
-                              title="Editar"
-                            >
-                              ✏️
-                            </button>
-                            {lancamento.status === 'previsto' && (
-                              <button
-                                onClick={() => setModalPagar({...modalPagar, aberto: true, lancamento})}
-                                className="text-green-500 hover:text-green-700 font-bold"
-                                title="Pagar"
-                              >
-                                💰
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setModalExcluir({aberto: true, lancamento})}
-                              className="text-red-500 hover:text-red-700 font-bold"
-                              title="Excluir"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {/* Tabela para Desktop */}
+                <div className="overflow-x-auto hidden md:block">
+                  <table className="min-w-full table-fixed text-xs">
+                    {/* ... cabeçalho da tabela ... */}
+                    <tbody>
+                      {lancamentosFiltrados.map((lancamento) => (
+                        <tr key={lancamento.id} className="border-b hover:bg-gray-50">
+                          {/* ... células da tabela ... */}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Lista de Cards para Mobile */}
+                <div className="block md:hidden">
+                  {lancamentosFiltrados.map((lancamento) => (
+                    <LancamentoCard
+                      key={lancamento.id}
+                      lancamento={lancamento}
+                      onCardClick={iniciarEdicao}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

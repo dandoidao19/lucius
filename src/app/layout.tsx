@@ -1,7 +1,9 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import CabecalhoSistema from "@/components/CabecalhoSistema";
+import ReactQueryProvider from "./providers/ReactQueryProvider"; // Importa o Provider
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,11 +30,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {/* Cabeçalho do Sistema LUCIUS com Logos */}
-        <CabecalhoSistema />
-        
-        {/* Conteúdo das páginas */}
-        {children}
+        <ReactQueryProvider> {/* Adiciona o Provider aqui */}
+          {/* Cabeçalho do Sistema LUCIUS com Logos */}
+          <CabecalhoSistema />
+
+          {/* Conteúdo das páginas */}
+          {children}
+        </ReactQueryProvider>
       </body>
     </html>
   );
