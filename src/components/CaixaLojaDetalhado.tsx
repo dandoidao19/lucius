@@ -1,6 +1,5 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
@@ -154,7 +153,7 @@ export default function CaixaLojaDetalhado({
 
       const todosLancamentos = dados.lancamentosLoja.map(l => ({
         ...l,
-        data: l.status === 'realizado' ? l.data_lancamento : l.data_prevista,
+        data: l.status === 'pago' ? l.data_pagamento : l.data,
       }));
 
       if (mostrandoHistorico) {
