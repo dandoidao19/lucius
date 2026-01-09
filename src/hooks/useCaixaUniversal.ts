@@ -46,7 +46,7 @@ export function useCaixaUniversal() {
         const lancamentosCasa = dados.lancamentosCasa;
 
         const realLoja = transacoesLoja
-          .filter(t => t.status === 'pago')
+          .filter(t => t.status_pagamento === 'pago')
           .reduce((acc, t) => {
             const valor = t.valor_pago ?? t.total ?? 0;
             return acc + (t.tipo === 'entrada' ? valor : -valor);
@@ -61,7 +61,7 @@ export function useCaixaUniversal() {
         setCaixaRealGeral(realLoja + realCasa);
 
         const saldoAteOntemLoja = transacoesLoja
-          .filter(t => t.status === 'pago' && t.data_pagamento && t.data_pagamento <= ontem)
+          .filter(t => t.status_pagamento === 'pago' && t.data_pagamento && t.data_pagamento <= ontem)
         .reduce((acc, t) => {
           const valor = t.valor_pago ?? t.total ?? 0;
           return acc + (t.tipo === 'entrada' ? valor : -valor);
@@ -75,7 +75,7 @@ export function useCaixaUniversal() {
 
         const allEntries: { data: string; valor: number }[] = [];
         transacoesLoja.forEach(t => {
-          const data = t.status === 'pago' ? t.data_pagamento : t.data;
+          const data = t.status_pagamento === 'pago' ? t.data_pagamento : t.data;
           if (!data || data < hoje) return;
           const valor = t.valor_pago ?? t.total ?? 0;
           allEntries.push({ data: data.split('T')[0], valor: t.tipo === 'entrada' ? valor : -valor });

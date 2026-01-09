@@ -110,11 +110,16 @@ export interface Lancamento {
   centro_custo_id: string
   data?: string;
   status: string
+  status_pagamento?: string
   valor_pago?: number
   total?: number
   data_pagamento?: string
   parcelamento?: { atual: number; total: number }
-  recorrencia?: any
+  recorrencia?: {
+    tipo: 'mensal' | 'anual' | 'diario' | 'semanal'
+    dia?: number
+    mes?: number
+  }
   caixa_id?: string
   origem?: string
   centros_de_custo?: {

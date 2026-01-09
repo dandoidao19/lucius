@@ -3,6 +3,7 @@
 import { useCaixaUniversal } from '@/hooks/useCaixaUniversal'
 import { formatarDataParaExibicao, getDataAtualBrasil } from '@/lib/dateUtils'
 import { useState } from 'react'
+import { formatarMoeda, formatarMoedaCompacta } from '@/lib/utils'
 
 export default function CaixaGeral() {
   const {
@@ -34,9 +35,6 @@ export default function CaixaGeral() {
   const caixaSubContainerStyle: React.CSSProperties = { fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
   const periodoLinhaStyle: React.CSSProperties = { fontSize: '11px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
   const botoesContainerStyle: React.CSSProperties = { display: 'flex', gap: 6, alignItems: 'center', whiteSpace: 'nowrap' }
-
-  const formatarMoeda = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
-  const formatarMoedaCompacta = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(valor)
 
   const renderBotoesModo = () => {
     if (filtro === '30dias') {

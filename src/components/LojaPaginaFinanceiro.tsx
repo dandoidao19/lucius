@@ -408,10 +408,7 @@ export default function LojaPaginaFinanceiro() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
         <div className="lg:col-span-1">
-          <CaixaLojaDetalhado onToggleTudo={(mostrarTudo) => {
-            // Quando painel esquerdo solicitar "mostrar tudo", ativamos Ver Todas no painel direito
-            setVerTodas(Boolean(mostrarTudo))
-          }} />
+          <CaixaLojaDetalhado />
         </div>
 
         <div className="lg:col-span-3 min-h-0">
