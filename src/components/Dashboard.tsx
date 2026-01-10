@@ -27,7 +27,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <MenuCategorias paginaAtiva={paginaAtiva} setPaginaAtiva={setPaginaAtiva} />
+      <MenuCategorias />
       <div className="mt-4">{renderPagina()}</div>
     </div>
   )
