@@ -21,14 +21,7 @@ const calcularPrevisaoCaixa = (
 ) => {
   console.log('[DEBUG] Executando cálculo pesado de Previsão de Caixa...')
 
-  const calcularDataNDias = (dataBase: string, dias: number) => {
-    const data = new Date(`${dataBase}T12:00:00`)
-    data.setDate(data.getDate() + dias)
-    return data.toISOString().split('T')[0]
-  }
-
   const hoje = getDataAtualBrasil()
-  const ontem = calcularDataNDias(hoje, -1)
 
   const realLoja = transacoesLoja
     .filter(t => t.status_pagamento === 'pago')
@@ -40,26 +33,17 @@ const calcularPrevisaoCaixa = (
 
   const realGeral = realLoja + realCasa
 
-  const saldoAteOntemLoja = transacoesLoja
-    .filter(t => t.status_pagamento === 'pago' && t.data_pagamento && t.data_pagamento <= ontem)
-    .reduce((acc, t) => acc + (t.tipo === 'entrada' ? (t.valor_pago ?? t.total) : -(t.valor_pago ?? t.total)), 0)
-
-  const saldoAteOntemCasa = lancamentosCasa
-    .filter(l => l.status === 'realizado' && l.data_lancamento && l.data_lancamento <= ontem)
-    .reduce((acc, l) => acc + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
-
-  const saldoInicialProjecao = saldoAteOntemLoja + saldoAteOntemCasa
-
+  // Modificação: Coletar TODAS as entradas, não apenas a partir de hoje.
   const allEntries: { data: string; valor: number }[] = []
   transacoesLoja.forEach(t => {
     const data = t.status_pagamento === 'pago' ? t.data_pagamento : t.data
-    if (!data || data < hoje) return
+    if (!data) return
     const valor = t.valor_pago ?? t.total
     allEntries.push({ data: data.split('T')[0], valor: t.tipo === 'entrada' ? valor : -valor })
   })
   lancamentosCasa.forEach(l => {
     const data = l.status === 'realizado' ? l.data_lancamento : l.data_prevista
-    if (!data || data < hoje) return
+    if (!data) return
     allEntries.push({ data: data.split('T')[0], valor: l.tipo === 'entrada' ? l.valor : -l.valor })
   })
 
@@ -77,10 +61,23 @@ const calcularPrevisaoCaixa = (
   const saidasHoje = hojeData.despesas
 
   const sortedDates = Object.keys(groupedByDate).sort()
-  const maxDate = sortedDates[sortedDates.length - 1] || calcularDataNDias(hoje, 30)
+  if (sortedDates.length === 0) {
+    return { // Retorna um estado vazio se não houver transações
+      caixaRealGeral: realGeral,
+      caixaRealLoja: realLoja,
+      caixaRealCasa: realCasa,
+      series: [],
+      entradasHoje: 0,
+      saidasHoje: 0,
+    }
+  }
+
+  // Modificação: A série agora é construída a partir da primeira data encontrada.
+  const minDate = sortedDates[0]
+  const maxDate = sortedDates[sortedDates.length - 1]
   const series: DiaCaixa[] = []
-  let saldoAcumulado = saldoInicialProjecao
-  const currentDate = new Date(`${hoje}T12:00:00`)
+  let saldoAcumulado = 0
+  const currentDate = new Date(`${minDate}T12:00:00`)
   const finalDate = new Date(`${maxDate}T12:00:00`)
 
   while (currentDate <= finalDate) {

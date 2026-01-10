@@ -23,8 +23,8 @@ export default function CaixaLojaDetalhado({ titulo }: { titulo?: string }) {
     setFiltro('mes')
   }
 
-  const handleVoltar10Dias = () => {
-    setFiltro('30dias') // O padrão agora é 30 dias
+  const handleVoltar30Dias = () => {
+    setFiltro('30dias')
   }
 
   const handleMostrarHistorico = () => {
@@ -54,7 +54,7 @@ export default function CaixaLojaDetalhado({ titulo }: { titulo?: string }) {
     ) : (
       <div style={botoesContainerStyle}>
         <input type="month" value={mesFiltro} onChange={handleMesFiltroChange} disabled={carregando} className="px-1.5 py-0.5 text-xs border border-gray-300 rounded" />
-        <button onClick={handleVoltar10Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-xs font-medium">30 Dias</button>
+        <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-xs font-medium">30 Dias</button>
         <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-500 text-white rounded text-xs font-medium">TUDO</button>
       </div>
     )

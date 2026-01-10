@@ -21,24 +21,35 @@ export function useCaixaUniversal() {
     return data.toISOString().split('T')[0]
   }, [])
 
-  // 2. A única lógica que permanece aqui é a de FILTRAGEM da série de dados.
-  // Isso é muito mais leve e rápido do que o cálculo completo.
+  // 2. A lógica de filtragem foi refinada para lidar com a série de dados completa.
   const caixaPrevistoGeral = useMemo(() => {
-    if (!dadosCalculados?.series) {
+    const series = dadosCalculados?.series
+    if (!series) {
       return []
     }
 
-    if (filtro === '30dias') {
-      const hoje = getDataAtualBrasil()
-      const dataLimite = calcularDataNDias(hoje, 29)
-      return dadosCalculados.series.filter(dia => dia.data <= dataLimite)
-    }
+    const hoje = getDataAtualBrasil()
 
-    if (filtro === 'mes' && mesFiltro) {
-      return dadosCalculados.series.filter(dia => dia.data.startsWith(mesFiltro))
-    }
+    switch (filtro) {
+      case '30dias':
+        const dataLimite = calcularDataNDias(hoje, 29)
+        // Filtra a partir de hoje e limita a 30 dias
+        return series.filter(dia => dia.data >= hoje && dia.data <= dataLimite)
 
-    return dadosCalculados.series
+      case 'mes':
+        if (mesFiltro) {
+          // Mostra o mês inteiro, incluindo dias passados
+          return series.filter(dia => dia.data.startsWith(mesFiltro))
+        }
+        return []
+
+      case 'tudo':
+        // Mostra a série completa, histórico e futuro
+        return series
+
+      default:
+        return []
+    }
   }, [dadosCalculados, filtro, mesFiltro, calcularDataNDias])
 
   return {
