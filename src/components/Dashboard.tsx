@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import MenuCategorias from './MenuCategorias'
+import CaixaGeral from './CaixaGeral'
 import CasaModulo from './CasaModulo'
 import LojaModulo from './LojaModulo'
 import ModuloCondicional from './ModuloCondicional'
