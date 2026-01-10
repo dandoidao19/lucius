@@ -34,11 +34,12 @@ export function useCaixaUniversal() {
       return dadosCalculados.series.filter(dia => dia.data <= dataLimite)
     }
 
-    // Lógica de filtro por mês pode ser adicionada aqui se necessário
-    // if (filtro === 'mes') { ... }
+    if (filtro === 'mes' && mesFiltro) {
+      return dadosCalculados.series.filter(dia => dia.data.startsWith(mesFiltro))
+    }
 
     return dadosCalculados.series
-  }, [dadosCalculados, filtro, calcularDataNDias])
+  }, [dadosCalculados, filtro, mesFiltro, calcularDataNDias])
 
   return {
     // Retorna os dados diretamente do cache do useCaixaPrevisto
