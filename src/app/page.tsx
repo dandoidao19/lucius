@@ -1,14 +1,11 @@
-'use client'
+import LoginForm from '@/components/LoginForm'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-
-export default function HomePage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.replace('/login')
-  }, [router])
-
-  return null
+export default function Home() {
+  return (
+    <main className="min-h-screen bg-gray-100">
+      <div className="container mx-auto">
+        <LoginForm />
+      </div>
+    </main>
+  )
 }
