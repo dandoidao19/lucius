@@ -44,8 +44,8 @@ export function useCaixaUniversal() {
         return []
 
       case 'tudo':
-        // Mostra a série completa, histórico e futuro
-        return series
+        // Mostra tudo a partir de hoje
+        return series.filter(dia => dia.data >= hoje)
 
       default:
         return []
