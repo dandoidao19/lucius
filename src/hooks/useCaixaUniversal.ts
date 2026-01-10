@@ -24,6 +24,7 @@ const calcularDataNDias = (dataBase: string, dias: number) => {
 const fetchAll = async <T>(
   fromTable: string,
   selectFields = '*',
+  filters: { column: string; value: unknown }[] = [],
   orderColumn = 'id',
 ): Promise<T[]> => {
   const pageSize = 1000
@@ -31,14 +32,21 @@ const fetchAll = async <T>(
   const all: T[] = []
 
   while (true) {
-    const { data, error } = await supabase
-      .from(fromTable)
-      .select(selectFields)
-      .order(orderColumn, { ascending: true })
-      .range(offset, offset + pageSize - 1)
+    let query = supabase.from(fromTable).select(selectFields)
+    filters.forEach((filter) => {
+      query = query.eq(filter.column, filter.value)
+    })
+    query = query.order(orderColumn, { ascending: true }).range(offset, offset + pageSize - 1)
 
-    if (error) throw error
-    if (!data || data.length === 0) break
+    const { data, error } = await query
+
+    if (error) {
+      throw error
+    }
+
+    if (!data || data.length === 0) {
+      break
+    }
 
     all.push(...(data as T[]))
     if (data.length < pageSize) break
@@ -47,27 +55,21 @@ const fetchAll = async <T>(
   return all
 }
 
-const fetchCaixaData = async (filtro: Filtro /*, mesFiltro: string */) => {
+const fetchCaixaData = async (filtro: Filtro, _mesFiltro: string) => {
   const hoje = getDataAtualBrasil()
   const ontem = calcularDataNDias(hoje, -1)
-
-  if (filtro === 'mes') {
-    // const [ano, mes] = mesFiltro.split('-')
-    // const primeiroDia = `${ano}-${mes}-01`
-    // const ultimoDia = new Date(parseInt(ano), parseInt(mes), 0).toISOString().split('T')[0]
-    // queryLoja = queryLoja.gte('data', primeiroDia).lte('data', ultimoDia)
-    // queryCasa = queryCasa.gte('data_prevista', primeiroDia).lte('data_prevista', ultimoDia)
-  }
 
   const [transacoesLoja, lancamentosCasa] = await Promise.all([
     fetchAll(
       'transacoes_loja',
       'tipo, total, valor_pago, data, data_pagamento, status_pagamento',
+      [],
       'data',
     ),
     fetchAll(
       'lancamentos_financeiros',
       'tipo, valor, data_prevista, data_lancamento, status',
+      [],
       'data_prevista',
     ),
   ])
@@ -210,12 +212,7 @@ export function useCaixaUniversal() {
     isError,
   } = useQuery({
     queryKey: ['caixaUniversal', filtro, mesFiltro],
-    queryFn: async () => {
-      const result = await fetchCaixaData(filtro, mesFiltro)
-      return { ...result, lastUpdated: Date.now() }
-    },
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    refetchOnWindowFocus: false,
+    queryFn: () => fetchCaixaData(filtro, mesFiltro),
   })
 
   const getTituloPrevisao = useCallback(() => {
@@ -248,6 +245,6 @@ export function useCaixaUniversal() {
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao,
-    ultimaAtualizacao: data?.lastUpdated ?? 0,
+    ultimaAtualizacao: data ? new Date().getTime() : 0,
   }
 }
