@@ -36,7 +36,7 @@ export default function ModalPagarTransacao({
   const [pagarValorTotal, setPagarValorTotal] = useState(true)
   const [valorPago, setValorPago] = useState(0)
   const [jurosDescontos, setJurosDescontos] = useState(0)
-  const { atualizarCaixaReal } = useDadosFinanceiros()
+  const { recarregarDados } = useDadosFinanceiros()
 
   useEffect(() => {
     if (aberto && transacao) {
@@ -219,7 +219,7 @@ export default function ModalPagarTransacao({
         }
       }
       
-      await atualizarCaixaReal('loja')
+      recarregarDados() // Usa a nova função para invalidar o cache
       
       let mensagem = `✅ Parcela da ${transacao.tipo === 'entrada' ? 'venda' : 'compra'} #${transacao.numero_transacao} `
       
