@@ -12,6 +12,7 @@ interface ItemVenda {
   quantidade: number
   categoria: string
   preco_custo: number
+  valor_repasse: number
   preco_venda: number
   estoque_atual?: number
   minimizado?: boolean
@@ -58,6 +59,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
       quantidade: 1,
       categoria: '',
       preco_custo: 0,
+      valor_repasse: 0,
       preco_venda: 0,
       estoque_atual: 0,
       minimizado: false,
@@ -112,6 +114,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           quantidade: 1,
           categoria: '',
           preco_custo: 0,
+          valor_repasse: 0,
           preco_venda: 0,
           estoque_atual: 0,
           minimizado: false,
@@ -151,6 +154,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               descricao: '',
               categoria: !item.isNovoCadastro ? categorias[0]?.nome || '' : '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
               estoque_atual: 0,
             }
@@ -170,6 +174,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               descricao: produto.descricao || '',
               categoria: produto.categoria || '',
               preco_custo: produto.preco_custo || 0,
+              valor_repasse: produto.valor_repasse || 0,
               preco_venda: produto.preco_venda || 0,
               estoque_atual: produto.quantidade || 0,
             }
@@ -413,7 +418,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                   descricao: item.descricao,
                   quantidade: -item.quantidade,
                   preco_custo: item.preco_custo,
-                  valor_repasse: item.preco_custo * 1.3,
+                  valor_repasse: item.valor_repasse,
                   preco_venda: item.preco_venda,
                   categoria: item.categoria,
                   data_ultima_compra: dataVendaPrepara,
@@ -453,6 +458,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                 produto_id: produtoId,
                 descricao: item.descricao,
                 quantidade: item.quantidade,
+                valor_repasse: item.valor_repasse,
                 preco_venda: item.preco_venda,
               })
 
@@ -466,7 +472,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                 produto_id: produtoId,
                 tipo: 'saida',
                 quantidade: item.quantidade,
-                observacao: `Venda para ${cliente} em ${dataVendaPrepara}`,
+                observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
                 data: new Date().toISOString(),
               })
           }
@@ -481,6 +487,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               quantidade: 1,
               categoria: categorias[0]?.nome || '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
               estoque_atual: 0,
               minimizado: false,
@@ -522,7 +529,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               descricao: item.descricao,
               quantidade: -item.quantidade,
               preco_custo: item.preco_custo,
-              valor_repasse: item.preco_custo * 1.3,
+              valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               data_ultima_compra: dataVendaPrepara,
@@ -562,6 +569,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             produto_id: produtoId,
             descricao: item.descricao,
             quantidade: item.quantidade,
+            valor_repasse: item.valor_repasse,
             preco_venda: item.preco_venda,
           })
 
@@ -575,7 +583,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             produto_id: produtoId,
             tipo: 'saida',
             quantidade: item.quantidade,
-            observacao: `Venda para ${cliente} em ${dataVendaPrepara}`,
+            observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
             data: new Date().toISOString(),
           })
       }
@@ -815,6 +823,20 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                   required
                 />
               </div>
+
+              {!itemAtivo.isNovoCadastro && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Valor Repasse
+                  </label>
+                  <input
+                    type="text"
+                    value={`R$ ${itemAtivo.valor_repasse.toFixed(2)}`}
+                    disabled
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-gray-100 text-gray-700"
+                  />
+                </div>
+              )}
 
               <div className="border-t pt-2 mt-2">
                 <h4 className="font-semibold text-gray-800 mb-2 text-xs">Informações de Pagamento</h4>
