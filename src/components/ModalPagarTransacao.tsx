@@ -172,7 +172,6 @@ export default function ModalPagarTransacao({
           .update({ 
             status_pagamento: statusPagamento,
             data_pagamento: dataPagamentoFormatada,
-            data_original: transacao.data,
             // ✅ GRAVAR valor_pago E juros_descontos
             valor_pago: valorPago,
             juros_descontos: jurosDescontosCalculado
