@@ -31,7 +31,7 @@ export default function ModalEstornarTransacao({
 }: ModalEstornarTransacaoProps) {
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
-  const { atualizarCaixaReal } = useDadosFinanceiros()
+  const { recarregarDados } = useDadosFinanceiros()
 
   const handleEstornar = async () => {
     if (!transacao) return
@@ -93,7 +93,7 @@ export default function ModalEstornarTransacao({
       }
       
       // 3. ATUALIZAR CAIXA
-      await atualizarCaixaReal('loja')
+      recarregarDados()
       
       console.log('✅ Estorno realizado com sucesso!')
       alert(`✅ Estorno da ${transacao.tipo === 'entrada' ? 'venda' : 'compra'} #${transacao.numero_transacao} realizado com sucesso!`)
