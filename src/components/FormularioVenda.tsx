@@ -205,24 +205,24 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
     for (let i = 1; i <= quantidadeParcelas; i++) {
       let dataParcela = dataVencimento
       
-      console.log(\`📅 Calculando parcela \${i}/\${quantidadeParcelas}\`)
-      console.log(\`📅 Data base: \${dataVencimento}\`)
+      console.log(`📅 Calculando parcela ${i}/${quantidadeParcelas}`)
+      console.log(`📅 Data base: ${dataVencimento}`)
       
       if (i > 1) {
         if (prazoParcelas === 'diaria') {
           dataParcela = getDataNDias(dataVencimento, i - 1)
-          console.log(\`📅 Parcela \${i} (diária): \${dataParcela}\`)
+          console.log(`📅 Parcela ${i} (diária): ${dataParcela}`)
         } else if (prazoParcelas === 'semanal') {
           dataParcela = getDataNDias(dataVencimento, (i - 1) * 7)
-          console.log(\`📅 Parcela \${i} (semanal): \${dataParcela}\`)
+          console.log(`📅 Parcela ${i} (semanal): ${dataParcela}`)
         } else if (prazoParcelas === 'mensal') {
           dataParcela = addMonths(dataVencimento, i - 1)
-          console.log(\`📅 Parcela \${i} (mensal): \${dataParcela}\`)
+          console.log(`📅 Parcela ${i} (mensal): ${dataParcela}`)
         }
       }
 
       const dataParcelaFormatada = prepararDataParaInsert(dataParcela)
-      console.log(\`📅 Parcela \${i} formatada: \${dataParcelaFormatada}\`)
+      console.log(`📅 Parcela ${i} formatada: ${dataParcelaFormatada}`)
 
       let statusParcela = 'pendente'
       if (statusPagamento === 'pago') {
@@ -233,12 +233,12 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
 
       // CORREÇÃO: Gerar número único usando timestamp para evitar conflitos
       const timestamp = Date.now()
-      const numeroTransacao = parseInt(\`\${timestamp.toString().slice(-6)}\${i}\`.padStart(6, '0'))
+      const numeroTransacao = parseInt(`${timestamp.toString().slice(-6)}${i}`.padStart(6, '0'))
       
-      console.log(\`🔢 Número da transação gerado: \${numeroTransacao}\`)
+      console.log(`🔢 Número da transação gerado: ${numeroTransacao}`)
 
       // CORREÇÃO: Descrição SEM número da transação
-      const descricao = \`Venda \${cliente} (\${i}/\${quantidadeParcelas})\`
+      const descricao = `Venda ${cliente} (${i}/${quantidadeParcelas})`
 
       transacoes.push({
         user_id: user.id,
@@ -280,15 +280,15 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
       const { data: transacoesParaLimpar } = await supabase
         .from('transacoes_loja')
         .select('id')
-        .ilike('descricao', \`Venda \${cliente}%\`)
+        .ilike('descricao', `Venda ${cliente}%`)
         .eq('tipo', 'entrada')
 
       if (transacoesParaLimpar && transacoesParaLimpar.length > 0) {
-        console.log(\`🗑️ Encontradas \${transacoesParaLimpar.length} transações antigas para limpar\`)
+        console.log(`🗑️ Encontradas ${transacoesParaLimpar.length} transações antigas para limpar`)
         const { error: deleteError } = await supabase
           .from('transacoes_loja')
           .delete()
-          .ilike('descricao', \`Venda \${cliente}%\`)
+          .ilike('descricao', `Venda ${cliente}%`)
           .eq('tipo', 'entrada')
 
         if (deleteError) {
@@ -419,7 +419,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               const { data: novoProduto, error: erroNovoProduto } = await supabase
                 .from('produtos')
                 .insert({
-                  codigo: \`\${item.categoria.substring(0, 1).toUpperCase()}\${Math.floor(Math.random() * 10000)}\`,
+                  codigo: `${item.categoria.substring(0, 1).toUpperCase()}${Math.floor(Math.random() * 10000)}`,
                   descricao: item.descricao,
                   quantidade: -item.quantidade,
                   preco_custo: item.preco_custo,
@@ -477,7 +477,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                 produto_id: produtoId,
                 tipo: 'saida',
                 quantidade: item.quantidade,
-                observacao: \`Venda para \${cliente} em \${dataVendaPrepara}. Valor Repasse: R$ \${item.valor_repasse.toFixed(2)}\`,
+                observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
                 data: new Date().toISOString(),
               })
           }
@@ -588,7 +588,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             produto_id: produtoId,
             tipo: 'saida',
             quantidade: item.quantidade,
-            observacao: \`Venda para \${cliente} em \${dataVendaPrepara}. Valor Repasse: R$ \${item.valor_repasse.toFixed(2)}\`,
+            observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
             data: new Date().toISOString(),
           })
       }
@@ -726,7 +726,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                     Produto (Busca e Seleção)
                   </label>
                   <SeletorProduto
-                    key={\`seletor-venda-\${resetSeletorKey}-\${itemAtivo.id}\`}
+                    key={`seletor-venda-${resetSeletorKey}-${itemAtivo.id}`}
                     onSelecionarProduto={(produto) => selecionarProduto(produto, itemAtivo.id)}
                     onNovoItem={() => {}}
                     placeholder="Buscar ou criar..."
@@ -837,7 +837,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                   </label>
                   <input
                     type="text"
-                    value={\`R$ \${itemAtivo.valor_repasse.toFixed(2)}\`}
+                    value={`R$ ${itemAtivo.valor_repasse.toFixed(2)}`}
                     disabled
                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-gray-100 text-gray-700"
                   />
