@@ -327,14 +327,17 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
     setLoading(true)
 
     try {
+      const itensValidos = itens.filter(item => item.descricao && item.descricao.trim() !== '')
+
+      if (itensValidos.length === 0) {
+        throw new Error('Adicione pelo menos um item à compra.')
+      }
+
       if (!fornecedor.trim()) {
         throw new Error('Fornecedor é obrigatório')
       }
 
-      for (const item of itens) {
-        if (!item.descricao.trim()) {
-          throw new Error('Todos os itens devem ter descrição')
-        }
+      for (const item of itensValidos) {
         if (item.quantidade <= 0) {
           throw new Error('Quantidade deve ser maior que 0')
         }
@@ -359,12 +362,14 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
       console.log('📊 Parcelas:', quantidadeParcelas)
       console.log('📅 Prazo:', prazoParcelas)
 
+      const totalCompra = itensValidos.reduce((total, item) => total + item.quantidade * item.valor_repasse, 0)
+
       const dadosCompra: any = {
         numero_transacao: numeroTransacao,
         data_compra: dataCompraPrepara,
         fornecedor,
-        total: calcularTotal(),
-        quantidade_itens: itens.length,
+        total: totalCompra,
+        quantidade_itens: itensValidos.length,
         forma_pagamento: 'dinheiro',
         status_pagamento: statusPagamento,
         quantidade_parcelas: quantidadeParcelas,
@@ -385,8 +390,8 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               numero_transacao: numeroTransacao,
               data_compra: dataCompraPrepara,
               fornecedor,
-              total: calcularTotal(),
-              quantidade_itens: itens.length,
+              total: totalCompra,
+              quantidade_itens: itensValidos.length,
               forma_pagamento: 'dinheiro',
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
@@ -402,7 +407,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
           console.log('🔄 Criando transações parceladas...')
           await criarTransacoesParceladas(
             compraData2.id,
-            calcularTotal(),
+            totalCompra,
             fornecedor,
             dataVencimentoPrepara,
             quantidadeParcelas,
@@ -410,7 +415,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
             numeroTransacao
           )
 
-          for (const item of itens) {
+          for (const item of itensValidos) {
             let produtoId = item.produto_id
 
             if (!produtoId) {
@@ -520,7 +525,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
       console.log('🔄 Criando transações parceladas...')
       await criarTransacoesParceladas(
         compraData.id,
-        calcularTotal(),
+        totalCompra,
         fornecedor,
         dataVencimentoPrepara,
         quantidadeParcelas,
@@ -528,7 +533,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
         numeroTransacao
       )
 
-      for (const item of itens) {
+      for (const item of itensValidos) {
         let produtoId = item.produto_id
 
         if (!produtoId) {
@@ -616,6 +621,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
           quantidade: 1,
           categoria: categorias[0]?.nome || '',
           preco_custo: 0,
+          valor_repasse: 0,
           preco_venda: 0,
           minimizado: false,
           isNovoCadastro: false,
