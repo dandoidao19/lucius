@@ -54,7 +54,7 @@ export default function LojaPaginaFinanceiro() {
   const [modalPagarTransacao, setModalPagarTransacao] = useState<{ aberto: boolean, transacao: any | null }>({ aberto: false, transacao: null })
   const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: any | null }>({ aberto: false, transacao: null })
 
-  const { dados, atualizarCaixaReal } = useDadosFinanceiros()
+  const { recarregarDados } = useDadosFinanceiros()
 
   // Helpers locais para cálculo de datas
   const addDias = useCallback((dataStr: string, dias: number) => {
@@ -341,20 +341,14 @@ export default function LojaPaginaFinanceiro() {
   const temPagamento = useCallback((transacao: Transacao) => !!transacao.data_pagamento, [])
 
   const handlePagamentoRealizado = useCallback(() => {
-    cacheGlobalUltimaAtualizacao = 0
-    cacheGlobalTransacoes = []
-    ultimaBuscaRef.current = 0
-    atualizarCaixaReal('loja')
-    buscarTransacoes(true)
-  }, [atualizarCaixaReal, buscarTransacoes])
+    recarregarDados()
+    buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
+  }, [recarregarDados, buscarTransacoes])
 
   const handleEstornoRealizado = useCallback(() => {
-    cacheGlobalUltimaAtualizacao = 0
-    cacheGlobalTransacoes = []
-    ultimaBuscaRef.current = 0
-    atualizarCaixaReal('loja')
-    buscarTransacoes(true)
-  }, [atualizarCaixaReal, buscarTransacoes])
+    recarregarDados()
+    buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
+  }, [recarregarDados, buscarTransacoes])
 
   const tituloLista = useMemo(() => {
     const temFiltros =

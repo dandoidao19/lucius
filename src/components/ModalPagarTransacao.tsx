@@ -36,7 +36,7 @@ export default function ModalPagarTransacao({
   const [pagarValorTotal, setPagarValorTotal] = useState(true)
   const [valorPago, setValorPago] = useState(0)
   const [jurosDescontos, setJurosDescontos] = useState(0)
-  const { atualizarCaixaReal } = useDadosFinanceiros()
+  const { recarregarDados } = useDadosFinanceiros()
 
   useEffect(() => {
     if (aberto && transacao) {
@@ -172,7 +172,6 @@ export default function ModalPagarTransacao({
           .update({ 
             status_pagamento: statusPagamento,
             data_pagamento: dataPagamentoFormatada,
-            data_original: transacao.data,
             // ✅ GRAVAR valor_pago E juros_descontos
             valor_pago: valorPago,
             juros_descontos: jurosDescontosCalculado
@@ -220,7 +219,7 @@ export default function ModalPagarTransacao({
         }
       }
       
-      await atualizarCaixaReal('loja')
+      recarregarDados() // Usa a nova função para invalidar o cache
       
       let mensagem = `✅ Parcela da ${transacao.tipo === 'entrada' ? 'venda' : 'compra'} #${transacao.numero_transacao} `
       

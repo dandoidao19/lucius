@@ -12,6 +12,7 @@ interface ItemCompra {
   quantidade: number
   categoria: string
   preco_custo: number
+  valor_repasse: number
   preco_venda: number
   minimizado?: boolean
   isNovoCadastro?: boolean
@@ -57,6 +58,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
       quantidade: 1,
       categoria: '',
       preco_custo: 0,
+      valor_repasse: 0,
       preco_venda: 0,
       minimizado: false,
       isNovoCadastro: false,
@@ -90,7 +92,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
   }
 
   const calcularTotal = () => {
-    return itens.reduce((total, item) => total + item.quantidade * item.preco_custo, 0)
+    return itens.reduce((total, item) => total + item.quantidade * item.valor_repasse, 0)
   }
 
   const adicionarNovoItem = () => {
@@ -110,6 +112,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
         quantidade: 1,
         categoria: categorias[0]?.nome || '',
         preco_custo: 0,
+        valor_repasse: 0,
         preco_venda: 0,
         minimizado: false,
         isNovoCadastro: false,
@@ -127,11 +130,31 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
   }
 
   const atualizarItem = (idItem: string, campo: string, valor: any) => {
-    setItens(
-      itens.map((item) =>
-        item.id === idItem ? { ...item, [campo]: valor } : item
-      )
-    )
+    setItens(prevItens => {
+      const novosItens = prevItens.map(item => {
+        if (item.id === idItem) {
+          const itemAtualizado = { ...item, [campo]: valor }
+
+          // Recalcular valor_repasse se o preço de custo ou a categoria mudar
+          if (campo === 'preco_custo' || campo === 'categoria') {
+            const categoriaNome = campo === 'categoria' ? valor : itemAtualizado.categoria
+            const precoCusto = campo === 'preco_custo' ? parseFloat(valor) || 0 : itemAtualizado.preco_custo
+
+            const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaNome)
+
+            if (categoriaSelecionada && precoCusto > 0) {
+              const percentual = categoriaSelecionada.percentual_repasse || 0
+              itemAtualizado.valor_repasse = precoCusto * (1 + percentual / 100)
+            } else {
+              itemAtualizado.valor_repasse = precoCusto // Se não houver percentual, repasse é igual ao custo
+            }
+          }
+          return itemAtualizado
+        }
+        return item
+      })
+      return novosItens
+    })
   }
 
   const toggleNovoCadastro = (idItem: string) => {
@@ -145,6 +168,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               descricao: '',
               categoria: !item.isNovoCadastro ? categorias[0]?.nome || '' : '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
             }
           : item
@@ -153,16 +177,27 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
   }
 
   const selecionarProduto = (produto: any, idItem: string) => {
-    setItens((prevItens) =>
-      prevItens.map((item) =>
+    const precoCusto = produto.preco_custo || 0
+    const categoriaNome = produto.categoria || ''
+    const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaNome)
+    let valorRepasse = precoCusto
+
+    if (categoriaSelecionada && precoCusto > 0) {
+      const percentual = categoriaSelecionada.percentual_repasse || 0
+      valorRepasse = precoCusto * (1 + percentual / 100)
+    }
+
+    setItens(prevItens =>
+      prevItens.map(item =>
         item.id === idItem
           ? {
               ...item,
               produto_id: produto.id,
               descricao: produto.descricao || '',
-              preco_custo: produto.preco_custo || 0,
+              preco_custo: precoCusto,
+              valor_repasse: valorRepasse,
               preco_venda: produto.preco_venda || 0,
-              categoria: produto.categoria || '',
+              categoria: categoriaNome,
             }
           : item
       )
@@ -292,14 +327,17 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
     setLoading(true)
 
     try {
+      const itensValidos = itens.filter(item => item.descricao && item.descricao.trim() !== '')
+
+      if (itensValidos.length === 0) {
+        throw new Error('Adicione pelo menos um item à compra.')
+      }
+
       if (!fornecedor.trim()) {
         throw new Error('Fornecedor é obrigatório')
       }
 
-      for (const item of itens) {
-        if (!item.descricao.trim()) {
-          throw new Error('Todos os itens devem ter descrição')
-        }
+      for (const item of itensValidos) {
         if (item.quantidade <= 0) {
           throw new Error('Quantidade deve ser maior que 0')
         }
@@ -324,12 +362,14 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
       console.log('📊 Parcelas:', quantidadeParcelas)
       console.log('📅 Prazo:', prazoParcelas)
 
+      const totalCompra = itensValidos.reduce((total, item) => total + item.quantidade * item.valor_repasse, 0)
+
       const dadosCompra: any = {
         numero_transacao: numeroTransacao,
         data_compra: dataCompraPrepara,
         fornecedor,
-        total: calcularTotal(),
-        quantidade_itens: itens.length,
+        total: totalCompra,
+        quantidade_itens: itensValidos.length,
         forma_pagamento: 'dinheiro',
         status_pagamento: statusPagamento,
         quantidade_parcelas: quantidadeParcelas,
@@ -350,8 +390,8 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               numero_transacao: numeroTransacao,
               data_compra: dataCompraPrepara,
               fornecedor,
-              total: calcularTotal(),
-              quantidade_itens: itens.length,
+              total: totalCompra,
+              quantidade_itens: itensValidos.length,
               forma_pagamento: 'dinheiro',
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
@@ -367,7 +407,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
           console.log('🔄 Criando transações parceladas...')
           await criarTransacoesParceladas(
             compraData2.id,
-            calcularTotal(),
+            totalCompra,
             fornecedor,
             dataVencimentoPrepara,
             quantidadeParcelas,
@@ -375,7 +415,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
             numeroTransacao
           )
 
-          for (const item of itens) {
+          for (const item of itensValidos) {
             let produtoId = item.produto_id
 
             if (!produtoId) {
@@ -386,7 +426,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                   descricao: item.descricao,
                   quantidade: item.quantidade,
                   preco_custo: item.preco_custo,
-                  valor_repasse: item.preco_custo * 1.3,
+                  valor_repasse: item.valor_repasse,
                   preco_venda: item.preco_venda,
                   categoria: item.categoria,
                   data_ultima_compra: dataCompraPrepara,
@@ -411,7 +451,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                   .update({
                     quantidade: produtoAtual.quantidade + item.quantidade,
                     preco_custo: item.preco_custo,
-                    valor_repasse: item.preco_custo * 1.3,
+                    valor_repasse: item.valor_repasse,
                     preco_venda: item.preco_venda,
                     categoria: item.categoria,
                     data_ultima_compra: dataCompraPrepara,
@@ -433,6 +473,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                 quantidade: item.quantidade,
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
+                valor_repasse: item.valor_repasse,
                 preco_venda: item.preco_venda,
               })
 
@@ -446,7 +487,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                 produto_id: produtoId,
                 tipo: 'entrada',
                 quantidade: item.quantidade,
-                observacao: `Compra de ${item.descricao} de ${fornecedor}`,
+                observacao: `Compra de ${item.descricao} de ${fornecedor}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
                 data: new Date().toISOString(),
               })
           }
@@ -462,6 +503,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               quantidade: 1,
               categoria: categorias[0]?.nome || '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
               minimizado: false,
               isNovoCadastro: false,
@@ -483,7 +525,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
       console.log('🔄 Criando transações parceladas...')
       await criarTransacoesParceladas(
         compraData.id,
-        calcularTotal(),
+        totalCompra,
         fornecedor,
         dataVencimentoPrepara,
         quantidadeParcelas,
@@ -491,7 +533,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
         numeroTransacao
       )
 
-      for (const item of itens) {
+      for (const item of itensValidos) {
         let produtoId = item.produto_id
 
         if (!produtoId) {
@@ -502,7 +544,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               descricao: item.descricao,
               quantidade: item.quantidade,
               preco_custo: item.preco_custo,
-              valor_repasse: item.preco_custo * 1.3,
+              valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               data_ultima_compra: dataCompraPrepara,
@@ -527,7 +569,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
               .update({
                 quantidade: produtoAtual.quantidade + item.quantidade,
                 preco_custo: item.preco_custo,
-                valor_repasse: item.preco_custo * 1.3,
+                valor_repasse: item.valor_repasse,
                 preco_venda: item.preco_venda,
                 categoria: item.categoria,
                 data_ultima_compra: dataCompraPrepara,
@@ -549,6 +591,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
             quantidade: item.quantidade,
             categoria: item.categoria,
             preco_custo: item.preco_custo,
+            valor_repasse: item.valor_repasse,
             preco_venda: item.preco_venda,
           })
 
@@ -562,7 +605,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
             produto_id: produtoId,
             tipo: 'entrada',
             quantidade: item.quantidade,
-            observacao: `Compra de ${item.descricao} de ${fornecedor}`,
+            observacao: `Compra de ${item.descricao} de ${fornecedor}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
             data: new Date().toISOString(),
           })
       }
@@ -578,6 +621,7 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
           quantidade: 1,
           categoria: categorias[0]?.nome || '',
           preco_custo: 0,
+          valor_repasse: 0,
           preco_venda: 0,
           minimizado: false,
           isNovoCadastro: false,
@@ -655,8 +699,8 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                     <div className="flex-1">
                       <p className="font-medium text-gray-800 text-xs">{item.descricao}</p>
                       <p className="text-xs text-gray-600">
-                        {item.quantidade}x R$ {item.preco_custo.toFixed(2)} = R${' '}
-                        {(item.quantidade * item.preco_custo).toFixed(2)}
+                        {item.quantidade}x R$ {item.valor_repasse.toFixed(2)} = R${' '}
+                        {(item.quantidade * item.valor_repasse).toFixed(2)}
                       </p>
                     </div>
                     <button
@@ -792,6 +836,19 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
                     </button>
                   )}
                 </div>
+              </div>
+
+              {/* Valor Repasse */}
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Valor Repasse (Calculado)
+                </label>
+                <input
+                  type="text"
+                  value={`R$ ${itemAtivo.valor_repasse.toFixed(2)}`}
+                  disabled
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
+                />
               </div>
 
               {/* Preço de Venda */}

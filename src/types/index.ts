@@ -86,25 +86,56 @@ export interface Transacao {
   cliente_fornecedor: string
 }
 
-// Este é o tipo que o ModalPagarAvancado espera
-// Importado/definido em ModalPagarAvancado.tsx
-export interface Lancamento {
-  id: string
-  descricao: string
-  valor: number
-  tipo: string
-  data_lancamento: string
-  data_prevista: string
-  centro_custo_id: string
-  status: string
-  parcelamento?: { atual: number; total: number }
-  recorrencia?: any
-  caixa_id?: string
-  origem?: string
-  centros_de_custo?: {
-    nome: string
-  }
+// Novo tipo para Centros de Custo
+export interface CentroCusto {
+  id: string;
+  nome: string;
+  contexto: 'casa' | 'loja';
+  tipo: 'entrada' | 'saida';
+  categoria: string;
+  recorrencia: string;
 }
+
+// Novo tipo para Transações da Loja, mais completo que o tipo 'Transacao' genérico
+export interface TransacaoLoja {
+  id: string;
+  data: string;
+  cliente: string;
+  total: number;
+  tipo: 'entrada' | 'saida';
+  status_pagamento: 'pago' | 'pendente' | 'parcial';
+  valor_pago?: number;
+  data_pagamento?: string;
+  // Adicione outros campos que possam existir na tabela
+  numero_transacao?: number;
+  quantidade_itens?: number;
+  quantidade_parcelas?: number;
+  prazoparcelas?: string;
+}
+
+// Este é o tipo que o ModalPagarAvancado espera
+// Agora exportado para ser usado em toda a aplicação
+export interface LancamentoFinanceiro {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: string;
+  data_lancamento: string;
+  data_prevista: string;
+  centro_custo_id: string;
+  status: string;
+  parcelamento?: {
+    atual: number;
+    total: number;
+  };
+  recorrencia?: any; // Manter 'any' por enquanto para não quebrar a lógica existente
+  caixa_id?: string;
+  origem?: string;
+  centros_de_custo?: {
+    nome: string;
+  } | null;
+}
+
 
 export interface ModalPagarState {
   aberto: boolean

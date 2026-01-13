@@ -12,6 +12,7 @@ interface ItemVenda {
   quantidade: number
   categoria: string
   preco_custo: number
+  valor_repasse: number
   preco_venda: number
   estoque_atual?: number
   minimizado?: boolean
@@ -58,6 +59,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
       quantidade: 1,
       categoria: '',
       preco_custo: 0,
+      valor_repasse: 0,
       preco_venda: 0,
       estoque_atual: 0,
       minimizado: false,
@@ -112,6 +114,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           quantidade: 1,
           categoria: '',
           preco_custo: 0,
+          valor_repasse: 0,
           preco_venda: 0,
           estoque_atual: 0,
           minimizado: false,
@@ -151,6 +154,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               descricao: '',
               categoria: !item.isNovoCadastro ? categorias[0]?.nome || '' : '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
               estoque_atual: 0,
             }
@@ -170,6 +174,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               descricao: produto.descricao || '',
               categoria: produto.categoria || '',
               preco_custo: produto.preco_custo || 0,
+              valor_repasse: produto.valor_repasse || 0,
               preco_venda: produto.preco_venda || 0,
               estoque_atual: produto.quantidade || 0,
             }
@@ -314,14 +319,17 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
     setLoading(true)
 
     try {
+      const itensValidos = itens.filter(item => item.descricao && item.descricao.trim() !== '')
+
+      if (itensValidos.length === 0) {
+        throw new Error('Adicione pelo menos um item à venda.')
+      }
+
       if (!cliente.trim()) {
         throw new Error('Cliente é obrigatório')
       }
 
-      for (const item of itens) {
-        if (!item.descricao.trim()) {
-          throw new Error('Todos os itens devem ter descrição')
-        }
+      for (const item of itensValidos) {
         if (item.quantidade <= 0) {
           throw new Error('Quantidade deve ser maior que 0')
         }
@@ -351,12 +359,14 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
       console.log('📊 Parcelas:', quantidadeParcelas)
       console.log('📅 Prazo:', prazoParcelas)
 
+      const totalVenda = itensValidos.reduce((total, item) => total + item.quantidade * item.preco_venda, 0)
+
       const dadosVenda: any = {
         numero_transacao: numeroTransacao,
         data_venda: dataVendaPrepara,
         cliente,
-        total: calcularTotal(),
-        quantidade_itens: itens.length,
+        total: totalVenda,
+        quantidade_itens: itensValidos.length,
         forma_pagamento: 'dinheiro',
         status_pagamento: statusPagamento,
         quantidade_parcelas: quantidadeParcelas,
@@ -377,8 +387,8 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               numero_transacao: numeroTransacao,
               data_venda: dataVendaPrepara,
               cliente,
-              total: calcularTotal(),
-              quantidade_itens: itens.length,
+              total: totalVenda,
+              quantidade_itens: itensValidos.length,
               forma_pagamento: 'dinheiro',
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
@@ -394,7 +404,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           console.log('🔄 Criando transações parceladas...')
           await criarTransacoesParceladas(
             vendaData2.id,
-            calcularTotal(),
+            totalVenda,
             cliente,
             dataVencimentoPrepara,
             quantidadeParcelas,
@@ -402,7 +412,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             numeroTransacao
           )
 
-          for (const item of itens) {
+          for (const item of itensValidos) {
             let produtoId = item.produto_id
 
             if (!produtoId) {
@@ -413,7 +423,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                   descricao: item.descricao,
                   quantidade: -item.quantidade,
                   preco_custo: item.preco_custo,
-                  valor_repasse: item.preco_custo * 1.3,
+                  valor_repasse: item.valor_repasse,
                   preco_venda: item.preco_venda,
                   categoria: item.categoria,
                   data_ultima_compra: dataVendaPrepara,
@@ -453,6 +463,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                 produto_id: produtoId,
                 descricao: item.descricao,
                 quantidade: item.quantidade,
+                valor_repasse: item.valor_repasse,
                 preco_venda: item.preco_venda,
               })
 
@@ -466,7 +477,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                 produto_id: produtoId,
                 tipo: 'saida',
                 quantidade: item.quantidade,
-                observacao: `Venda para ${cliente} em ${dataVendaPrepara}`,
+                observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
                 data: new Date().toISOString(),
               })
           }
@@ -481,6 +492,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
               quantidade: 1,
               categoria: categorias[0]?.nome || '',
               preco_custo: 0,
+              valor_repasse: 0,
               preco_venda: 0,
               estoque_atual: 0,
               minimizado: false,
@@ -503,7 +515,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
       console.log('🔄 Criando transações parceladas...')
       await criarTransacoesParceladas(
         vendaData.id,
-        calcularTotal(),
+        totalVenda,
         cliente,
         dataVencimentoPrepara,
         quantidadeParcelas,
@@ -511,18 +523,18 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
         numeroTransacao
       )
 
-      for (const item of itens) {
+      for (const item of itensValidos) {
         let produtoId = item.produto_id
 
         if (!produtoId) {
           const { data: novoProduto, error: erroNovoProduto } = await supabase
             .from('produtos')
             .insert({
-              codigo: `${item.categoria.substring(0, 1).toUpperCase()}${Math.floor(Math.random() * 10000)}`,
+              codigo: \`\${item.categoria.substring(0, 1).toUpperCase()}\${Math.floor(Math.random() * 10000)}\`,
               descricao: item.descricao,
               quantidade: -item.quantidade,
               preco_custo: item.preco_custo,
-              valor_repasse: item.preco_custo * 1.3,
+              valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               data_ultima_compra: dataVendaPrepara,
@@ -562,6 +574,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             produto_id: produtoId,
             descricao: item.descricao,
             quantidade: item.quantidade,
+            valor_repasse: item.valor_repasse,
             preco_venda: item.preco_venda,
           })
 
@@ -575,7 +588,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
             produto_id: produtoId,
             tipo: 'saida',
             quantidade: item.quantidade,
-            observacao: `Venda para ${cliente} em ${dataVendaPrepara}`,
+            observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
             data: new Date().toISOString(),
           })
       }
@@ -590,6 +603,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           quantidade: 1,
           categoria: categorias[0]?.nome || '',
           preco_custo: 0,
+          valor_repasse: 0,
           preco_venda: 0,
           estoque_atual: 0,
           minimizado: false,
@@ -815,6 +829,20 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
                   required
                 />
               </div>
+
+              {!itemAtivo.isNovoCadastro && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Valor Repasse
+                  </label>
+                  <input
+                    type="text"
+                    value={`R$ ${itemAtivo.valor_repasse.toFixed(2)}`}
+                    disabled
+                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded bg-gray-100 text-gray-700"
+                  />
+                </div>
+              )}
 
               <div className="border-t pt-2 mt-2">
                 <h4 className="font-semibold text-gray-800 mb-2 text-xs">Informações de Pagamento</h4>

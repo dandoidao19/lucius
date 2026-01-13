@@ -152,7 +152,7 @@ const validarFormulario = (form: FormLancamento): boolean => {
 }
 
 export default function CasaModulo() {
-  const { dados, recarregarLancamentos, atualizarCaixaReal, carregando: carregandoContexto } = useDadosFinanceiros()
+  const { dados, recarregarDados, carregando: carregandoContexto } = useDadosFinanceiros()
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([])
   const [loading, setLoading] = useState(false)
   const [carregandoInicial, setCarregandoInicial] = useState(true)
@@ -219,7 +219,7 @@ export default function CasaModulo() {
       // Carregar lançamentos se ainda não foram carregados
       if (dados.todosLancamentosCasa.length === 0) {
         console.log('🔄 Carregando lançamentos do módulo casa...')
-        await recarregarLancamentos('casa')
+        recarregarDados()
       }
       
       setCarregandoInicial(false)
@@ -227,7 +227,7 @@ export default function CasaModulo() {
     }
     
     carregarDadosIniciais()
-  }, [carregandoContexto, dados.todosLancamentosCasa.length, recarregarLancamentos])
+  }, [carregandoContexto, dados.todosLancamentosCasa.length, recarregarDados])
 
   // ✅ Carregar centros de custo do contexto
   useEffect(() => {
@@ -379,7 +379,7 @@ export default function CasaModulo() {
       })
       
       // Recarregar apenas os dados necessários
-      await recarregarLancamentos('casa')
+      recarregarDados()
       
       setFormularioAberto(false)
       alert('✅ Lançamento adicionado com sucesso!')
@@ -467,7 +467,7 @@ export default function CasaModulo() {
       alert('✅ Pagamento processado com sucesso!')
       
       // Recarregar apenas os dados necessários
-      await recarregarLancamentos('casa')
+      recarregarDados()
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
       alert('❌ Erro ao processar pagamento: ' + error.message)
@@ -490,7 +490,7 @@ export default function CasaModulo() {
       alert('✅ Lançamento excluído com sucesso!')
       
       // Recarregar apenas os dados necessários
-      await recarregarLancamentos('casa')
+      recarregarDados()
     } catch (error: any) {
       console.error('Erro ao excluir lançamento:', error)
       alert('❌ Erro ao excluir lançamento: ' + error.message)
@@ -586,7 +586,7 @@ export default function CasaModulo() {
       alert('✅ Lançamento editado com sucesso!')
       
       // Recarregar apenas os dados necessários
-      await recarregarLancamentos('casa')
+      recarregarDados()
     } catch (error: any) {
       console.error('Erro ao salvar edição:', error)
       alert('❌ Erro ao salvar edição: ' + error.message)
