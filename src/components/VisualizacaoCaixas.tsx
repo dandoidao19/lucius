@@ -1,6 +1,7 @@
 'use client'
 
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
+import { formatarMoeda, formatarMoedaCompacta } from '@/lib/utils'
 
 interface DiaCaixa {
   data: string
@@ -30,24 +31,6 @@ export default function VisualizacaoCaixas({
   caixaPrevisto,
   cor = 'blue'
 }: VisualizacaoCaixasProps) {
-  const formatarMoeda = (valor: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(valor)
-  }
-
-  const formatarMoedaCompacta = (valor: number) => {
-    if (valor === 0) return 'R$ 0'
-    
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(valor)
-  }
-
   const formatarDataTabela = (dataISO: string) => {
     try {
       const dataFormatada = formatarDataParaExibicao(dataISO)

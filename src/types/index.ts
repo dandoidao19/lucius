@@ -86,6 +86,18 @@ export interface Transacao {
   cliente_fornecedor: string
 }
 
+// src/types/index.ts
+
+export interface CentroCusto {
+  id: string;
+  nome: string;
+  contexto: 'casa' | 'loja';
+  tipo: 'RECEITA' | 'DESPESA';
+  categoria: string;
+  recorrencia: string;
+}
+
+
 // Este é o tipo que o ModalPagarAvancado espera
 // Importado/definido em ModalPagarAvancado.tsx
 export interface Lancamento {
@@ -96,9 +108,18 @@ export interface Lancamento {
   data_lancamento: string
   data_prevista: string
   centro_custo_id: string
+  data?: string;
   status: string
+  status_pagamento?: string
+  valor_pago?: number
+  total?: number
+  data_pagamento?: string
   parcelamento?: { atual: number; total: number }
-  recorrencia?: any
+  recorrencia?: {
+    tipo: 'mensal' | 'anual' | 'diario' | 'semanal'
+    dia?: number
+    mes?: number
+  }
   caixa_id?: string
   origem?: string
   centros_de_custo?: {
