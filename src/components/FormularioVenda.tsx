@@ -530,7 +530,7 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           const { data: novoProduto, error: erroNovoProduto } = await supabase
             .from('produtos')
             .insert({
-              codigo: \`\${item.categoria.substring(0, 1).toUpperCase()}\${Math.floor(Math.random() * 10000)}\`,
+              codigo: `${item.categoria.substring(0, 1).toUpperCase()}${Math.floor(Math.random() * 10000)}`,
               descricao: item.descricao,
               quantidade: -item.quantidade,
               preco_custo: item.preco_custo,
