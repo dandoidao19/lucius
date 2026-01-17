@@ -17,7 +17,6 @@ export default function CaixaGeral() {
     setFiltro,
     mesFiltro,
     setMesFiltro,
-    ultimaAtualizacao,
     getTituloPrevisao
   } = useCaixaUniversal()
 
@@ -98,7 +97,6 @@ export default function CaixaGeral() {
           <div className="overflow-x-auto">
             <div className="text-[10px] text-gray-500 mb-1">
               Mostrando {caixaPrevistoGeral.length} dias
-              <span className="ml-2 text-blue-500">✓ {new Date(ultimaAtualizacao).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
             </div>
             <table className="w-full text-xs border-collapse">
               <thead>

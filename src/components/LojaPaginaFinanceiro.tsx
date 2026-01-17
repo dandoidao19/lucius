@@ -7,6 +7,7 @@ import FiltrosLancamentos from './FiltrosLancamentos'
 import CaixaLojaDetalhado from './CaixaLojaDetalhado'
 import ModalPagarTransacao from './ModalPagarTransacao'
 import ModalEstornarTransacao from './ModalEstornarTransacao'
+import FormularioLancamentoLoja from './FormularioLancamentoLoja'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
@@ -30,6 +31,23 @@ interface Transacao {
   origem_id?: string
 }
 
+// Definição explícita para o tipo de dado bruto vindo do Supabase
+interface SupabaseTransacaoLoja {
+  id: string;
+  numero_transacao?: number;
+  data: string;
+  data_pagamento?: string;
+  data_original?: string;
+  tipo: 'entrada' | 'saida';
+  descricao?: string;
+  total: number;
+  valor_pago?: number;
+  juros_descontos?: number;
+  status_pagamento?: string;
+  quantidade_parcelas?: number;
+}
+
+
 let cacheGlobalTransacoes: Transacao[] = []
 let cacheGlobalUltimaAtualizacao: number = 0
 const CACHE_TEMPO_VIDA = 30000
@@ -51,8 +69,9 @@ export default function LojaPaginaFinanceiro() {
   const [filtroTipo, setFiltroTipo] = useState('todos')
   const [filtroStatus, setFiltroStatus] = useState('todos')
 
-  const [modalPagarTransacao, setModalPagarTransacao] = useState<{ aberto: boolean, transacao: any | null }>({ aberto: false, transacao: null })
-  const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: any | null }>({ aberto: false, transacao: null })
+  const [modalPagarTransacao, setModalPagarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
+  const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
+  const [exibirFormularioLancamento, setExibirFormularioLancamento] = useState(false)
 
   const { recarregarDados } = useDadosFinanceiros()
 
@@ -401,10 +420,7 @@ export default function LojaPaginaFinanceiro() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
         <div className="lg:col-span-1">
-          <CaixaLojaDetalhado onToggleTudo={(mostrarTudo) => {
-            // Quando painel esquerdo solicitar "mostrar tudo", ativamos Ver Todas no painel direito
-            setVerTodas(Boolean(mostrarTudo))
-          }} />
+          <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
         </div>
 
         <div className="lg:col-span-3 min-h-0">
@@ -485,8 +501,18 @@ export default function LojaPaginaFinanceiro() {
         </div>
       </div>
 
-      <ModalPagarTransacao aberto={modalPagarTransacao.aberto} transacao={modalPagarTransacao.transacao} onClose={() => setModalPagarTransacao({ aberto: false, transacao: null })} onPagamentoRealizado={handlePagamentoRealizado} />
-      <ModalEstornarTransacao aberto={modalEstornarTransacao.aberto} transacao={modalEstornarTransacao.transacao} onClose={() => setModalEstornarTransacao({ aberto: false, transacao: null })} onEstornoRealizado={handleEstornoRealizado} />
+      <ModalPagarTransacao
+        aberto={modalPagarTransacao.aberto}
+        transacao={modalPagarTransacao.transacao ? { ...modalPagarTransacao.transacao, status_pagamento: modalPagarTransacao.transacao.status_pagamento || 'pendente' } : null}
+        onClose={() => setModalPagarTransacao({ aberto: false, transacao: null })}
+        onPagamentoRealizado={handlePagamentoRealizado}
+      />
+      <ModalEstornarTransacao
+        aberto={modalEstornarTransacao.aberto}
+        transacao={modalEstornarTransacao.transacao ? { ...modalEstornarTransacao.transacao, status_pagamento: modalEstornarTransacao.transacao.status_pagamento || 'pendente' } : null}
+        onClose={() => setModalEstornarTransacao({ aberto: false, transacao: null })}
+        onEstornoRealizado={handleEstornoRealizado}
+      />
     </div>
   )
 }

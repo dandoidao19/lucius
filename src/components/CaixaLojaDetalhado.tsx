@@ -2,7 +2,12 @@
 
 import { useCaixaUniversal } from '@/hooks/useCaixaUniversal'
 
-export default function CaixaLojaDetalhado({ titulo }: { titulo?: string }) {
+interface CaixaLojaDetalhadoProps {
+  titulo?: string;
+  onMostrarTudo: (mostrar: boolean) => void;
+}
+
+export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaDetalhadoProps) {
   // 1. Consumir o hook centralizado e otimizado
   const {
     caixaRealLoja,

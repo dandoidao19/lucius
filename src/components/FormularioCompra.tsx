@@ -129,6 +129,23 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
     setErro('')
   }
 
+  const ativarItemParaEdicao = (idItem: string) => {
+    const itemSelecionado = itens.find(item => item.id === idItem)
+    if (!itemSelecionado) return
+
+    const outrosItens = itens.filter(item => item.id !== idItem)
+
+    // Garante que todos os outros itens fiquem minimizados
+    const outrosItensMinimizados = outrosItens.map(item =>
+      item.minimizado ? item : { ...item, minimizado: true }
+    )
+
+    // Coloca o item selecionado no final, como ativo
+    const novosItens = [...outrosItensMinimizados.filter(item => !item.minimizado), ...outrosItensMinimizados.filter(item => item.minimizado), { ...itemSelecionado, minimizado: false }]
+
+    setItens(novosItens)
+  }
+
   const atualizarItem = (idItem: string, campo: string, valor: any) => {
     setItens(prevItens => {
       const novosItens = prevItens.map(item => {
@@ -720,9 +737,20 @@ export default function FormularioCompra({ onCompraAdicionada }: FormularioCompr
         {itemAtivo && (
           <div className="border-t pt-2 bg-blue-50 p-2 rounded-lg border border-blue-200">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-semibold text-gray-800 text-xs">
-                Item {itens.length} (Em Preenchimento)
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-800 text-xs">
+                  Item {itens.length} (Em Preenchimento)
+                </h3>
+                {itens.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removerItem(itemAtivo.id)}
+                    className="text-red-500 hover:text-red-700 text-xs font-medium"
+                  >
+                    (Remover este item)
+                  </button>
+                )}
+              </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"

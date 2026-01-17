@@ -135,6 +135,23 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
     setErro('')
   }
 
+  const ativarItemParaEdicao = (idItem: string) => {
+    const itemSelecionado = itens.find(item => item.id === idItem)
+    if (!itemSelecionado) return
+
+    const outrosItens = itens.filter(item => item.id !== idItem)
+
+    // Garante que todos os outros itens fiquem minimizados
+    const outrosItensMinimizados = outrosItens.map(item =>
+      item.minimizado ? item : { ...item, minimizado: true }
+    )
+
+    // Coloca o item selecionado no final, como ativo
+    const novosItens = [...outrosItensMinimizados.filter(item => !item.minimizado), ...outrosItensMinimizados.filter(item => item.minimizado), { ...itemSelecionado, minimizado: false }]
+
+    setItens(novosItens)
+  }
+
   const atualizarItem = (idItem: string, campo: string, valor: any) => {
     setItens(
       itens.map((item) =>

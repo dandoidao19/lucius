@@ -128,14 +128,34 @@ export interface LancamentoFinanceiro {
     atual: number;
     total: number;
   };
-  recorrencia?: any; // Manter 'any' por enquanto para não quebrar a lógica existente
+  recorrencia?: unknown;
   caixa_id?: string;
   origem?: string;
   centros_de_custo?: {
     nome: string;
-  } | null;
+  };
 }
 
+export interface Lancamento {
+  id: string;
+  descricao: string;
+  valor: number;
+  tipo: string;
+  data_lancamento: string;
+  data_prevista: string;
+  centro_custo_id: string;
+  status: string;
+  parcelamento?: {
+    atual: number;
+    total: number;
+  };
+  recorrencia?: unknown;
+  caixa_id?: string;
+  origem?: string;
+  centros_de_custo?: {
+    nome: string;
+  };
+}
 
 export interface ModalPagarState {
   aberto: boolean
