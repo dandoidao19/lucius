@@ -83,10 +83,10 @@ export default function LojaPaginaFinanceiro() {
   }, [])
 
   // Processar transações
-  const processarTransacoes = useCallback(async (transacoesLoja: any[]) => {
+  const processarTransacoes = useCallback(async (transacoesLoja: SupabaseTransacaoLoja[]) => {
     if (!transacoesLoja || transacoesLoja.length === 0) return []
 
-    return transacoesLoja.map(trans => {
+    return transacoesLoja.map((trans): Transacao => {
       let parcela_numero = 1
       let parcela_total = 1
       let descricaoLimpa = trans.descricao || ''
@@ -106,7 +106,7 @@ export default function LojaPaginaFinanceiro() {
         data_pagamento: trans.data_pagamento,
         data_original: trans.data_original || trans.data,
         tipo: trans.tipo,
-        descricao: descricaoLimpa || trans.descricao,
+        descricao: descricaoLimpa || trans.descricao || '',
         valor: trans.total,
         valor_pago: trans.valor_pago,
         juros_descontos: trans.juros_descontos,
@@ -369,6 +369,12 @@ export default function LojaPaginaFinanceiro() {
     buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
   }, [recarregarDados, buscarTransacoes])
 
+  const handleLancamentoAdicionado = useCallback(() => {
+    setExibirFormularioLancamento(false)
+    recarregarDados()
+    buscarTransacoes(true)
+  }, [recarregarDados, buscarTransacoes])
+
   const tituloLista = useMemo(() => {
     const temFiltros =
       !!filtroNumeroTransacao ||
@@ -418,6 +424,15 @@ export default function LojaPaginaFinanceiro() {
         tipo="geral"
       />
 
+      {exibirFormularioLancamento && (
+        <div className="my-3">
+          <FormularioLancamentoLoja
+            onLancamentoAdicionado={handleLancamentoAdicionado}
+            onCancel={() => setExibirFormularioLancamento(false)}
+          />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
         <div className="lg:col-span-1">
           <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
@@ -426,10 +441,18 @@ export default function LojaPaginaFinanceiro() {
         <div className="lg:col-span-3 min-h-0">
           <div className="bg-white rounded-lg shadow-md p-3">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-semibold text-gray-800 text-sm">
-                {tituloLista}
-                {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
-              </h3>
+               <div className="flex items-center gap-4">
+                <h3 className="font-semibold text-gray-800 text-sm">
+                  {tituloLista}
+                  {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
+                </h3>
+                <button
+                  onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
+                  className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-xs font-medium"
+                >
+                  {exibirFormularioLancamento ? 'Fechar Lançamento' : '+ Lançamento Avulso'}
+                </button>
+              </div>
               <button
                 onClick={() => setVerTodas(!verTodas)}
                 className={`px-3 py-1 text-xs font-medium rounded transition-colors ${verTodas ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}

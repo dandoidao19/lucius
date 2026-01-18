@@ -29,11 +29,13 @@ export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaD
   }
 
   const handleVoltar30Dias = () => {
-    setFiltro('30dias')
+    setFiltro('30dias');
+    onMostrarTudo(false);
   }
 
   const handleMostrarHistorico = () => {
-    setFiltro('tudo')
+    setFiltro('tudo');
+    onMostrarTudo(true);
   }
 
   const handleMesFiltroChange = (e: React.ChangeEvent<HTMLInputElement>) => {
