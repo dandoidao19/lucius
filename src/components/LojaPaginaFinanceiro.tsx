@@ -72,6 +72,7 @@ export default function LojaPaginaFinanceiro() {
   const [modalPagarTransacao, setModalPagarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
   const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
   const [exibirFormularioLancamento, setExibirFormularioLancamento] = useState(false)
+  const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Transacao | null>(null)
 
   const { recarregarDados } = useDadosFinanceiros()
 
@@ -359,6 +360,7 @@ export default function LojaPaginaFinanceiro() {
 
   const handleLancamentoAdicionado = useCallback(() => {
     setExibirFormularioLancamento(false)
+    setLancamentoParaEditar(null) // Limpa o estado de edição
     recarregarDados()
     buscarTransacoes(true)
   }, [recarregarDados, buscarTransacoes])
@@ -412,11 +414,15 @@ export default function LojaPaginaFinanceiro() {
         tipo="geral"
       />
 
-      {exibirFormularioLancamento && (
+      {(exibirFormularioLancamento || lancamentoParaEditar) && (
         <div className="my-3">
           <FormularioLancamentoLoja
+            lancamentoInicial={lancamentoParaEditar}
             onLancamentoAdicionado={handleLancamentoAdicionado}
-            onCancel={() => setExibirFormularioLancamento(false)}
+            onCancel={() => {
+              setExibirFormularioLancamento(false)
+              setLancamentoParaEditar(null)
+            }}
           />
         </div>
       )}
@@ -495,11 +501,31 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-white font-bold text-xs ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
                           <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-1 py-0.5 text-center">
-                            {transacao.status_pagamento === 'pago' ? (
-                              <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">↩️ Estornar</button>
-                            ) : (
-                              <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">💰 Pagar</button>
-                            )}
+                            <div className="flex items-center justify-center space-x-1">
+                              {transacao.status_pagamento === 'pago' ? (
+                                <>
+                                  <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
+                                    ↩️ Estornar
+                                  </button>
+                                  {((transacao.parcela_total || transacao.quantidade_parcelas || 1) <= 1) && (
+                                    <button
+                                      onClick={() => {
+                                        setLancamentoParaEditar(transacao)
+                                        setExibirFormularioLancamento(true)
+                                      }}
+                                      className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1.5 py-0.5 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
+                                      title="Editar"
+                                    >
+                                      ✏️ Editar
+                                    </button>
+                                  )}
+                                </>
+                              ) : (
+                                <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
+                                  💰 Pagar
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )
