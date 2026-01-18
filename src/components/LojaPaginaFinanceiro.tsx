@@ -138,12 +138,12 @@ export default function LojaPaginaFinanceiro() {
 
     try {
       console.log('📊 Buscando transações da loja...')
-      const { data: transacoesLoja, error: errorTransacoes } = await supabase
+      const { data: transacoesLoja, error } = await supabase
         .from('transacoes_loja')
         .select('*')
         .order('data', { ascending: true })
 
-      if (errorTransacoes) throw errorTransacoes
+      if (error) throw error
 
       if (!transacoesLoja || transacoesLoja.length === 0) {
         console.log('📭 Nenhuma transação encontrada')
@@ -212,18 +212,6 @@ export default function LojaPaginaFinanceiro() {
       const dataFim = new Date(fim + 'T23:59:59')
       return data >= dataInicio && data <= dataFim
     } catch (error) {
-      return false
-    }
-  }, [])
-
-  const estaNoMesAtual = useCallback((dataString: string) => {
-    try {
-      if (!dataString) return false
-      const data = new Date(dataString + 'T12:00:00')
-      const hoje = new Date()
-      if (isNaN(data.getTime())) return false
-      return data.getFullYear() === hoje.getFullYear() && data.getMonth() === hoje.getMonth()
-    } catch {
       return false
     }
   }, [])
