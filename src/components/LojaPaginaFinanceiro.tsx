@@ -503,15 +503,19 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-1 py-0.5 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {transacao.status_pagamento === 'pago' ? (
+                                <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
+                                  ↩️ Estornar
+                                </button>
+                              ) : (
                                 <>
-                                  <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
-                                    ↩️ Estornar
+                                  <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
+                                    💰 Pagar
                                   </button>
                                   {((transacao.parcela_total || transacao.quantidade_parcelas || 1) <= 1) && (
                                     <button
                                       onClick={() => {
                                         setLancamentoParaEditar(transacao)
-                                        setExibirFormularioLancamento(true)
+                                        setExibirFormularioLancamento(true) // Reutiliza a flag para mostrar o form
                                       }}
                                       className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1.5 py-0.5 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                                       title="Editar"
@@ -520,10 +524,6 @@ export default function LojaPaginaFinanceiro() {
                                     </button>
                                   )}
                                 </>
-                              ) : (
-                                <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
-                                  💰 Pagar
-                                </button>
                               )}
                             </div>
                           </td>
