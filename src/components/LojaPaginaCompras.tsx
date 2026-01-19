@@ -6,28 +6,7 @@ import FormularioCompra from './FormularioCompra'
 import ListaCompras from './ListaCompras'
 import FiltrosLancamentos from './FiltrosLancamentos'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
-
-interface Compra {
-  id: string
-  numero_transacao: number
-  data_compra: string
-  fornecedor: string
-  total: number
-  quantidade_itens: number
-  quantidade_parcelas: number
-  status_pagamento: string
-  itens?: ItemCompra[]
-}
-
-interface ItemCompra {
-  id: string
-  produto_id: string
-  descricao: string
-  quantidade: number
-  categoria: string
-  preco_custo: number
-  preco_venda: number
-}
+import { Compra, CompraDetalhada } from '@/types'
 
 // CACHE GLOBAL PARA COMPRAS
 let cacheGlobalCompras: Compra[] = []
@@ -42,6 +21,7 @@ export default function LojaPaginaCompras() {
   const [compras, setCompras] = useState<Compra[]>(cacheGlobalCompras)
   const [comprasFiltradas, setComprasFiltradas] = useState<Compra[]>([])
   const [loading, setLoading] = useState(cacheGlobalCompras.length === 0)
+  const [compraParaEditar, setCompraParaEditar] = useState<Compra | null>(null)
   const buscaEmAndamentoRef = useRef<boolean>(false)
   
   // Estados para filtros
@@ -294,6 +274,16 @@ export default function LojaPaginaCompras() {
     cacheGlobalTransacoes = []
     
     carregarCompras(true)
+    setCompraParaEditar(null) // Garante que o formulário resete após a edição
+  }
+
+  const handleEditarCompra = (compra: CompraDetalhada) => {
+    setCompraParaEditar(compra)
+    window.scrollTo({ top: 0, behavior: 'smooth' }) // Rola a tela para o topo para mostrar o formulário
+  }
+
+  const handleCancelEdit = () => {
+    setCompraParaEditar(null)
   }
 
   if (loading && compras.length === 0) {
@@ -333,7 +323,9 @@ export default function LojaPaginaCompras() {
         {/* Coluna Esquerda: Formulário */}
         <div className="lg:col-span-1">
           <FormularioCompra
+            compraParaEditar={compraParaEditar}
             onCompraAdicionada={handleCompraAdicionada}
+            onCancelEdit={handleCancelEdit}
           />
         </div>
 
@@ -350,7 +342,11 @@ export default function LojaPaginaCompras() {
                 </span>
               )}
             </div>
-            <ListaCompras compras={comprasFiltradas} onAtualizar={() => carregarCompras(true)} />
+            <ListaCompras
+              compras={comprasFiltradas}
+              onAtualizar={() => carregarCompras(true)}
+              onEditar={handleEditarCompra}
+            />
           </div>
         </div>
       </div>

@@ -6,46 +6,12 @@ import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import ModalEditarProduto from './ModalEditarProduto'
 import BotaoExcluirCompra from './BotaoExcluirCompra'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
-
-interface ItemCompra {
-  id: string
-  compra_id: string
-  produto_id: string | null
-  codigo?: string
-  descricao: string
-  quantidade: number
-  categoria: string
-  preco_custo: number
-  preco_venda: number
-}
-
-interface ParcelaCompra {
-  id: string
-  numero: number
-  data: string
-  valor: number
-  status: string
-}
-
-interface CompraDetalhada {
-  id: string
-  numero_transacao: number
-  data_compra: string
-  data_vencimento?: string
-  fornecedor: string
-  total: number
-  quantidade_itens: number
-  status_pagamento: string
-  quantidade_parcelas: number
-  prazoparcelas: string
-  itens: ItemCompra[]
-  parcelas: ParcelaCompra[]
-  totalParcelas: number
-}
+import { CompraDetalhada, ParcelaCompra, ItemCompra } from '@/types'
 
 interface ListaComprasProps {
   compras: any[]
   onAtualizar: () => void
+  onEditar: (compra: CompraDetalhada) => void
 }
 
 const calcularDataParcela = (
@@ -110,7 +76,7 @@ const extrairNumeroParcela = (descricao: string): number => {
   return match ? parseInt(match[1]) : 1
 }
 
-export default function ListaCompras({ compras, onAtualizar }: ListaComprasProps) {
+export default function ListaCompras({ compras, onAtualizar, onEditar }: ListaComprasProps) {
   const [comprasComDetalhes, setComprasComDetalhes] = useState<CompraDetalhada[]>([])
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
   const [modalEditar, setModalEditar] = useState<{ aberto: boolean; produto: any | null }>({ 
@@ -482,6 +448,16 @@ export default function ListaCompras({ compras, onAtualizar }: ListaComprasProps
                   </td>
                   <td className="px-2 py-1 text-center">
                     <div className="flex gap-1 justify-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditar(compra)
+                        }}
+                        className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1 py-0.5 bg-blue-50 rounded hover:bg-blue-100"
+                        title="Editar Compra"
+                      >
+                        ✏️
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()

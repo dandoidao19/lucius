@@ -7,10 +7,32 @@ import { useCentrosDeCusto } from '@/hooks/useCentrosDeCusto'
 import { useLancamentosFinanceiros } from '@/hooks/useLancamentosFinanceiros'
 import { useTransacoesLoja } from '@/hooks/useTransacoesLoja'
 
-import { CentroCusto, LancamentoFinanceiro } from '@/types'
+// Tipos unificados para servir o contexto e os módulos consumidores (como CasaModulo)
+export interface CentroCusto {
+  id: string;
+  nome: string;
+  contexto: 'casa' | 'loja';
+  tipo?: string;
+  categoria?: string;
+  recorrencia?: string;
+}
 
-// A interface Lancamento foi renomeada para LancamentoFinanceiro em @/types
-// Os tipos locais podem ser removidos.
+export interface LancamentoFinanceiro {
+  id: string;
+  data: string;
+  descricao: string;
+  valor: number;
+  tipo: 'entrada' | 'saida';
+  status: 'previsto' | 'realizado';
+  centro_custo_id: string;
+  caixa_id?: string;
+  data_prevista?: string;
+  data_lancamento?: string;
+  centros_de_custo?: { nome: string };
+  parcelamento?: any;
+  recorrencia?: any;
+  origem?: string;
+}
 
 interface DadosCache {
   centrosCustoCasa: CentroCusto[]

@@ -6,13 +6,14 @@ import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 // Interfaces (devem ser importadas do arquivo principal ou definidas aqui se for um arquivo separado)
 interface Lancamento {
   id: string
+  data: string;
   descricao: string
   valor: number
-  tipo: string
-  data_lancamento: string
-  data_prevista: string
+  tipo: 'entrada' | 'saida'
+  data_lancamento?: string
+  data_prevista?: string
   centro_custo_id: string
-  status: string
+  status: 'previsto' | 'realizado'
   parcelamento?: { atual: number; total: number }
   recorrencia?: any
   caixa_id?: string

@@ -1,166 +1,93 @@
-// src/types/index.ts
-
-export interface ItemVenda {
-  id: string
-  venda_id?: string
-  produto_id?: string
-  descricao: string
-  quantidade: number
-  preco_venda: number
-  valor_repasse?: number
-}
-
 export interface ItemCompra {
-  id: string
-  compra_id?: string
-  produto_id?: string
-  descricao: string
-  quantidade: number
-  preco_custo: number
-  preco_venda: number
-  categoria: string
+  id: string;
+  produto_id: string | null;
+  codigo?: string;
+  descricao: string;
+  quantidade: number;
+  categoria: string;
+  preco_custo: number;
+  valor_repasse: number;
+  preco_venda: number;
+  minimizado?: boolean;
+  isNovoCadastro?: boolean;
 }
 
-export interface Parcela {
-  data: string
-  valor: number
-}
-
-export interface Venda {
-  id: string
-  numero_transacao: number
-  data_venda: string
-  cliente: string
-  total: number
-  quantidade_itens: number
-  status_pagamento: string
-  quantidade_parcelas: number
-  prazoparcelas: string
-  itens?: ItemVenda[]
-  parcelas?: Parcela[]
+export interface ParcelaCompra {
+  id: string;
+  numero: number;
+  data: string;
+  valor: number;
+  status: string;
 }
 
 export interface Compra {
-  id: string
-  numero_transacao: number
-  data_compra: string
-  fornecedor: string
-  total: number
-  quantidade_itens: number
-  status_pagamento: string
-  quantidade_parcelas: number
-  prazoparcelas: string
-  itens?: ItemCompra[]
-  parcelas?: Parcela[]
+  id: string;
+  numero_transacao: number;
+  data_compra: string;
+  fornecedor: string;
+  total: number;
+  quantidade_itens: number;
+  quantidade_parcelas: number;
+  status_pagamento: string;
+  prazoparcelas?: string;
+  itens?: ItemCompra[];
 }
 
-export interface Produto {
-  id: string
-  codigo: string
-  descricao: string
-  quantidade: number
-  preco_custo: number
-  valor_repasse: number
-  preco_venda: number
-  data_ultima_compra: string
-  categoria?: string
+export interface CompraDetalhada extends Compra {
+  itens: ItemCompra[];
+  parcelas: ParcelaCompra[];
+  totalParcelas: number;
 }
 
-export interface Filtros {
-  dataInicio?: string
-  dataFim?: string
-  mes?: string
-  descricao?: string
-  status?: string
+export interface ItemVenda {
+  id: string;
+  produto_id: string | null;
+  descricao: string;
+  quantidade: number;
+  preco_unitario: number;
+  subtotal: number;
 }
 
-export interface Transacao {
-  id: string
-  numero_transacao: number
-  data: string
-  descricao: string
-  valor: number
-  tipo: 'entrada' | 'saida'
-  status_pagamento: string
-  quantidade_parcelas: number
-  cliente_fornecedor: string
+export interface Venda {
+  id: string;
+  numero_transacao: number;
+  data_venda: string;
+  cliente: string;
+  total: number;
+  quantidade_itens: number;
+  quantidade_parcelas: number;
+  status_pagamento: string;
+  prazoparcelas?: string;
+  itens?: ItemVenda[];
 }
 
-// Novo tipo para Centros de Custo
+export interface LancamentoFinanceiro {
+  id: string;
+  data: string;
+  descricao: string;
+  valor: number;
+  tipo: 'entrada' | 'saida';
+  status: 'previsto' | 'realizado';
+  centro_custo_id: string;
+  caixa_id?: string;
+  pago?: boolean;
+  data_lancamento?: string;
+  data_prevista?: string;
+}
+
 export interface CentroCusto {
   id: string;
   nome: string;
   contexto: 'casa' | 'loja';
-  tipo: 'entrada' | 'saida';
-  categoria: string;
-  recorrencia: string;
 }
 
-// Novo tipo para Transações da Loja, mais completo que o tipo 'Transacao' genérico
 export interface TransacaoLoja {
   id: string;
   data: string;
-  cliente: string;
+  descricao: string;
   total: number;
   tipo: 'entrada' | 'saida';
-  status_pagamento: 'pago' | 'pendente' | 'parcial';
+  status_pagamento: string;
   valor_pago?: number;
   data_pagamento?: string;
-  // Adicione outros campos que possam existir na tabela
-  numero_transacao?: number;
-  quantidade_itens?: number;
-  quantidade_parcelas?: number;
-  prazoparcelas?: string;
-}
-
-// Este é o tipo que o ModalPagarAvancado espera
-// Agora exportado para ser usado em toda a aplicação
-export interface LancamentoFinanceiro {
-  id: string;
-  descricao: string;
-  valor: number;
-  tipo: string;
-  data_lancamento: string;
-  data_prevista: string;
-  centro_custo_id: string;
-  status: string;
-  parcelamento?: {
-    atual: number;
-    total: number;
-  };
-  recorrencia?: unknown;
-  caixa_id?: string;
-  origem?: string;
-  centros_de_custo?: {
-    nome: string;
-  };
-}
-
-export interface Lancamento {
-  id: string;
-  descricao: string;
-  valor: number;
-  tipo: string;
-  data_lancamento: string;
-  data_prevista: string;
-  centro_custo_id: string;
-  status: string;
-  parcelamento?: {
-    atual: number;
-    total: number;
-  };
-  recorrencia?: unknown;
-  caixa_id?: string;
-  origem?: string;
-  centros_de_custo?: {
-    nome: string;
-  };
-}
-
-export interface ModalPagarState {
-  aberto: boolean
-  lancamento: Lancamento | null
-  passo: 'confirmar_total' | 'valor_parcial' | 'nova_parcela' | 'nova_parcela_data'
-  valorPago: number | null
-  novaDataVencimento: string
 }

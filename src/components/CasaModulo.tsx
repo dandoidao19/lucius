@@ -3,38 +3,14 @@
 import { supabase } from '@/lib/supabase'
 import ModalPagarAvancado from './ModalPagarAvancado'
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
+import { useDadosFinanceiros, CentroCusto, LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
 import FiltrosCasa from './FiltrosCasa'
 import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
 
-interface CentroCusto {
-  id: string
-  nome: string
-  contexto: string
-  tipo: string
-  categoria: string
-  recorrencia: string
-}
-
-interface Lancamento {
-  id: string
-  descricao: string
-  valor: number
-  tipo: string
-  data_lancamento: string
-  data_prevista: string
-  centro_custo_id: string
-  status: string
-  parcelamento?: any
-  recorrencia?: any
-  caixa_id?: string
-  origem?: string
-  centros_de_custo?: {
-    nome: string
-  }
-}
+// As interfaces CentroCusto e Lancamento agora são importadas do DadosFinanceirosContext
+type Lancamento = LancamentoFinanceiro;
 
 interface FormLancamento {
   descricao: string
@@ -501,7 +477,7 @@ export default function CasaModulo() {
     setEditandoLancamento(lancamento)
     
     const dataDoBanco = lancamento.data_lancamento
-    const dataPrevistaDoBanco = lancamento.data_prevista || dataDoBanco 
+    const dataPrevistaDoBanco = lancamento.data_prevista || dataDoBanco || getDataAtualBrasil()
     
     const dataFormatada = dataPrevistaDoBanco.includes('T') 
       ? dataPrevistaDoBanco.split('T')[0]
@@ -631,29 +607,29 @@ export default function CasaModulo() {
 
     // Ordenar por data crescente (do mais antigo para o mais novo)
     resultado.sort((a, b) => {
-      const dataA = new Date(a.data_prevista || a.data_lancamento).getTime()
-      const dataB = new Date(b.data_prevista || b.data_lancamento).getTime()
+      const dataA = new Date(a.data_prevista || a.data_lancamento || new Date()).getTime()
+      const dataB = new Date(b.data_prevista || b.data_lancamento || new Date()).getTime()
       return dataA - dataB
     })
 
     // Aplicar filtros
     if (filtroDataInicio) {
       resultado = resultado.filter(lanc => {
-        const dataLanc = lanc.data_prevista || lanc.data_lancamento
+        const dataLanc = lanc.data_prevista || lanc.data_lancamento || ''
         return dataLanc >= filtroDataInicio
       })
     }
 
     if (filtroDataFim) {
       resultado = resultado.filter(lanc => {
-        const dataLanc = lanc.data_prevista || lanc.data_lancamento
+        const dataLanc = lanc.data_prevista || lanc.data_lancamento || ''
         return dataLanc <= filtroDataFim
       })
     }
 
     if (filtroMes) {
       resultado = resultado.filter(lanc => {
-        const dataLanc = lanc.data_prevista || lanc.data_lancamento
+        const dataLanc = lanc.data_prevista || lanc.data_lancamento || ''
         return dataLanc.startsWith(filtroMes)
       })
     }
@@ -688,7 +664,7 @@ export default function CasaModulo() {
       console.log(`Filtro padrão 11 dias: ${inicio} até ${fim}`)
       
       resultado = resultado.filter(lanc => {
-        const dataLanc = lanc.data_prevista || lanc.data_lancamento
+        const dataLanc = lanc.data_prevista || lanc.data_lancamento || ''
         return dataLanc >= inicio && dataLanc <= fim
       })
     }
@@ -1032,7 +1008,7 @@ export default function CasaModulo() {
                         className="border-b hover:bg-gray-50 transition-colors bg-white"
                       >
                         <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
-                          {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento)}
+                          {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}
                         </td>
                         <td className="px-1 py-1">
                           {lancamento.status === 'realizado' ? (
