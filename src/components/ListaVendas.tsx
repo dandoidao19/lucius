@@ -19,6 +19,7 @@ interface ParcelaVenda {
 interface ListaVendasProps {
   vendas: Venda[]
   onAtualizar: () => void
+  onEditar: (venda: Venda) => void
 }
 
 const calcularDataParcela = (
@@ -64,7 +65,7 @@ const extrairNumeroParcela = (descricao: string): number => {
   return match ? parseInt(match[1]) : 1
 }
 
-export default function ListaVendas({ vendas, onAtualizar }: ListaVendasProps) {
+export default function ListaVendas({ vendas, onAtualizar, onEditar }: ListaVendasProps) {
   const [vendasComDetalhes, setVendasComDetalhes] = useState<any[]>([])
   const [expandidos, setExpandidos] = useState<Set<string>>(new Set())
   const [modalEditar, setModalEditar] = useState<{ aberto: boolean; produto: any | null }>({ 
@@ -464,6 +465,16 @@ export default function ListaVendas({ vendas, onAtualizar }: ListaVendasProps) {
                   </td>
                   <td className="px-2 py-1 text-center">
                     <div className="flex gap-1 justify-center">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditar(venda)
+                        }}
+                        className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1 py-0.5 bg-blue-50 rounded hover:bg-blue-100"
+                        title="Editar Venda"
+                      >
+                        ✏️
+                      </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation()

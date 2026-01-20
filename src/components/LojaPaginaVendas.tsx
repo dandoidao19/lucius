@@ -16,6 +16,7 @@ export default function LojaPaginaVendas() {
   const [vendas, setVendas] = useState<TipoVenda[]>([])
   const [vendasFiltradas, setVendasFiltradas] = useState<TipoVenda[]>([])
   const [loading, setLoading] = useState(true)
+  const [vendaParaEditar, setVendaParaEditar] = useState<TipoVenda | null>(null)
   
   const [filtroDataInicio, setFiltroDataInicio] = useState('')
   const [filtroDataFim, setFiltroDataFim] = useState('')
@@ -189,6 +190,16 @@ export default function LojaPaginaVendas() {
     cacheGlobalTransacoes = []
     
     carregarVendas()
+    setVendaParaEditar(null) // Limpa o formulário após a edição
+  }
+
+  const handleEditarVenda = (venda: TipoVenda) => {
+    setVendaParaEditar(venda)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleCancelEdit = () => {
+    setVendaParaEditar(null)
   }
 
   if (loading) {
@@ -225,7 +236,9 @@ export default function LojaPaginaVendas() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-1">
           <FormularioVenda
+            vendaParaEditar={vendaParaEditar}
             onVendaAdicionada={handleVendaAdicionada}
+            onCancelEdit={handleCancelEdit}
           />
         </div>
 
@@ -241,7 +254,11 @@ export default function LojaPaginaVendas() {
                 </span>
               )}
             </div>
-            <ListaVendas vendas={vendasFiltradas} onAtualizar={carregarVendas} />
+            <ListaVendas
+              vendas={vendasFiltradas}
+              onAtualizar={carregarVendas}
+              onEditar={handleEditarVenda}
+            />
           </div>
         </div>
       </div>

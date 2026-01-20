@@ -82,6 +82,9 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
           const itemsParaFormulario = compraParaEditar.itens.map((item: any, index: number) => ({
             ...item,
             id: item.id || Date.now().toString() + index,
+            preco_custo: item.preco_custo || 0,
+            valor_repasse: item.valor_repasse || 0,
+            preco_venda: item.preco_venda || 0,
             minimizado: true,
             isNovoCadastro: false,
           }));

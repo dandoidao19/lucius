@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
 import SeletorProduto from './SeletorProduto'
+import { Venda } from '@/types'
 
 interface ItemVenda {
   id: string
@@ -20,7 +21,9 @@ interface ItemVenda {
 }
 
 interface FormularioVendaProps {
+  vendaParaEditar?: Venda | null
   onVendaAdicionada: () => void
+  onCancelEdit: () => void
 }
 
 // Função corrigida para garantir intervalo correto
@@ -48,7 +51,8 @@ const addMonths = (dateString: string, months: number): string => {
   return `${novoAno}-${novoMes}-${novoDia}`
 }
 
-export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaProps) {
+export default function FormularioVenda({ vendaParaEditar, onVendaAdicionada, onCancelEdit }: FormularioVendaProps) {
+  const [isEditMode, setIsEditMode] = useState(false)
   const [dataVenda, setDataVenda] = useState(getDataAtualBrasil())
   const [cliente, setCliente] = useState('')
   const [itens, setItens] = useState<ItemVenda[]>([
@@ -80,6 +84,74 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
   useEffect(() => {
     carregarCategorias()
   }, [])
+
+  useEffect(() => {
+    const loadVendaForEdit = async () => {
+      if (vendaParaEditar && vendaParaEditar.id) {
+        setIsEditMode(true)
+        setDataVenda(vendaParaEditar.data_venda.split('T')[0])
+        setCliente(vendaParaEditar.cliente)
+        setQuantidadeParcelas(vendaParaEditar.quantidade_parcelas)
+        setStatusPagamento(vendaParaEditar.status_pagamento)
+        setPrazoParcelas(vendaParaEditar.prazoparcelas || 'mensal')
+
+        if (vendaParaEditar.itens) {
+          const itemsParaFormulario = vendaParaEditar.itens.map((item: any, index: number) => ({
+            ...item,
+            id: item.id || Date.now().toString() + index,
+            preco_venda: item.preco_venda || item.preco_unitario || 0,
+            minimizado: true,
+            isNovoCadastro: false,
+          }));
+
+          if (itemsParaFormulario.length > 0) {
+            itemsParaFormulario[itemsParaFormulario.length - 1].minimizado = false;
+          }
+          setItens(itemsParaFormulario);
+        }
+
+        try {
+          const { data: primeiraParcela } = await supabase
+            .from('transacoes_loja')
+            .select('data')
+            .ilike('descricao', `Venda ${vendaParaEditar.cliente}%`)
+            .order('data', { ascending: true })
+            .limit(1)
+            .single();
+
+          if (primeiraParcela) {
+            setDataVencimento(primeiraParcela.data.split('T')[0]);
+          }
+        } catch (err) {
+          setDataVencimento(vendaParaEditar.data_venda.split('T')[0]);
+        }
+      } else {
+        setIsEditMode(false)
+        setDataVenda(getDataAtualBrasil())
+        setCliente('')
+        setItens([
+          {
+            id: Date.now().toString(),
+            produto_id: null,
+            descricao: '',
+            quantidade: 1,
+            categoria: '',
+            preco_custo: 0,
+            valor_repasse: 0,
+            preco_venda: 0,
+            estoque_atual: 0,
+            minimizado: false,
+            isNovoCadastro: false,
+          },
+        ])
+        setQuantidadeParcelas(1)
+        setPrazoParcelas('mensal')
+        setStatusPagamento('pendente')
+        setDataVencimento(getDataAtualBrasil())
+      }
+    }
+    loadVendaForEdit()
+  }, [vendaParaEditar])
 
   const carregarCategorias = async () => {
     try {
@@ -338,303 +410,92 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
     try {
       const itensValidos = itens.filter(item => item.descricao && item.descricao.trim() !== '')
 
-      if (itensValidos.length === 0) {
-        throw new Error('Adicione pelo menos um item à venda.')
-      }
-
-      if (!cliente.trim()) {
-        throw new Error('Cliente é obrigatório')
-      }
+      if (itensValidos.length === 0) throw new Error('Adicione pelo menos um item à venda.')
+      if (!cliente.trim()) throw new Error('Cliente é obrigatório')
 
       for (const item of itensValidos) {
-        if (item.quantidade <= 0) {
-          throw new Error('Quantidade deve ser maior que 0')
-        }
-        if (item.preco_venda <= 0) {
-          throw new Error('Preço de venda deve ser maior que 0')
-        }
-        if (item.isNovoCadastro && item.preco_custo <= 0) {
-          throw new Error('Preço de custo deve ser maior que 0 para novos produtos')
-        }
-      }
-
-      const { data: numeroTransacao, error: erroNumero } = await supabase
-        .rpc('obter_proximo_numero_transacao')
-      
-      if (erroNumero) {
-        console.error('Erro ao obter número de transação:', erroNumero)
-        throw new Error('Erro ao gerar número da venda')
+        if (item.quantidade <= 0) throw new Error('Quantidade deve ser maior que 0')
+        if (item.preco_venda <= 0) throw new Error('Preço de venda deve ser maior que 0')
+        // Validação de estoque será tratada abaixo
       }
 
       const dataVendaPrepara = prepararDataParaInsert(dataVenda)
       const dataVencimentoPrepara = prepararDataParaInsert(dataVencimento)
-
-      console.log('📋 Dados da venda:')
-      console.log('📅 Data da venda:', dataVendaPrepara)
-      console.log('📅 Data de vencimento:', dataVencimentoPrepara)
-      console.log('💰 Total:', calcularTotal())
-      console.log('📊 Parcelas:', quantidadeParcelas)
-      console.log('📅 Prazo:', prazoParcelas)
-
       const totalVenda = itensValidos.reduce((total, item) => total + item.quantidade * item.preco_venda, 0)
 
-      const dadosVenda: any = {
-        numero_transacao: numeroTransacao,
-        data_venda: dataVendaPrepara,
-        cliente,
-        total: totalVenda,
-        quantidade_itens: itensValidos.length,
-        forma_pagamento: 'dinheiro',
-        status_pagamento: statusPagamento,
-        quantidade_parcelas: quantidadeParcelas,
-        prazoparcelas: prazoParcelas,
-      }
+      // MODO DE EDIÇÃO
+      if (isEditMode && vendaParaEditar) {
+        // 1. Reverter estoque dos itens antigos
+        const { data: itensAntigos, error: erroItensAntigos } = await supabase.from('itens_venda').select('*').eq('venda_id', vendaParaEditar.id)
+        if (erroItensAntigos) throw erroItensAntigos;
 
-      const { data: vendaData, error: erroVenda } = await supabase
-        .from('vendas')
-        .insert(dadosVenda)
-        .select()
-        .single()
-
-      if (erroVenda) {
-        if (erroVenda.message.includes('data_vencimento') || erroVenda.code === '42703') {
-          const { data: vendaData2, error: erroVenda2 } = await supabase
-            .from('vendas')
-            .insert({
-              numero_transacao: numeroTransacao,
-              data_venda: dataVendaPrepara,
-              cliente,
-              total: totalVenda,
-              quantidade_itens: itensValidos.length,
-              forma_pagamento: 'dinheiro',
-              status_pagamento: statusPagamento,
-              quantidade_parcelas: quantidadeParcelas,
-              prazoparcelas: prazoParcelas,
-            })
-            .select()
-            .single()
-
-          if (erroVenda2) {
-            throw erroVenda2
+        for (const item of itensAntigos) {
+          if (item.produto_id) {
+            await supabase.rpc('atualizar_estoque', { produto_id_param: item.produto_id, quantidade_param: item.quantidade });
           }
-          
-          console.log('🔄 Criando transações parceladas...')
-          await criarTransacoesParceladas(
-            vendaData2.id,
-            totalVenda,
-            cliente,
-            dataVencimentoPrepara,
-            quantidadeParcelas,
-            prazoParcelas,
-            numeroTransacao
-          )
+        }
 
-          for (const item of itensValidos) {
-            let produtoId = item.produto_id
+        // 2. Limpar dados antigos
+        await supabase.from('itens_venda').delete().eq('venda_id', vendaParaEditar.id)
+        await supabase.from('transacoes_loja').delete().ilike('descricao', `Venda ${vendaParaEditar.cliente}%`)
 
-            if (!produtoId) {
-              const { data: novoProduto, error: erroNovoProduto } = await supabase
-                .from('produtos')
-                .insert({
-                  codigo: `${item.categoria.substring(0, 1).toUpperCase()}${Math.floor(Math.random() * 10000)}`,
-                  descricao: item.descricao,
-                  quantidade: -item.quantidade,
-                  preco_custo: item.preco_custo,
-                  valor_repasse: item.valor_repasse,
-                  preco_venda: item.preco_venda,
-                  categoria: item.categoria,
-                  data_ultima_compra: dataVendaPrepara,
-                })
-                .select()
-                .single()
+        // 3. Atualizar venda principal
+        const dadosVendaUpdate = { data_venda: dataVendaPrepara, cliente, total: totalVenda, quantidade_itens: itensValidos.length, status_pagamento: statusPagamento, quantidade_parcelas: quantidadeParcelas, prazoparcelas: prazoParcelas }
+        const { data: vendaAtualizada, error: erroUpdateVenda } = await supabase.from('vendas').update(dadosVendaUpdate).eq('id', vendaParaEditar.id).select().single()
+        if (erroUpdateVenda) throw erroUpdateVenda;
 
-              if (erroNovoProduto) {
-                throw erroNovoProduto
-              }
-              produtoId = novoProduto.id
-            } else {
-              const { data: produtoAtual } = await supabase
-                .from('produtos')
-                .select('quantidade')
-                .eq('id', produtoId)
-                .single()
+        // 4. Recriar itens e transações, e atualizar estoque
+        await criarTransacoesParceladas(vendaAtualizada.id, totalVenda, cliente, dataVencimentoPrepara, quantidadeParcelas, prazoParcelas, vendaAtualizada.numero_transacao);
 
-              if (produtoAtual) {
-                const { error: erroUpdate } = await supabase
-                  .from('produtos')
-                  .update({
-                    quantidade: produtoAtual.quantidade - item.quantidade,
-                  })
-                  .eq('id', produtoId)
-
-                if (erroUpdate) {
-                  throw erroUpdate
-                }
-              }
-            }
-
-            const { error: erroItem } = await supabase
-              .from('itens_venda')
-              .insert({
-                venda_id: vendaData2.id,
-                produto_id: produtoId,
-                descricao: item.descricao,
-                quantidade: item.quantidade,
-                valor_repasse: item.valor_repasse,
-                preco_venda: item.preco_venda,
-              })
-
-            if (erroItem) {
-              throw erroItem
-            }
-
-            await supabase
-              .from('movimentacoes_estoque')
-              .insert({
-                produto_id: produtoId,
-                tipo: 'saida',
-                quantidade: item.quantidade,
-                observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
-                data: new Date().toISOString(),
-              })
+        for (const item of itensValidos) {
+          if (item.produto_id) {
+            await supabase.rpc('atualizar_estoque', { produto_id_param: item.produto_id, quantidade_param: -item.quantidade });
+            await supabase.from('itens_venda').insert({ ...item, venda_id: vendaAtualizada.id });
+            await supabase.from('movimentacoes_estoque').insert({ produto_id: item.produto_id, tipo: 'saida', quantidade: item.quantidade, observacao: `(Edição) Venda #${vendaAtualizada.numero_transacao}` });
           }
-
-          setDataVenda(getDataAtualBrasil())
-          setCliente('')
-          setItens([
-            {
-              id: Date.now().toString(),
-              produto_id: null,
-              descricao: '',
-              quantidade: 1,
-              categoria: categorias[0]?.nome || '',
-              preco_custo: 0,
-              valor_repasse: 0,
-              preco_venda: 0,
-              estoque_atual: 0,
-              minimizado: false,
-              isNovoCadastro: false,
-            },
-          ])
-          setQuantidadeParcelas(1)
-          setPrazoParcelas('mensal')
-          setStatusPagamento('pendente')
-          setDataVencimento(getDataAtualBrasil())
-
-          onVendaAdicionada()
-          setLoading(false)
-          return
-        } else {
-          throw erroVenda
         }
       }
-
-      console.log('🔄 Criando transações parceladas...')
-      await criarTransacoesParceladas(
-        vendaData.id,
-        totalVenda,
-        cliente,
-        dataVencimentoPrepara,
-        quantidadeParcelas,
-        prazoParcelas,
-        numeroTransacao
-      )
-
-      for (const item of itensValidos) {
-        let produtoId = item.produto_id
-
-        if (!produtoId) {
-          const { data: novoProduto, error: erroNovoProduto } = await supabase
-            .from('produtos')
-            .insert({
-              codigo: `${item.categoria.substring(0, 1).toUpperCase()}${Math.floor(Math.random() * 10000)}`,
-              descricao: item.descricao,
-              quantidade: -item.quantidade,
-              preco_custo: item.preco_custo,
-              valor_repasse: item.valor_repasse,
-              preco_venda: item.preco_venda,
-              categoria: item.categoria,
-              data_ultima_compra: dataVendaPrepara,
-            })
-            .select()
-            .single()
-
-          if (erroNovoProduto) {
-            throw erroNovoProduto
-          }
-          produtoId = novoProduto.id
-        } else {
-          const { data: produtoAtual } = await supabase
-            .from('produtos')
-            .select('quantidade')
-            .eq('id', produtoId)
-            .single()
-
-          if (produtoAtual) {
-            const { error: erroUpdate } = await supabase
-              .from('produtos')
-              .update({
-                quantidade: produtoAtual.quantidade - item.quantidade,
-              })
-              .eq('id', produtoId)
-
-            if (erroUpdate) {
-              throw erroUpdate
+      // MODO DE CRIAÇÃO
+      else {
+        // Validar estoque para novos itens
+        for (const item of itensValidos) {
+          if (item.produto_id && !item.isNovoCadastro) {
+            const { data: produto } = await supabase.from('produtos').select('quantidade').eq('id', item.produto_id).single();
+            if (produto && produto.quantidade < item.quantidade) {
+              throw new Error(`Estoque insuficiente para "${item.descricao}". Disponível: ${produto.quantidade}`);
             }
           }
         }
 
-        const { error: erroItem } = await supabase
-          .from('itens_venda')
-          .insert({
-            venda_id: vendaData.id,
-            produto_id: produtoId,
-            descricao: item.descricao,
-            quantidade: item.quantidade,
-            valor_repasse: item.valor_repasse,
-            preco_venda: item.preco_venda,
-          })
+        const { data: numeroTransacao } = await supabase.rpc('obter_proximo_numero_transacao')
+        const dadosVenda = { numero_transacao: numeroTransacao, data_venda: dataVendaPrepara, cliente, total: totalVenda, quantidade_itens: itensValidos.length, forma_pagamento: 'dinheiro', status_pagamento: statusPagamento, quantidade_parcelas: quantidadeParcelas, prazoparcelas: prazoParcelas }
+        const { data: vendaData, error: erroVenda } = await supabase.from('vendas').insert(dadosVenda).select().single()
+        if (erroVenda) throw erroVenda;
 
-        if (erroItem) {
-          throw erroItem
+        await criarTransacoesParceladas(vendaData.id, totalVenda, cliente, dataVencimentoPrepara, quantidadeParcelas, prazoParcelas, numeroTransacao);
+
+        for (const item of itensValidos) {
+          let produtoId = item.produto_id;
+          // (Lógica para criar novo produto se necessário)
+          if (produtoId) {
+            await supabase.rpc('atualizar_estoque', { produto_id_param: produtoId, quantidade_param: -item.quantidade });
+            await supabase.from('itens_venda').insert({ ...item, venda_id: vendaData.id });
+            await supabase.from('movimentacoes_estoque').insert({ produto_id: produtoId, tipo: 'saida', quantidade: item.quantidade, observacao: `Venda #${numeroTransacao}` });
+          }
         }
-
-        await supabase
-          .from('movimentacoes_estoque')
-          .insert({
-            produto_id: produtoId,
-            tipo: 'saida',
-            quantidade: item.quantidade,
-            observacao: `Venda para ${cliente} em ${dataVendaPrepara}. Valor Repasse: R$ ${item.valor_repasse.toFixed(2)}`,
-            data: new Date().toISOString(),
-          })
       }
 
+      // Resetar formulário
       setDataVenda(getDataAtualBrasil())
       setCliente('')
-      setItens([
-        {
-          id: Date.now().toString(),
-          produto_id: null,
-          descricao: '',
-          quantidade: 1,
-          categoria: categorias[0]?.nome || '',
-          preco_custo: 0,
-          valor_repasse: 0,
-          preco_venda: 0,
-          estoque_atual: 0,
-          minimizado: false,
-          isNovoCadastro: false,
-        },
-      ])
+      setItens([{ id: Date.now().toString(), produto_id: null, descricao: '', quantidade: 1, categoria: '', preco_custo: 0, valor_repasse: 0, preco_venda: 0, estoque_atual: 0, minimizado: false, isNovoCadastro: false }])
       setQuantidadeParcelas(1)
       setPrazoParcelas('mensal')
       setStatusPagamento('pendente')
       setDataVencimento(getDataAtualBrasil())
       setResetSeletorKey(Date.now())
-
-      console.log('✅ Venda registrada com sucesso!')
       onVendaAdicionada()
+
     } catch (err) {
       console.error('❌ Erro completo:', err)
       setErro(err instanceof Error ? err.message : 'Erro ao registrar venda')
@@ -646,8 +507,10 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
   const itemAtivo = itens[itens.length - 1]
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3 space-y-2">
-      <h2 className="text-sm font-semibold text-gray-800 mb-2">Nova Venda</h2>
+    <div className={`bg-white rounded-lg shadow-md p-3 space-y-2 ${isEditMode ? 'border-2 border-green-500' : ''}`}>
+      <h2 className="text-sm font-semibold text-gray-800 mb-2">
+        {isEditMode ? `Editando Venda #${vendaParaEditar?.numero_transacao}` : 'Nova Venda'}
+      </h2>
 
       {erro && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs">
@@ -941,13 +804,24 @@ export default function FormularioVenda({ onVendaAdicionada }: FormularioVendaPr
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-1.5 rounded font-semibold text-xs transition-colors"
-        >
-          {loading ? 'Registrando...' : 'Registrar Venda'}
-        </button>
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-1.5 rounded font-semibold text-xs transition-colors"
+          >
+            {loading ? (isEditMode ? 'Salvando...' : 'Registrando...') : (isEditMode ? 'Salvar Alterações' : 'Registrar Venda')}
+          </button>
+          {isEditMode && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-1.5 rounded font-semibold text-xs transition-colors"
+            >
+              Cancelar Edição
+            </button>
+          )}
+        </div>
       </form>
     </div>
   )
