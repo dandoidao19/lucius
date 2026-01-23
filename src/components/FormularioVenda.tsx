@@ -89,17 +89,21 @@ export default function FormularioVenda({ vendaParaEditar, onVendaAdicionada, on
     const loadVendaForEdit = async () => {
       if (vendaParaEditar && vendaParaEditar.id) {
         setIsEditMode(true)
-        setDataVenda(vendaParaEditar.data_venda.split('T')[0])
-        setCliente(vendaParaEditar.cliente)
-        setQuantidadeParcelas(vendaParaEditar.quantidade_parcelas)
-        setStatusPagamento(vendaParaEditar.status_pagamento)
+        setDataVenda((vendaParaEditar.data_venda || '').split('T')[0])
+        setCliente(vendaParaEditar.cliente || '')
+        setQuantidadeParcelas(vendaParaEditar.quantidade_parcelas || 1)
+        setStatusPagamento(vendaParaEditar.status_pagamento || 'pendente')
         setPrazoParcelas(vendaParaEditar.prazoparcelas || 'mensal')
 
         if (vendaParaEditar.itens) {
           const itemsParaFormulario = vendaParaEditar.itens.map((item: any, index: number) => ({
             ...item,
             id: item.id || Date.now().toString() + index,
-            preco_venda: item.preco_venda || item.preco_unitario || 0,
+            descricao: item.descricao || '',
+            categoria: item.categoria || '',
+            preco_venda: item.preco_venda || 0,
+            preco_custo: item.preco_custo || 0,
+            valor_repasse: item.valor_repasse || 0,
             minimizado: true,
             isNovoCadastro: false,
           }));

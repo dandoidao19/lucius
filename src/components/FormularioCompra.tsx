@@ -576,7 +576,8 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
                 .map((item) => (
                   <div
                     key={item.id}
-                    className="bg-gray-50 p-1 rounded border border-gray-200 flex justify-between items-center"
+                    className="bg-gray-50 p-1 rounded border border-gray-200 flex justify-between items-center cursor-pointer hover:bg-blue-100"
+                    onClick={() => ativarItemParaEdicao(item.id)}
                   >
                     <div className="flex-1">
                       <p className="font-medium text-gray-800 text-xs">{item.descricao}</p>
