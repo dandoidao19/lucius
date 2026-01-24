@@ -8,6 +8,7 @@ import MenuCategorias from './MenuCategorias'
 import ConfiguracaoLogos from './ConfiguracaoLogos'
 import ImportacaoExcelLoja from './ImportacaoExcelLoja'
 import EdicaoEmLote from './EdicaoEmLote'
+import LogAuditoria from './LogAuditoria'
 
 // Define os grupos e submenus - REORGANIZADO
 const gruposConfig = [
@@ -28,6 +29,13 @@ const gruposConfig = [
       { id: 'logos', title: 'Logomarcas e PDFs', component: ConfiguracaoLogos },
       { id: 'categorias', title: 'Categorias', component: MenuCategorias },
       { id: 'importacao-loja', title: 'Importar Dados', component: ImportacaoExcelLoja },
+    ]
+  },
+  {
+    id: 'sistema',
+    titulo: '💻 SISTEMA',
+    submenus: [
+      { id: 'auditoria', title: 'Log de Auditoria', component: LogAuditoria },
     ]
   }
 ]
@@ -71,6 +79,8 @@ export default function ModuloConfiguracoes() {
         return <ImportacaoExcel onImportacaoConcluida={handleImportacaoConcluida} />
       case 'importacao-loja':
         return <ImportacaoExcelLoja onImportacaoConcluida={handleImportacaoConcluida} />
+      case 'auditoria':
+        return <LogAuditoria />
       default:
         return <div className="text-xs">Componente não encontrado.</div>
     }
