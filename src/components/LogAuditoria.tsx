@@ -1,8 +1,7 @@
-
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createBrowserClient } from '@supabase/ssr'
 
 interface Log {
   id: number
@@ -17,7 +16,12 @@ interface Log {
 }
 
 const LogAuditoria = () => {
-  const supabase = createClientComponentClient()
+  // A correção está aqui: a função createBrowserClient precisa da URL e da Chave.
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +63,7 @@ const LogAuditoria = () => {
 
       {loading && <p className="text-sm text-gray-600">Carregando logs...</p>}
       {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded">{error}</p>}
-
+      
       {!loading && !error && (
         <div className="overflow-x-auto max-h-[70vh]">
           <table className="min-w-full text-xs bg-white">
@@ -90,7 +94,7 @@ const LogAuditoria = () => {
                   <td className="px-3 py-2">{log.table_name}</td>
                   <td className="px-3 py-2">{log.record_id}</td>
                   <td className="px-3 py-2 text-center">
-                    <button
+                    <button 
                       onClick={() => setSelectedLog(log)}
                       className="text-blue-600 hover:underline text-xs"
                     >
@@ -105,11 +109,11 @@ const LogAuditoria = () => {
       )}
 
       {selectedLog && (
-        <div
+        <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
           onClick={() => setSelectedLog(null)}
         >
-          <div
+          <div 
             className="bg-white rounded-lg shadow-xl p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
@@ -121,7 +125,7 @@ const LogAuditoria = () => {
               <p><strong>Tabela:</strong> {selectedLog.table_name}</p>
               <p><strong>ID do Registro:</strong> {selectedLog.record_id}</p>
             </div>
-
+            
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h4 className="font-bold text-sm mb-2">Dados Antigos (Old)</h4>
