@@ -32,7 +32,7 @@ const LogAuditoria = () => {
 
       if (error) {
         console.error('Erro ao buscar logs de auditoria:', error)
-        setError('Não foi possível carregar os logs de auditoria.')
+        setError(`Erro: ${error.message || 'Não foi possível carregar os logs de auditoria. Verifique se a tabela "auditoria" existe no banco de dados.'}`)
       } else {
         setLogs(data as Log[])
       }
