@@ -3,17 +3,34 @@
 -- ============================================
 
 -- 1. Criar a tabela de auditoria se não existir
-CREATE TABLE IF NOT EXISTS public.auditoria (
-    id BIGSERIAL PRIMARY KEY,
-    data_hora TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    user_id UUID,
-    user_email TEXT,
-    action TEXT NOT NULL,
-    table_name TEXT NOT NULL,
-    record_id TEXT NOT NULL,
-    old_data JSONB,
-    new_data JSONB
-);
+-- 1. Criar a tabela de auditoria e garantir estrutura correta
+DO $$
+BEGIN
+    -- Se a tabela não existir, cria do zero
+    IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'auditoria') THEN
+        CREATE TABLE public.auditoria (
+            id BIGSERIAL PRIMARY KEY,
+            data_hora TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            user_id UUID,
+            user_email TEXT,
+            action TEXT NOT NULL,
+            table_name TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            old_data JSONB,
+            new_data JSONB
+        );
+    ELSE
+        -- Se existir, garantir que a coluna 'data_hora' exista (renomeando a antiga se necessário)
+        IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='timestamp') THEN
+            ALTER TABLE public.auditoria RENAME COLUMN "timestamp" TO data_hora;
+        END IF;
+
+        -- Garantir que a coluna 'data_hora' exista caso não tenha nem timestamp nem data_hora
+        IF NOT EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='data_hora') THEN
+            ALTER TABLE public.auditoria ADD COLUMN data_hora TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+        END IF;
+    END IF;
+END $$;
 
 -- 2. Habilitar RLS na tabela de auditoria
 ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
