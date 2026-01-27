@@ -25,6 +25,11 @@ ON public.auditoria FOR SELECT
 TO authenticated
 USING (true);
 
+-- Adicionar permissões explícitas de acesso
+GRANT ALL ON TABLE public.auditoria TO authenticated;
+GRANT ALL ON TABLE public.auditoria TO service_role;
+GRANT ALL ON TABLE public.auditoria TO postgres;
+
 -- 4. Função principal de auditoria
 CREATE OR REPLACE FUNCTION public.process_audit_log()
 RETURNS TRIGGER AS $$

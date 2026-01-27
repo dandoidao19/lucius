@@ -24,19 +24,43 @@ const LogAuditoria = () => {
   useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('auditoria')
-        .select('*')
-        .order('timestamp', { ascending: false })
-        .limit(1000)
+      setError(null)
 
-      if (error) {
-        console.error('Erro ao buscar logs de auditoria:', error)
-        setError(`Erro: ${error.message || 'Não foi possível carregar os logs de auditoria. Verifique se a tabela "auditoria" existe no banco de dados.'}`)
-      } else {
-        setLogs(data as Log[])
+      try {
+        // 1. Verificar Sessão (necessário para as políticas de segurança)
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+        if (sessionError) {
+          setError(`Erro de autenticação: ${sessionError.message}`)
+          setLoading(false)
+          return
+        }
+
+        if (!sessionData.session) {
+          setError("Você precisa estar logado para acessar os logs de auditoria.")
+          setLoading(false)
+          return
+        }
+
+        // 2. Buscar Logs
+        const { data, error: dbError } = await supabase
+          .from('auditoria')
+          .select('*')
+          .order('timestamp', { ascending: false })
+          .limit(1000)
+
+        if (dbError) {
+          console.error('Erro Supabase Auditoria:', dbError)
+          setError(`Erro ao carregar logs: [${dbError.code}] ${dbError.message}. Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA.sql.`)
+        } else {
+          setLogs(data as Log[])
+        }
+      } catch (err: any) {
+        console.error('Erro inesperado auditoria:', err)
+        setError(`Erro inesperado: ${err.message || JSON.stringify(err)}`)
+      } finally {
+        setLoading(false)
       }
-      setLoading(false)
     }
 
     fetchLogs()

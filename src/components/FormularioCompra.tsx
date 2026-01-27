@@ -55,7 +55,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
       isNovoCadastro: false,
     },
   ])
-  const [categorias, setCategorias] = useState<any[]>([])
+  const [categorias, setCategorias] = useState<{ id: string; nome: string; percentual_repasse?: number }[]>([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -79,7 +79,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
         setPrazoParcelas((compraParaEditar as any).prazoparcelas || 'mensal')
 
         if (compraParaEditar.itens) {
-          const itemsParaFormulario = compraParaEditar.itens.map((item: any, index: number) => ({
+          const itemsParaFormulario = compraParaEditar.itens.map((item: ItemCompra, index: number) => ({
             ...item,
             id: item.id || Date.now().toString() + index,
             preco_custo: item.preco_custo || 0,
@@ -206,7 +206,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
     setItens(novosItens)
   }
 
-  const atualizarItem = (idItem: string, campo: string, valor: any) => {
+  const atualizarItem = (idItem: string, campo: keyof ItemCompra, valor: string | number | boolean | null | undefined) => {
     setItens(prevItens => {
       const novosItens = prevItens.map(item => {
         if (item.id === idItem) {
@@ -253,7 +253,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
     )
   }
 
-  const selecionarProduto = (produto: any, idItem: string) => {
+  const selecionarProduto = (produto: { id: string; descricao: string; categoria: string; preco_custo: number; preco_venda: number }, idItem: string) => {
     const precoCusto = produto.preco_custo || 0
     const categoriaNome = produto.categoria || ''
     const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaNome)
@@ -464,7 +464,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
         await criarTransacoesParceladas(compraAtualizada.id, totalCompra, fornecedor, dataVencimentoPrepara, quantidadeParcelas, prazoParcelas, compraAtualizada.numero_transacao);
 
         for (const item of itensValidos) {
-          let produtoId = item.produto_id;
+          const produtoId = item.produto_id;
           if (item.isNovoCadastro || !produtoId) {
             // (Lógica para criar novo produto se necessário)
           } else {
@@ -488,7 +488,7 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
         await criarTransacoesParceladas(compraData.id, totalCompra, fornecedor, dataVencimentoPrepara, quantidadeParcelas, prazoParcelas, numeroTransacao);
 
         for (const item of itensValidos) {
-          let produtoId = item.produto_id;
+          const produtoId = item.produto_id;
           if (item.isNovoCadastro || !produtoId) {
             // (Lógica para criar novo produto)
           } else {
