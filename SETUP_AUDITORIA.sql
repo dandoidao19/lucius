@@ -5,7 +5,7 @@
 -- 1. Criar a tabela de auditoria se não existir
 CREATE TABLE IF NOT EXISTS public.auditoria (
     id BIGSERIAL PRIMARY KEY,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    data_hora TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     user_id UUID,
     user_email TEXT,
     action TEXT NOT NULL,

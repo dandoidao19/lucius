@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 
 interface Log {
   id: number
-  timestamp: string
+  data_hora: string
   user_id: string
   user_email: string
   action: string
@@ -46,12 +46,13 @@ const LogAuditoria = () => {
         const { data, error: dbError } = await supabase
           .from('auditoria')
           .select('*')
-          .order('timestamp', { ascending: false })
+          .order('data_hora', { ascending: false })
           .limit(1000)
 
         if (dbError) {
           console.error('Erro Supabase Auditoria:', dbError)
-          setError(`Erro ao carregar logs: [${dbError.code}] ${dbError.message}. Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA.sql.`)
+          const detalhe = dbError.details || dbError.hint || ''
+          setError(`Erro [${dbError.code}]: ${dbError.message}. ${detalhe} Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA.sql.`)
         } else {
           setLogs(data as Log[])
         }
@@ -98,7 +99,7 @@ const LogAuditoria = () => {
             <tbody className="divide-y divide-gray-200">
               {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 whitespace-nowrap">{new Date(log.timestamp).toLocaleString('pt-BR')}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{new Date(log.data_hora).toLocaleString('pt-BR')}</td>
                   <td className="px-3 py-2">{log.user_email}</td>
                   <td className="px-3 py-2">
                     <span className={`px-2 py-0.5 rounded-full text-white text-[10px] ${
@@ -137,7 +138,7 @@ const LogAuditoria = () => {
           >
             <h3 className="text-base font-bold mb-4">Detalhes do Log #{selectedLog.id}</h3>
             <div className="space-y-3 text-xs">
-              <p><strong>Data/Hora:</strong> {new Date(selectedLog.timestamp).toLocaleString('pt-BR')}</p>
+              <p><strong>Data/Hora:</strong> {new Date(selectedLog.data_hora).toLocaleString('pt-BR')}</p>
               <p><strong>Usuário:</strong> {selectedLog.user_email} ({selectedLog.user_id})</p>
               <p><strong>Ação:</strong> {selectedLog.action}</p>
               <p><strong>Tabela:</strong> {selectedLog.table_name}</p>
