@@ -214,8 +214,8 @@ export default function FormularioCompra({ compraParaEditar, onCompraAdicionada,
 
           // Recalcular valor_repasse se o preço de custo ou a categoria mudar
           if (campo === 'preco_custo' || campo === 'categoria') {
-            const categoriaNome = campo === 'categoria' ? valor : itemAtualizado.categoria
-            const precoCusto = campo === 'preco_custo' ? parseFloat(valor) || 0 : itemAtualizado.preco_custo
+            const categoriaNome = campo === 'categoria' ? String(valor) : itemAtualizado.categoria
+            const precoCusto = campo === 'preco_custo' ? parseFloat(String(valor)) || 0 : itemAtualizado.preco_custo
 
             const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaNome)
 

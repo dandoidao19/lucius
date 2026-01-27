@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { supabase } from '@/lib/supabase'
 
 interface Log {
   id: number
@@ -11,17 +11,11 @@ interface Log {
   action: string
   table_name: string
   record_id: string
-  old_data: Record<string, any> | null
-  new_data: Record<string, any> | null
+  old_data: Record<string, unknown> | null
+  new_data: Record<string, unknown> | null
 }
 
 const LogAuditoria = () => {
-  // A correção está aqui: a função createBrowserClient precisa da URL e da Chave.
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -46,9 +40,9 @@ const LogAuditoria = () => {
     }
 
     fetchLogs()
-  }, [supabase])
+  }, [])
 
-  const renderJsonData = (data: Record<string, any> | null) => {
+  const renderJsonData = (data: Record<string, unknown> | null) => {
     if (!data) return <span className="text-gray-400">N/A</span>
     return (
       <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap break-all">

@@ -22,7 +22,6 @@ interface FormularioLancamentoLojaProps {
 }
 
 export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCancel, lancamentoInicial }: FormularioLancamentoLojaProps) {
-  const [descricao, setDescricao] = useState('')
   const [clienteFornecedor, setClienteFornecedor] = useState('')
   const [valor, setValor] = useState(0)
   const [data, setData] = useState(getDataAtualBrasil())
@@ -35,14 +34,12 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
 
   useEffect(() => {
     if (isEditMode && lancamentoInicial) {
-      setDescricao(lancamentoInicial.descricao || '')
-      setClienteFornecedor(lancamentoInicial.cliente_fornecedor || '')
+      setClienteFornecedor(lancamentoInicial.descricao || lancamentoInicial.cliente_fornecedor || '')
       setValor(lancamentoInicial.valor_pago ?? lancamentoInicial.valor)
       setData(lancamentoInicial.data)
       setTipo(lancamentoInicial.tipo)
       setStatusPagamento(lancamentoInicial.status_pagamento || 'pendente')
     } else {
-      setDescricao('')
       setClienteFornecedor('')
       setValor(0)
       setData(getDataAtualBrasil())
@@ -55,8 +52,8 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
     e.preventDefault()
     setErro('')
 
-    if (!descricao.trim() && !clienteFornecedor.trim()) {
-      setErro('É necessário preencher a descrição ou o cliente/fornecedor.')
+    if (!clienteFornecedor.trim()) {
+      setErro('O campo Cliente/Fornecedor é obrigatório.')
       return
     }
     if (valor <= 0) {
@@ -67,11 +64,8 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
     setLoading(true)
 
     try {
-      // Combina cliente/fornecedor e descrição para uma descrição completa.
-      const descricaoCompleta = `${clienteFornecedor.trim()} ${descricao.trim()}`.trim()
-
       const dadosBase = {
-        descricao: descricaoCompleta,
+        descricao: clienteFornecedor.trim(),
         total: valor,
         tipo: tipo,
         data: prepararDataParaInsert(data),
@@ -91,7 +85,11 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         // Lógica de Inserção
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Usuário não autenticado.')
-        const numeroTransacao = Date.now()
+
+        // Obter próximo número de transação via RPC para evitar erro de tipo/limite
+        const { data: numeroTransacao, error: errorNumero } = await supabase.rpc('obter_proximo_numero_transacao')
+        if (errorNumero) throw errorNumero
+
         const dadosInsert = {
           ...dadosBase,
           user_id: user.id,
@@ -129,25 +127,13 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       <form onSubmit={handleSubmit} className="space-y-2">
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Cliente/Fornecedor
+            Cliente/Fornecedor *
           </label>
           <input
             type="text"
             value={clienteFornecedor}
             onChange={(e) => setClienteFornecedor(e.target.value)}
             placeholder="Nome do cliente ou fornecedor"
-            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">
-            Descrição / Detalhes *
-          </label>
-          <input
-            type="text"
-            value={descricao}
-            onChange={(e) => setDescricao(e.target.value)}
-            placeholder="Ex: Referente ao serviço X"
             className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
