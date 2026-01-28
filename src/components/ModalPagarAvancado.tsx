@@ -47,8 +47,6 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
   const valorOriginal = lancamento.valor
   const valorPago = modalPagar.valorPago ?? valorOriginal
   const diff = valorPago - valorOriginal
-  const eSaida = lancamento.tipo === 'saida'
-  const labelDiff = diff > 0 ? (eSaida ? 'Desconto' : 'Juros') : (eSaida ? 'Juros' : 'Desconto')
 
   const fecharModal = () => setModalPagar({ 
     aberto: false, 
@@ -202,32 +200,51 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
         return (
           <>
             <div className="mb-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">O que fazer com a diferença?</h3>
-              <div className="h-1 w-12 bg-blue-500 rounded"></div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">
+                {diff > 0 ? 'Confirmar Novo Valor' : 'O que fazer com a diferença?'}
+              </h3>
+              <div className={`h-1 w-12 ${diff > 0 ? 'bg-green-500' : 'bg-blue-500'} rounded`}></div>
             </div>
 
             <div className="bg-blue-50 p-4 mb-6 rounded text-sm space-y-2">
-              <p><span className="font-semibold text-gray-700">Valor Pago:</span> <span className="font-bold">R$ {valorPago.toFixed(2)}</span></p>
-              <p><span className="font-semibold text-gray-700">Diferença:</span> <span className={`font-bold ${diff > 0 ? 'text-green-600' : 'text-red-600'}`}>R$ {Math.abs(diff).toFixed(2)}</span></p>
+              <p><span className="font-semibold text-gray-700">Valor Original:</span> <span>R$ {valorOriginal.toFixed(2)}</span></p>
+              <p><span className="font-semibold text-gray-700">Novo Valor Pago:</span> <span className="font-bold">R$ {valorPago.toFixed(2)}</span></p>
+              {diff < 0 && (
+                <p><span className="font-semibold text-gray-700">Diferença Restante:</span> <span className="font-bold text-red-600">R$ {Math.abs(diff).toFixed(2)}</span></p>
+              )}
             </div>
 
             <div className="space-y-3">
-              <button
-                onClick={() => processarPagamento(false)}
-                className="w-full p-4 text-left border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-300 transition-all group"
-              >
-                <p className="font-bold text-sm text-gray-800 group-hover:text-blue-600">Lançar como {labelDiff}</p>
-                <p className="text-xs text-gray-500">O lançamento será marcado como pago e o valor será ajustado para o que foi pago.</p>
-              </button>
+              {diff < 0 ? (
+                <>
+                  <button
+                    onClick={() => processarPagamento(false)}
+                    className="w-full p-4 text-left border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-300 transition-all group"
+                  >
+                    <p className="font-bold text-sm text-gray-800 group-hover:text-blue-600">Quitar lançamento com este valor</p>
+                    <p className="text-xs text-gray-500">O valor total do lançamento será alterado para R$ {valorPago.toFixed(2)} e marcado como pago.</p>
+                  </button>
 
-              {diff < 0 && (
-                <button
-                  onClick={() => avancarPasso('nova_data')}
-                  className="w-full p-4 text-left border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-300 transition-all group"
-                >
-                  <p className="font-bold text-sm text-gray-800 group-hover:text-blue-600">Criar nova parcela com o valor restante</p>
-                  <p className="text-xs text-gray-500">O valor de R$ {Math.abs(diff).toFixed(2)} será lançado em uma nova parcela prevista.</p>
-                </button>
+                  <button
+                    onClick={() => avancarPasso('nova_data')}
+                    className="w-full p-4 text-left border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-blue-300 transition-all group"
+                  >
+                    <p className="font-bold text-sm text-gray-800 group-hover:text-blue-600">Criar nova parcela com o valor restante</p>
+                    <p className="text-xs text-gray-500">O valor restante de R$ {Math.abs(diff).toFixed(2)} será lançado em uma nova parcela prevista.</p>
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    O valor pago é maior que o valor original. O sistema atualizará o valor total deste lançamento para <span className="font-bold text-gray-900">R$ {valorPago.toFixed(2)}</span> e o marcará como pago.
+                  </p>
+                  <button
+                    onClick={() => processarPagamento(false)}
+                    className="w-full p-4 text-center bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all"
+                  >
+                    Confirmar e Pagar
+                  </button>
+                </div>
               )}
             </div>
 
