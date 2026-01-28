@@ -119,154 +119,146 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Cabeçalho Estilizado conforme print */}
-        <div className="bg-[#1a222e] text-white px-6 py-4 flex justify-between items-start">
+        {/* Cabeçalho */}
+        <div className="bg-gray-800 text-white px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-bold">
+            <h2 className="text-xl font-bold flex items-center gap-2">
               <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : 'Transação'}
             </h2>
-            <p className="text-xs text-gray-400 mt-1 font-medium">{formatarDataParaExibicao(dadosResumo.data)}</p>
+            <p className="text-xs text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
           </div>
-          <button onClick={onClose} className="hover:bg-gray-700 p-1.5 rounded transition-colors text-xl">✕</button>
+          <button onClick={onClose} className="hover:bg-gray-700 p-2 rounded-full transition-colors text-xl">✕</button>
         </div>
 
         <div className="p-6 overflow-y-auto space-y-6">
-          {/* Card de Resumo Superior */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Cliente/Fornecedor</p>
-              <p className="text-sm font-bold text-gray-900">{dadosResumo.entidade.toUpperCase()}</p>
+          {/* Resumo */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border">
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase">Cliente/Fornecedor</p>
+              <p className="text-sm font-semibold text-gray-800">{dadosResumo.entidade}</p>
             </div>
-            <div className="space-y-1 flex flex-col items-center md:items-start">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Status</p>
-              <span className={`inline-block px-3 py-0.5 rounded text-[11px] font-bold uppercase ${
-                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido'
-                  ? 'bg-green-50 text-green-600'
-                  : 'bg-yellow-50 text-yellow-600'
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase">Status</p>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
               }`}>
-                {dadosResumo.status}
+                {dadosResumo.status.toUpperCase()}
               </span>
             </div>
-            <div className="space-y-1 text-right md:text-left">
-              <p className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Valor Total</p>
-              <p className="text-2xl font-black text-blue-600">R$ {dadosResumo.total.toFixed(2)}</p>
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase">Valor Total</p>
+              <p className="text-lg font-bold text-blue-700">R$ {dadosResumo.total.toFixed(2)}</p>
             </div>
           </div>
 
           {/* Observações (se houver) */}
           {dadosResumo.observacao && (
-            <div className="bg-blue-50/50 p-3 rounded border border-blue-100">
-              <p className="text-[10px] font-black text-blue-400 uppercase mb-1">Observações</p>
-              <p className="text-xs text-gray-700 italic">{dadosResumo.observacao}</p>
+            <div className="bg-blue-50 p-3 rounded border border-blue-100">
+              <p className="text-[10px] font-bold text-blue-600 uppercase mb-1">Observações</p>
+              <p className="text-xs text-blue-800 italic">{dadosResumo.observacao}</p>
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Coluna Esquerda: Itens */}
-            <div>
-              <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                <span className="text-lg">📦</span> Itens ({itens.length})
-              </h3>
-              <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                <table className="w-full text-xs text-left">
-                  <thead className="bg-gray-50 border-b border-gray-200">
+          {/* Itens (No topo) */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+              📦 Itens ({itens.length})
+            </h3>
+            <div className="border rounded-lg overflow-x-auto shadow-sm">
+              <table className="w-full text-xs text-left min-w-[600px]">
+                <thead className="bg-gray-100 border-b">
+                  <tr>
+                    <th className="px-4 py-2 font-bold text-gray-600 uppercase">Descrição</th>
+                    <th className="px-4 py-2 font-bold text-gray-600 uppercase">Categoria</th>
+                    <th className="px-4 py-2 font-bold text-gray-600 uppercase text-center">Qtd</th>
+                    <th className="px-4 py-2 font-bold text-gray-600 uppercase text-right">Unitário</th>
+                    <th className="px-4 py-2 font-bold text-gray-600 uppercase text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y bg-white">
+                  {loading ? (
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 italic">Buscando itens...</td></tr>
+                  ) : itens.length === 0 ? (
+                    <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-500 italic">Nenhum item encontrado.</td></tr>
+                  ) : (
+                    itens.map(item => (
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 font-medium text-gray-800">{item.descricao}</td>
+                        <td className="px-4 py-2 text-gray-600">{item.categoria || '—'}</td>
+                        <td className="px-4 py-2 text-center">{item.quantidade}</td>
+                        <td className="px-4 py-2 text-right">R$ {item.preco_unitario.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-right font-bold text-gray-900">R$ {item.subtotal.toFixed(2)}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+                {!loading && itens.length > 0 && (
+                  <tfoot className="bg-gray-50 font-bold border-t">
                     <tr>
-                      <th className="px-3 py-2 font-bold text-gray-500 uppercase text-[9px]">Descrição</th>
-                      <th className="px-2 py-2 font-bold text-gray-500 uppercase text-[9px] text-center">Qtd</th>
-                      <th className="px-2 py-2 font-bold text-gray-500 uppercase text-[9px] text-right">Unitário</th>
-                      <th className="px-3 py-2 font-bold text-gray-500 uppercase text-[9px] text-right">Subtotal</th>
+                      <td colSpan={4} className="px-4 py-2 text-right uppercase text-[10px]">Total dos Itens:</td>
+                      <td className="px-4 py-2 text-right text-blue-700 font-bold">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+
+          {/* Financeiro (Abaixo) */}
+          {tipo !== 'condicionais' && (
+            <div className="space-y-2 pt-4 border-t">
+              <h3 className="text-sm font-bold text-gray-700 flex items-center gap-2">
+                💳 Detalhamento Financeiro / Parcelas ({parcelas.length})
+              </h3>
+              <div className="border rounded-lg overflow-x-auto shadow-sm">
+                <table className="w-full text-xs text-left min-w-[600px]">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 py-2 font-bold text-gray-600 uppercase">Vencimento</th>
+                      <th className="px-4 py-2 font-bold text-gray-600 uppercase">Descrição</th>
+                      <th className="px-4 py-2 font-bold text-gray-600 uppercase text-right">Valor</th>
+                      <th className="px-4 py-2 font-bold text-gray-600 uppercase text-center">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100 bg-white">
-                    {loading ? (
-                      <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400 italic">Buscando itens...</td></tr>
-                    ) : itens.length === 0 ? (
-                      <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-400 italic">Nenhum item encontrado.</td></tr>
+                  <tbody className="divide-y bg-white">
+                    {parcelas.length === 0 ? (
+                      <tr><td colSpan={4} className="px-4 py-8 text-center text-gray-500 italic">Nenhuma parcela encontrada.</td></tr>
                     ) : (
-                      itens.map(item => (
-                        <tr key={item.id} className="hover:bg-gray-50/50">
-                          <td className="px-3 py-2">
-                            <p className="font-bold text-gray-800">{item.descricao.toUpperCase()}</p>
-                            {item.categoria && <p className="text-[9px] text-gray-400 font-medium">— {item.categoria.toUpperCase()}</p>}
+                      parcelas.map(p => (
+                        <tr key={p.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-2 font-medium text-gray-700">{formatarDataParaExibicao(p.data)}</td>
+                          <td className="px-4 py-2 text-gray-600">{p.descricao}</td>
+                          <td className="px-4 py-2 text-right font-bold text-gray-900">R$ {p.valor.toFixed(2)}</td>
+                          <td className="px-4 py-2 text-center">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              p.status === 'pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {p.status}
+                            </span>
                           </td>
-                          <td className="px-2 py-2 text-center text-gray-600 font-medium">{item.quantidade}</td>
-                          <td className="px-2 py-2 text-right text-gray-600">R$ {item.preco_unitario.toFixed(2)}</td>
-                          <td className="px-3 py-2 text-right font-bold text-gray-800">R$ {item.subtotal.toFixed(2)}</td>
                         </tr>
                       ))
                     )}
                   </tbody>
-                  {!loading && itens.length > 0 && (
-                    <tfoot className="bg-gray-50/80 font-black border-t border-gray-200">
+                  {parcelas.length > 0 && (
+                    <tfoot className="bg-gray-50 font-bold border-t">
                       <tr>
-                        <td colSpan={3} className="px-3 py-2 text-right text-[10px] text-gray-600 uppercase tracking-widest">Total dos Itens:</td>
-                        <td className="px-3 py-2 text-right text-blue-600 text-sm italic">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
+                        <td colSpan={2} className="px-4 py-2 text-right uppercase text-[10px]">Total:</td>
+                        <td className="px-4 py-2 text-right text-green-700 font-bold">R$ {parcelas.reduce((acc, p) => acc + p.valor, 0).toFixed(2)}</td>
+                        <td></td>
                       </tr>
                     </tfoot>
                   )}
                 </table>
               </div>
             </div>
-
-            {/* Coluna Direita: Parcelas */}
-            {tipo !== 'condicionais' && (
-              <div>
-                <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                  <span className="text-lg">💳</span> Parcelas / Financeiro ({parcelas.length})
-                </h3>
-                <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                  <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                      <tr>
-                        <th className="px-3 py-2 font-bold text-gray-500 uppercase text-[9px]">Vencimento</th>
-                        <th className="px-3 py-2 font-bold text-gray-500 uppercase text-[9px] text-right">Valor</th>
-                        <th className="px-3 py-2 font-bold text-gray-500 uppercase text-[9px] text-center">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 bg-white">
-                      {parcelas.length === 0 ? (
-                        <tr><td colSpan={3} className="px-4 py-8 text-center text-gray-400 italic">Nenhuma parcela encontrada.</td></tr>
-                      ) : (
-                        parcelas.map(p => (
-                          <tr key={p.id} className="hover:bg-gray-50/50">
-                            <td className="px-3 py-2">
-                              <p className="text-[11px] text-gray-700 font-bold">{formatarDataParaExibicao(p.data)}</p>
-                              <p className="text-[9px] text-gray-400 font-medium italic">{p.descricao}</p>
-                            </td>
-                            <td className="px-3 py-2 text-right font-black text-gray-800 text-xs whitespace-nowrap">R$ {p.valor.toFixed(2)}</td>
-                            <td className="px-3 py-2 text-center">
-                              <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                                p.status === 'pago'
-                                  ? 'bg-green-50 text-green-600 border border-green-100'
-                                  : 'bg-yellow-50 text-yellow-600 border border-yellow-100'
-                              }`}>
-                                {p.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                    {parcelas.length > 0 && (
-                      <tfoot className="bg-gray-50/80 font-black border-t border-gray-200">
-                        <tr>
-                          <td colSpan={1} className="px-3 py-2 text-right text-[10px] text-gray-600 uppercase tracking-widest">Total:</td>
-                          <td className="px-3 py-2 text-right text-green-600 text-sm italic">R$ {parcelas.reduce((acc, p) => acc + p.valor, 0).toFixed(2)}</td>
-                          <td></td>
-                        </tr>
-                      </tfoot>
-                    )}
-                  </table>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
-        <div className="p-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+        <div className="p-4 bg-gray-50 border-t flex justify-end">
           <button
             onClick={onClose}
-            className="px-8 py-2 bg-[#1a222e] text-white rounded-lg font-black uppercase tracking-widest text-xs hover:bg-gray-800 transition-all shadow-md"
+            className="px-6 py-2 bg-gray-800 text-white rounded-lg font-bold hover:bg-gray-900 transition-all"
           >
             Fechar
           </button>
