@@ -1,8 +1,9 @@
 'use client'
 
 import { supabase } from '@/lib/supabase'
+import { User } from '@supabase/supabase-js'
 import ModalPagarAvancado from './ModalPagarAvancado'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useDadosFinanceiros, CentroCusto, LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
@@ -143,19 +144,19 @@ export default function CasaModulo() {
   
   const [abaLancamentos, setAbaLancamentos] = useState<'padrao' | 'recorrente'>('padrao')
   const [formularioAberto, setFormularioAberto] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [mostrarTodos, setMostrarTodos] = useState(false)
   
   const [modalPagar, setModalPagar] = useState<{ 
     aberto: boolean; 
     lancamento: Lancamento | null;
-    passo: 'confirmar_total' | 'valor_parcial' | 'nova_parcela' | 'nova_parcela_data';
+    passo: 'inicial' | 'valor' | 'decisao' | 'nova_data';
     valorPago: number | null;
     novaDataVencimento: string;
   }>({
     aberto: false,
     lancamento: null,
-    passo: 'confirmar_total',
+    passo: 'inicial',
     valorPago: null,
     novaDataVencimento: getDataAtualBrasil()
   })
@@ -359,16 +360,17 @@ export default function CasaModulo() {
       
       setFormularioAberto(false)
       alert('✅ Lançamento adicionado com sucesso!')
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao adicionar lançamento:', error)
-      alert('❌ Erro ao adicionar lançamento: ' + error.message)
+      const msg = error instanceof Error ? error.message : String(error)
+      alert('❌ Erro ao adicionar lançamento: ' + msg)
     } finally {
       setLoading(false)
     }
   }
 
-  const processarPagamento = async () => {
-    const { lancamento, passo, valorPago } = modalPagar
+  const processarPagamento = async (criarNovaParcela: boolean = false) => {
+    const { lancamento, valorPago } = modalPagar
     
     if (!lancamento || !user) return
 
@@ -378,7 +380,7 @@ export default function CasaModulo() {
       const dataAtual = getDataAtualBrasil()
       const valorOriginal = lancamento.valor
       const valorPagoFinal = valorPago !== null ? valorPago : valorOriginal
-      const valorRestante = valorOriginal - valorPagoFinal
+      const valorRestante = Math.max(0, valorOriginal - valorPagoFinal)
 
       const parcelaAtual = lancamento.parcelamento?.atual || 1
       const totalParcelas = lancamento.parcelamento?.total || 1
@@ -388,14 +390,16 @@ export default function CasaModulo() {
       let novaDescricaoOriginal = descricaoOriginal
       let novoParcelamento = lancamento.parcelamento
 
-      if (valorRestante > 0 && passo === 'nova_parcela_data') {
+      // Se for criar nova parcela, o lançamento atual vira uma parcela de um total maior
+      if (criarNovaParcela && valorRestante > 0.01) {
         novoParcelamento = { atual: parcelaAtual, total: totalParcelas + 1 }
         novaDescricaoOriginal = `${descricaoBase} (${parcelaAtual}/${totalParcelas + 1})`
       }
 
+      // 1. Atualizar o lançamento atual para 'realizado' com o valor realmente pago
       const { error: errorUpdate } = await supabase
         .from('lancamentos_financeiros')
-        .update([{ // ✅ CORREÇÃO: Colocar em array []
+        .update([{
           status: 'realizado',
           valor: valorPagoFinal,
           data_lancamento: dataAtual,
@@ -406,7 +410,8 @@ export default function CasaModulo() {
 
       if (errorUpdate) throw errorUpdate
 
-      if (valorRestante > 0 && modalPagar.passo === 'nova_parcela_data') {
+      // 2. Se o usuário escolheu criar uma nova parcela para o restante
+      if (criarNovaParcela && valorRestante > 0.01) {
         const novaDescricaoParcela = `${descricaoBase} (${totalParcelas + 1}/${totalParcelas + 1})`
         
         const dadosNovaParcela = {
@@ -426,7 +431,7 @@ export default function CasaModulo() {
 
         const { error: errorInsert } = await supabase
           .from('lancamentos_financeiros')
-          .insert([dadosNovaParcela]) // ✅ CORREÇÃO: Colocar em array []
+          .insert([dadosNovaParcela])
           .select()
 
         if (errorInsert) throw errorInsert
@@ -435,7 +440,7 @@ export default function CasaModulo() {
       setModalPagar({ 
         aberto: false, 
         lancamento: null, 
-        passo: 'confirmar_total', 
+        passo: 'inicial',
         valorPago: null, 
         novaDataVencimento: getDataAtualBrasil() 
       })
@@ -444,9 +449,10 @@ export default function CasaModulo() {
       
       // Recarregar apenas os dados necessários
       recarregarDados()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao processar pagamento:', error)
-      alert('❌ Erro ao processar pagamento: ' + error.message)
+      const msg = error instanceof Error ? error.message : String(error)
+      alert('❌ Erro ao processar pagamento: ' + msg)
     } finally {
       setLoading(false)
     }
@@ -467,9 +473,10 @@ export default function CasaModulo() {
       
       // Recarregar apenas os dados necessários
       recarregarDados()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao excluir lançamento:', error)
-      alert('❌ Erro ao excluir lançamento: ' + error.message)
+      const msg = error instanceof Error ? error.message : String(error)
+      alert('❌ Erro ao excluir lançamento: ' + msg)
     }
   }
 
@@ -563,9 +570,10 @@ export default function CasaModulo() {
       
       // Recarregar apenas os dados necessários
       recarregarDados()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao salvar edição:', error)
-      alert('❌ Erro ao salvar edição: ' + error.message)
+      const msg = error instanceof Error ? error.message : String(error)
+      alert('❌ Erro ao salvar edição: ' + msg)
     } finally {
       setLoading(false)
     }
@@ -700,7 +708,7 @@ export default function CasaModulo() {
         <div className="bg-white p-4 rounded-lg shadow-xl w-full max-w-sm">
           <h3 className="text-sm font-semibold mb-3">Confirmar Exclusão</h3>
           <p className="text-xs text-gray-700 mb-3">
-            Tem certeza que deseja excluir o lançamento "{modalExcluir.lancamento.descricao}"? Esta ação é irreversível.
+            Tem certeza que deseja excluir o lançamento &quot;{modalExcluir.lancamento.descricao}&quot;? Esta ação é irreversível.
           </p>
           <div className="flex justify-end space-x-2">
             <button
