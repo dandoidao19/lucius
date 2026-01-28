@@ -1,8 +1,8 @@
 -- ================================================================
--- SCRIPT CONSOLIDADO DE AUDITORIA E FUNÇÕES (VERSÃO V2 - ROBUSTA)
+-- SCRIPT CONSOLIDADO DE AUDITORIA E FUNÇÕES (VERSÃO V3 - COMPATÍVEL)
 -- ================================================================
 -- Este script configura a tabela de logs, os gatilhos (triggers)
--- e as funções de numeração automática com máxima compatibilidade.
+-- e as funções de numeração automática, alinhado à estrutura existente.
 
 -- 1. GARANTIR A TABELA DE AUDITORIA COM ESTRUTURA CORRETA
 DO $$
@@ -16,13 +16,21 @@ BEGIN
             action TEXT NOT NULL,
             table_name TEXT NOT NULL,
             record_id TEXT NOT NULL,
-            old_data JSONB,
-            new_data JSONB
+            old_record JSONB,
+            new_record JSONB
         );
     ELSE
         -- Garantir nome correto da coluna de tempo (evitar erro 400 por palavra reservada 'timestamp')
         IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='timestamp') THEN
             ALTER TABLE public.auditoria RENAME COLUMN "timestamp" TO data_hora;
+        END IF;
+
+        -- Garantir que as colunas de dados usem o nome padrão 'old_record' e 'new_record'
+        IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='old_data') THEN
+            ALTER TABLE public.auditoria RENAME COLUMN "old_data" TO old_record;
+        END IF;
+        IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='new_data') THEN
+            ALTER TABLE public.auditoria RENAME COLUMN "new_data" TO new_record;
         END IF;
     END IF;
 END $$;
@@ -38,7 +46,7 @@ GRANT ALL ON TABLE public.auditoria TO authenticated;
 GRANT ALL ON TABLE public.auditoria TO service_role;
 GRANT ALL ON TABLE public.auditoria TO postgres;
 
--- 3. FUNÇÃO DE GERAÇÃO DE LOGS (USANDO TO_JSONB)
+-- 3. FUNÇÃO DE GERAÇÃO DE LOGS (USANDO TO_JSONB E NOMES COMPATÍVEIS)
 CREATE OR REPLACE FUNCTION public.process_audit_log()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -62,15 +70,15 @@ BEGIN
     END;
 
     IF (TG_OP = 'INSERT') THEN
-        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, new_data)
+        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, new_record)
         VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(NEW));
         RETURN NEW;
     ELSIF (TG_OP = 'UPDATE') THEN
-        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_data, new_data)
+        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_record, new_record)
         VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(OLD), to_jsonb(NEW));
         RETURN NEW;
     ELSIF (TG_OP = 'DELETE') THEN
-        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_data)
+        INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_record)
         VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(OLD));
         RETURN OLD;
     END IF;

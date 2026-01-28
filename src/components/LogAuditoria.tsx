@@ -11,8 +11,10 @@ interface Log {
   action: string
   table_name: string
   record_id: string
-  old_data: Record<string, unknown> | null
-  new_data: Record<string, unknown> | null
+  old_data?: Record<string, unknown> | null
+  new_data?: Record<string, unknown> | null
+  old_record?: Record<string, unknown> | null
+  new_record?: Record<string, unknown> | null
 }
 
 const LogAuditoria = () => {
@@ -71,9 +73,13 @@ const LogAuditoria = () => {
   }, [])
 
   const renderAlteracoes = (log: Log) => {
-    const { action, old_data, new_data } = log
+    const { action, old_data, new_data, old_record, new_record } = log
 
-    console.log(`Diagnosticando log #${log.id}:`, { action, old_data, new_data })
+    // Tentar obter os dados de qualquer uma das variações de nome de coluna
+    const rawNew = new_data || new_record
+    const rawOld = old_data || old_record
+
+    console.log(`Diagnosticando log #${log.id}:`, { action, rawNew, rawOld })
 
     // Função auxiliar para garantir que tratamos os dados como objeto
     const normalizeData = (data: any): Record<string, unknown> => {
@@ -84,8 +90,8 @@ const LogAuditoria = () => {
       return data as Record<string, unknown>
     }
 
-    const normalizedNew = normalizeData(new_data)
-    const normalizedOld = normalizeData(old_data)
+    const normalizedNew = normalizeData(rawNew)
+    const normalizedOld = normalizeData(rawOld)
 
     console.log(`Normalizado #${log.id}:`, { normalizedNew, normalizedOld })
 
@@ -298,20 +304,20 @@ const LogAuditoria = () => {
                   Ver JSON Bruto
                 </button>
                 <div className="text-[9px] text-gray-400 italic">
-                  Tipo: {typeof selectedLog.new_data === 'object' ? 'Objeto' : 'Desconhecido'}
+                  Tipo: {(typeof selectedLog.new_data === 'object' || typeof selectedLog.new_record === 'object') ? 'Objeto' : 'Desconhecido'}
                 </div>
               </div>
               <div className="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase">Dados Originais (Old)</h4>
                   <pre className="bg-gray-50 p-2 rounded text-[10px] text-gray-500 overflow-x-auto">
-                    {JSON.stringify(selectedLog.old_data, null, 2)}
+                    {JSON.stringify(selectedLog.old_data || selectedLog.old_record, null, 2)}
                   </pre>
                 </div>
                 <div>
                   <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase">Novos Dados (New)</h4>
                   <pre className="bg-gray-50 p-2 rounded text-[10px] text-gray-500 overflow-x-auto">
-                    {JSON.stringify(selectedLog.new_data, null, 2)}
+                    {JSON.stringify(selectedLog.new_data || selectedLog.new_record, null, 2)}
                   </pre>
                 </div>
               </div>
