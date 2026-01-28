@@ -29,6 +29,7 @@ interface Transacao {
   parcela_total?: number
   transacao_principal_id?: string
   origem_id?: string
+  observacao?: string
 }
 
 // Definição explícita para o tipo de dado bruto vindo do Supabase
@@ -45,6 +46,7 @@ interface SupabaseTransacaoLoja {
   juros_descontos?: number;
   status_pagamento?: string;
   quantidade_parcelas?: number;
+  observacao?: string;
 }
 
 
@@ -73,6 +75,7 @@ export default function LojaPaginaFinanceiro() {
   const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
   const [exibirFormularioLancamento, setExibirFormularioLancamento] = useState(false)
   const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Transacao | null>(null)
+  const [caixaMinimizado, setCaixaMinimizado] = useState(true)
 
   const { recarregarDados } = useDadosFinanceiros()
 
@@ -117,6 +120,7 @@ export default function LojaPaginaFinanceiro() {
         parcela_total: trans.quantidade_parcelas || parcela_total,
         cliente_fornecedor: descricaoLimpa,
         origem_id: trans.id,
+        observacao: trans.observacao,
       }
     })
   }, [])
@@ -427,15 +431,28 @@ export default function LojaPaginaFinanceiro() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
-        <div className="lg:col-span-1">
-          <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
+      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+        {/* Barra Lateral do Caixa (Retrátil) */}
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+        >
+          <div className="min-w-[250px]">
+            <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
+          </div>
         </div>
 
-        <div className="lg:col-span-3 min-h-0">
+        {/* Lista de Transações (Expandida) */}
+        <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded-lg shadow-md p-3">
             <div className="flex justify-between items-center mb-3">
                <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setCaixaMinimizado(!caixaMinimizado)}
+                  className={`p-1.5 rounded-md transition-colors ${caixaMinimizado ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-blue-100 text-blue-600 hover:bg-blue-200'}`}
+                  title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
+                >
+                  {caixaMinimizado ? '📊 Exibir Caixas' : '◀ Recolher'}
+                </button>
                 <h3 className="font-semibold text-gray-800 text-sm">
                   {tituloLista}
                   {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
@@ -474,6 +491,7 @@ export default function LojaPaginaFinanceiro() {
                       <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Parcela</th>
                       <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Tipo</th>
                       <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Status</th>
+                      <th className="px-1 py-0.5 text-left font-semibold text-gray-700" style={{ fontSize: '10px' }}>Obs.</th>
                       <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Ação</th>
                     </tr>
                   </thead>
@@ -500,6 +518,7 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-1 py-0.5 text-center text-gray-700" style={{ fontSize: '11px' }}><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
                           <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-white font-bold text-xs ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
                           <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
+                          <td className="px-1 py-0.5 text-left max-w-[100px] truncate italic text-gray-500" style={{ fontSize: '10px' }} title={transacao.observacao}>{transacao.observacao || '—'}</td>
                           <td className="px-1 py-0.5 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {transacao.status_pagamento === 'pago' ? (

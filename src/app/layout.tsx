@@ -4,6 +4,7 @@ import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { RealtimeSubscriber } from "@/components/RealtimeSubscriber";
 import CabecalhoSistema from "@/components/CabecalhoSistema";
+import AtalhosGlobais from "@/components/AtalhosGlobais";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,6 +38,9 @@ export default function RootLayout({
 
           {/* Conteúdo das páginas */}
           {children}
+
+          {/* Atalhos Globais (Balões Flutuantes) */}
+          <AtalhosGlobais />
         </QueryProvider>
       </body>
     </html>
