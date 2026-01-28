@@ -71,12 +71,23 @@ const LogAuditoria = () => {
     const { action, old_data, new_data } = log
 
     if (action === 'INSERT') {
+      const entries = Object.entries(new_data || {})
+
+      if (entries.length === 0) {
+        return (
+          <div className="bg-gray-50 p-4 rounded border border-dashed border-gray-300 text-center">
+            <p className="text-gray-500 text-sm italic">Nenhum dado detalhado foi capturado para esta inclusão.</p>
+            <p className="text-[10px] text-gray-400 mt-1">Verifique se o trigger no Supabase está configurado corretamente com row_to_json(NEW).</p>
+          </div>
+        )
+      }
+
       return (
         <div className="space-y-2">
           <p className="font-semibold text-green-700">Resumo da Inclusão:</p>
           <div className="grid grid-cols-1 gap-1">
-            {Object.entries(new_data || {}).map(([key, value]) => (
-              <div key={key} className="flex border-b border-gray-100 py-1">
+            {entries.map(([key, value]) => (
+              <div key={key} className="flex border-b border-gray-100 py-1 hover:bg-gray-50/50">
                 <span className="font-medium w-1/3 text-gray-600">{key}:</span>
                 <span className="w-2/3 break-all">{String(value ?? '—')}</span>
               </div>
@@ -87,11 +98,21 @@ const LogAuditoria = () => {
     }
 
     if (action === 'DELETE') {
+      const entries = Object.entries(old_data || {})
+
+      if (entries.length === 0) {
+        return (
+          <div className="bg-red-50 p-4 rounded border border-dashed border-red-200 text-center">
+            <p className="text-red-500 text-sm italic">Os dados excluídos não foram capturados.</p>
+          </div>
+        )
+      }
+
       return (
         <div className="space-y-2">
           <p className="font-semibold text-red-700">Dados Excluídos:</p>
           <div className="grid grid-cols-1 gap-1">
-            {Object.entries(old_data || {}).map(([key, value]) => (
+            {entries.map(([key, value]) => (
               <div key={key} className="flex border-b border-gray-100 py-1 text-gray-500 italic">
                 <span className="font-medium w-1/3">{key}:</span>
                 <span className="w-2/3 break-all">{String(value ?? '—')}</span>
@@ -218,7 +239,19 @@ const LogAuditoria = () => {
               <p><strong>Usuário:</strong> {selectedLog.user_email} ({selectedLog.user_id})</p>
               <p><strong>Ação:</strong> {selectedLog.action}</p>
               <p><strong>Tabela:</strong> {selectedLog.table_name}</p>
-              <p><strong>ID do Registro:</strong> {selectedLog.record_id}</p>
+              <div className="flex items-center gap-2">
+                <strong>ID do Registro:</strong>
+                <code className="bg-gray-100 px-1 rounded">{selectedLog.record_id}</code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedLog.record_id)
+                    alert('ID copiado!')
+                  }}
+                  className="text-[10px] text-blue-600 hover:underline"
+                >
+                  (Copiar)
+                </button>
+              </div>
             </div>
             
             <div className="mt-6 border-t pt-4">
