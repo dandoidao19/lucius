@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
+import ModalDetalhesTransacao from './ModalDetalhesTransacao'
 
 interface TransacaoUnificada {
   id: string
@@ -23,6 +24,10 @@ export default function LojaPaginaTransacoes() {
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [loading, setLoading] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
+  const [modalDetalhes, setModalDetalhes] = useState<{ aberto: boolean; transacao: TransacaoUnificada | null }>({
+    aberto: false,
+    transacao: null
+  })
 
   const carregarTransacoes = useCallback(async () => {
     setLoading(true)
@@ -138,14 +143,15 @@ export default function LojaPaginaTransacoes() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase">Data</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase text-center">Tipo</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase">Nº</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase">Cliente/Fornecedor</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase text-right">Total</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase text-center">Status</th>
-                <th className="px-4 py-3 text-xs font-bold text-gray-600 uppercase">Observações</th>
+              <tr className="text-[10px]">
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase whitespace-nowrap">Data</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Tipo</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center">Nº</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase min-w-[120px]">Cliente/Fornecedor</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase min-w-[200px]">Observações</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-right whitespace-nowrap">Total</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Status</th>
+                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -159,28 +165,37 @@ export default function LojaPaginaTransacoes() {
                 </tr>
               ) : (
                 transacoes.map((t) => (
-                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3 text-sm text-gray-700">{formatarDataParaExibicao(t.data)}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`inline-block px-2 py-1 rounded text-[10px] font-black border ${t.cor}`}>
+                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors text-[11px]">
+                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
+                    <td className="px-3 py-2 text-center">
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black border ${t.cor}`}>
                         {t.tipo_exibicao}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm font-mono text-gray-500">#{t.numero}</td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-800">{t.entidade}</td>
-                    <td className="px-4 py-3 text-sm text-right font-bold text-gray-700">
+                    <td className="px-3 py-2 font-mono text-gray-500 text-center">#{t.numero}</td>
+                    <td className="px-3 py-2 font-medium text-gray-800 truncate max-w-[150px]" title={t.entidade}>{t.entidade}</td>
+                    <td className="px-3 py-2 text-gray-500 italic truncate max-w-[250px]" title={t.observacao}>
+                      {t.observacao.replace('[PEDIDO]', '').trim() || '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right font-bold text-gray-700 whitespace-nowrap">
                       {t.total > 0 ? `R$ ${t.total.toFixed(2)}` : '—'}
                     </td>
-                    <td className="px-4 py-3 text-center text-xs uppercase font-semibold">
-                      <span className={`px-2 py-0.5 rounded-full ${
+                    <td className="px-3 py-2 text-center uppercase font-semibold">
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                         t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-100 text-green-700' :
                         t.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
                       }`}>
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 italic max-w-xs truncate" title={t.observacao}>
-                      {t.observacao.replace('[PEDIDO]', '').trim()}
+                    <td className="px-3 py-2 text-center">
+                      <button
+                        onClick={() => setModalDetalhes({ aberto: true, transacao: t })}
+                        className="p-1 hover:bg-blue-100 rounded text-blue-600 transition-colors"
+                        title="Ver Detalhes"
+                      >
+                        👁️
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -195,6 +210,23 @@ export default function LojaPaginaTransacoes() {
         onClose={() => setModalAberto(false)}
         onSucesso={carregarTransacoes}
       />
+
+      {modalDetalhes.transacao && (
+        <ModalDetalhesTransacao
+          aberto={modalDetalhes.aberto}
+          onClose={() => setModalDetalhes({ aberto: false, transacao: null })}
+          transacaoId={modalDetalhes.transacao.id}
+          tipo={modalDetalhes.transacao.tabela}
+          dadosResumo={{
+            numero: modalDetalhes.transacao.numero,
+            data: modalDetalhes.transacao.data,
+            entidade: modalDetalhes.transacao.entidade,
+            total: modalDetalhes.transacao.total,
+            status: modalDetalhes.transacao.status,
+            observacao: modalDetalhes.transacao.observacao
+          }}
+        />
+      )}
     </div>
   )
 }

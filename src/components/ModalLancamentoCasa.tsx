@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
