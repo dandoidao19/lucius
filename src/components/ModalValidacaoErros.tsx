@@ -125,7 +125,7 @@ export default function ModalValidacaoErros({
                   <h3 className="font-semibold text-green-800 mb-2">✅ Pronto para Importar!</h3>
                   <p className="text-green-700 text-sm">
                     Todas as {resultado.linhasValidas} linhas foram validadas com sucesso. 
-                    Você pode prosseguir com a importação clicando no botão "Importar Dados" abaixo.
+                    Você pode prosseguir com a importação clicando no botão &quot;Importar Dados&quot; abaixo.
                   </p>
                 </div>
               )}
@@ -140,7 +140,7 @@ export default function ModalValidacaoErros({
                   <div className="bg-white rounded p-3 text-sm">
                     <p className="font-medium text-gray-800 mb-2">💡 Dicas para correção:</p>
                     <ul className="list-disc list-inside text-gray-700 space-y-1">
-                      <li>Verifique a aba "Erros" para ver detalhes de cada problema</li>
+                      <li>Verifique a aba &quot;Erros&quot; para ver detalhes de cada problema</li>
                       <li>Baixe o relatório completo para facilitar a correção</li>
                       <li>Certifique-se de que todas as colunas obrigatórias estão preenchidas</li>
                       <li>Verifique se os formatos de data e valor estão corretos</li>
@@ -177,7 +177,7 @@ export default function ModalValidacaoErros({
                               <div className="font-medium text-red-800">{erro.campo}</div>
                               <div className="text-sm text-red-700 mt-1">{erro.mensagem}</div>
                               <div className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded font-mono">
-                                Valor recebido: <span className="font-semibold">"{erro.valor}"</span>
+                                Valor recebido: <span className="font-semibold">&quot;{erro.valor}&quot;</span>
                               </div>
                             </div>
                           </div>

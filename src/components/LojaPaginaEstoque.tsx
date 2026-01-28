@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import ModalEditarProduto from './ModalEditarProduto'
 import ModalLogProduto from './ModalLogProduto'
@@ -43,15 +43,7 @@ export default function LojaPaginaEstoque() {
   const [ordenacaoPor, setOrdenacaoPor] = useState<OrdenacaoTipo>('descricao')
   const [ordenacaoDirecao, setOrdenacaoDirecao] = useState<OrdenacaoDirecao>('asc')
 
-  useEffect(() => {
-    carregarProdutos()
-  }, [])
-
-  useEffect(() => {
-    aplicarFiltrosEOrdenacao()
-  }, [produtos, filtroDescricao, filtroCodigo, filtroStatus, ordenacaoPor, ordenacaoDirecao])
-
-  const carregarProdutos = async () => {
+  const carregarProdutos = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('produtos')
@@ -65,9 +57,17 @@ export default function LojaPaginaEstoque() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const aplicarFiltrosEOrdenacao = () => {
+  useEffect(() => {
+    carregarProdutos()
+  }, [carregarProdutos])
+
+  useEffect(() => {
+    aplicarFiltrosEOrdenacao()
+  }, [aplicarFiltrosEOrdenacao])
+
+  const aplicarFiltrosEOrdenacao = useCallback(() => {
     let resultado = [...produtos]
 
     // TAREFA 2.1: Aplicar prioridade de ordenação: saldo positivo → negativo → zerado
@@ -131,7 +131,7 @@ export default function LojaPaginaEstoque() {
     // Separar produtos condicionais
     const condicionais = resultado.filter(p => (p.status_item || 'resolvido') === 'condicional')
     setProdutosCondicionais(condicionais)
-  }
+  }, [produtos, filtroDescricao, filtroCodigo, filtroStatus, ordenacaoPor, ordenacaoDirecao])
 
   // CORREÇÃO: Funções para calcular os novos valores do estoque
   const calcularValorRealizadoVenda = () => {
@@ -323,7 +323,7 @@ export default function LojaPaginaEstoque() {
                 <label className="block text-xs font-medium text-gray-700 mb-0.5">Status</label>
                 <select
                   value={filtroStatus}
-                  onChange={(e) => setFiltroStatus(e.target.value as any)}
+                  onChange={(e) => setFiltroStatus(e.target.value as 'todos' | 'resolvido' | 'condicional')}
                   className="w-full px-2 py-0.5 border border-gray-300 rounded text-xs"
                 >
                   <option value="todos">Todos</option>

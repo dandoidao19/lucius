@@ -9,7 +9,7 @@
 export interface ErroValidacao {
   linha: number
   campo: string
-  valor: any
+  valor: unknown
   mensagem: string
   tipo: 'erro' | 'aviso'
 }
@@ -32,7 +32,7 @@ export interface LancamentoValidado {
   status: 'realizado' | 'previsto'
   centroCusto: string
   centroCustoId?: string
-  dadosOriginais: any
+  dadosOriginais: Record<string, unknown>
 }
 
 // Valores permitidos
@@ -63,7 +63,7 @@ function converterDDMMYYYY(dataStr: string): Date | null {
 /**
  * Valida o formato de uma data
  */
-export function validarFormatoData(data: any): boolean {
+export function validarFormatoData(data: unknown): boolean {
   if (!data) return false
   
   // Se for número (serial do Excel)
@@ -119,8 +119,8 @@ export function validarRangeData(dataStr: string): boolean {
 /**
  * Valida formato de valor numérico
  */
-export function validarValor(valor: any): { valido: boolean; valorNumerico?: number } {
-  if (valor === null || valor === undefined || valor === '') {
+export function validarValor(valor: unknown): { valido: boolean; valorNumerico?: number } {
+  if (valor === null || valor === undefined || (typeof valor === 'string' && valor === '')) {
     return { valido: false }
   }
   
@@ -154,10 +154,10 @@ export function validarValor(valor: any): { valido: boolean; valorNumerico?: num
 /**
  * Valida tipo de lançamento
  */
-export function validarTipo(tipo: any): { valido: boolean; tipoNormalizado?: 'entrada' | 'saida' } {
+export function validarTipo(tipo: unknown): { valido: boolean; tipoNormalizado?: 'entrada' | 'saida' } {
   if (!tipo) return { valido: false }
   
-  const tipoStr = tipo.toString().toUpperCase().trim()
+  const tipoStr = String(tipo).toUpperCase().trim()
   
   if (tipoStr.includes('ENTRADA') || tipoStr.includes('RECEITA')) {
     return { valido: true, tipoNormalizado: 'entrada' }
@@ -173,10 +173,10 @@ export function validarTipo(tipo: any): { valido: boolean; tipoNormalizado?: 'en
 /**
  * Valida status do lançamento
  */
-export function validarStatus(status: any): { valido: boolean; statusNormalizado?: 'realizado' | 'previsto' } {
+export function validarStatus(status: unknown): { valido: boolean; statusNormalizado?: 'realizado' | 'previsto' } {
   if (!status) return { valido: false }
   
-  const statusStr = status.toString().toUpperCase().trim()
+  const statusStr = String(status).toUpperCase().trim()
   
   if (statusStr.includes('PAGO') || statusStr.includes('REALIZADO')) {
     return { valido: true, statusNormalizado: 'realizado' }
@@ -192,10 +192,10 @@ export function validarStatus(status: any): { valido: boolean; statusNormalizado
 /**
  * Valida descrição
  */
-export function validarDescricao(descricao: any): boolean {
+export function validarDescricao(descricao: unknown): boolean {
   if (!descricao) return false
   
-  const descStr = descricao.toString().trim()
+  const descStr = String(descricao).trim()
   
   // Descrição deve ter pelo menos 3 caracteres
   if (descStr.length < 3) return false
@@ -209,10 +209,10 @@ export function validarDescricao(descricao: any): boolean {
 /**
  * Valida centro de custo
  */
-export function validarCentroCusto(centroCusto: any): boolean {
+export function validarCentroCusto(centroCusto: unknown): boolean {
   if (!centroCusto) return false
   
-  const centroStr = centroCusto.toString().trim()
+  const centroStr = String(centroCusto).trim()
   
   // Centro de custo deve ter pelo menos 2 caracteres
   if (centroStr.length < 2) return false
@@ -227,9 +227,9 @@ export function validarCentroCusto(centroCusto: any): boolean {
  * Valida uma linha completa do Excel
  */
 export function validarLinha(
-  linha: any[],
+  linha: unknown[],
   numeroLinha: number,
-  mapeamento: any
+  mapeamento: { DATA: number; DESCRICAO: number; VALOR: number; TIPO: number; STATUS: number; CENTRO_CUSTO: number }
 ): { lancamento?: LancamentoValidado; erros: ErroValidacao[] } {
   const erros: ErroValidacao[] = []
   
@@ -318,12 +318,12 @@ export function validarLinha(
   // Se passou todas as validações, criar objeto de lançamento validado
   const lancamento: LancamentoValidado = {
     linha: numeroLinha,
-    descricao: rawDescricao.toString().trim(),
+    descricao: String(rawDescricao).trim(),
     valor: resultadoValor.valorNumerico!,
     tipo: resultadoTipo.tipoNormalizado!,
-    data: rawData, // Será convertido depois
+    data: String(rawData), // Será convertido depois
     status: resultadoStatus.statusNormalizado!,
-    centroCusto: rawCentroCusto.toString().trim(),
+    centroCusto: String(rawCentroCusto).trim(),
     dadosOriginais: {
       data: rawData,
       descricao: rawDescricao,
@@ -341,8 +341,8 @@ export function validarLinha(
  * Valida todas as linhas do arquivo
  */
 export function validarArquivo(
-  rows: any[][],
-  mapeamento: any
+  rows: unknown[][],
+  mapeamento: { DATA: number; DESCRICAO: number; VALOR: number; TIPO: number; STATUS: number; CENTRO_CUSTO: number }
 ): { lancamentos: LancamentoValidado[]; resultado: ResultadoValidacao } {
   const erros: ErroValidacao[] = []
   const avisos: ErroValidacao[] = []

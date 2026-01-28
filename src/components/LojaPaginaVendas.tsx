@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import FormularioVenda from './FormularioVenda'
 import ListaVendas from './ListaVendas'
@@ -9,7 +9,7 @@ import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 import type { Venda as TipoVenda } from '@/types'
 
 // CACHE GLOBAL PARA TRANSAÇÕES (compartilhado com TelaInicialLoja)
-let cacheGlobalTransacoes: any[] = []
+let cacheGlobalTransacoes: TipoVenda[] = []
 let cacheGlobalUltimaAtualizacao: number = 0
 
 export default function LojaPaginaVendas() {
@@ -25,15 +25,7 @@ export default function LojaPaginaVendas() {
   const [filtroDescricao, setFiltroDescricao] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('todos')
 
-  useEffect(() => {
-    carregarVendas()
-  }, [])
-
-  useEffect(() => {
-    aplicarFiltros()
-  }, [vendas, filtroDataInicio, filtroDataFim, filtroMes, filtroNumeroTransacao, filtroDescricao, filtroStatus])
-
-  const carregarVendas = async () => {
+  const carregarVendas = useCallback(async () => {
     try {
       const { data, error } = await supabase
         .from('vendas')
@@ -73,9 +65,13 @@ export default function LojaPaginaVendas() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const aplicarFiltros = () => {
+  useEffect(() => {
+    carregarVendas()
+  }, [carregarVendas])
+
+  const aplicarFiltros = useCallback(() => {
     let resultado = [...vendas]
 
     // Verificar se há filtros NÃO de data aplicados
@@ -128,7 +124,11 @@ export default function LojaPaginaVendas() {
     }
 
     setVendasFiltradas(resultado)
-  }
+  }, [vendas, filtroDataInicio, filtroDataFim, filtroMes, filtroNumeroTransacao, filtroDescricao, filtroStatus])
+
+  useEffect(() => {
+    aplicarFiltros()
+  }, [aplicarFiltros])
 
   const gerarPDFVendasFiltradas = () => {
     try {

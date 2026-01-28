@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
 
@@ -29,11 +29,7 @@ export default function ModalLogProduto({ produto, onClose }: ModalLogProdutoPro
   const [logs, setLogs] = useState<LogMovimentacao[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    carregarLogs()
-  }, [produto.id])
-
-  const carregarLogs = async () => {
+  const carregarLogs = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -60,11 +56,11 @@ export default function ModalLogProduto({ produto, onClose }: ModalLogProdutoPro
 
       if (erroCompras) {
         console.error('Erro ao buscar compras:', erroCompras)
-      } else if (compras && compras.length > 0) {
-        console.log(`📦 ${compras.length} compras encontradas`)
+      } else if (compras && (compras as any[]).length > 0) {
+        console.log(`📦 ${(compras as any[]).length} compras encontradas`)
         
-        compras.forEach((compra: any, index: number) => {
-          const compraData = compra.compras
+        ;(compras as any[]).forEach((compra: any, index: number) => {
+          const compraData = compra.compras as { data_compra: string; fornecedor: string; numero_transacao: number } | null
           logsCombinados.push({
             id: `compra-${produto.id}-${compraData?.numero_transacao || 'N'}-${index}`,
             data: compraData?.data_compra || new Date().toISOString(),
@@ -96,11 +92,11 @@ export default function ModalLogProduto({ produto, onClose }: ModalLogProdutoPro
 
       if (erroVendas) {
         console.error('Erro ao buscar vendas:', erroVendas)
-      } else if (vendas && vendas.length > 0) {
-        console.log(`💰 ${vendas.length} vendas encontradas`)
+      } else if (vendas && (vendas as any[]).length > 0) {
+        console.log(`💰 ${(vendas as any[]).length} vendas encontradas`)
         
-        vendas.forEach((venda: any, index: number) => {
-          const vendaData = venda.vendas
+        ;(vendas as any[]).forEach((venda: any, index: number) => {
+          const vendaData = venda.vendas as { data_venda: string; cliente: string; numero_transacao: number } | null
           logsCombinados.push({
             id: `venda-${produto.id}-${vendaData?.numero_transacao || 'N'}-${index}`,
             data: vendaData?.data_venda || new Date().toISOString(),
@@ -124,7 +120,11 @@ export default function ModalLogProduto({ produto, onClose }: ModalLogProdutoPro
     } finally {
       setLoading(false)
     }
-  }
+  }, [produto.id, produto.descricao])
+
+  useEffect(() => {
+    carregarLogs()
+  }, [carregarLogs])
 
   const getTipoBadge = (tipo: string) => {
     const tipos: { [key: string]: { bg: string; text: string; label: string; emoji: string } } = {

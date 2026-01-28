@@ -50,7 +50,7 @@ export default function ModuloCondicional() {
       isNovoCadastro: false,
     },
   ])
-  const [categorias, setCategorias] = useState<any[]>([])
+  const [categorias, setCategorias] = useState<{ id: string; nome: string }[]>([])
   const [transacoes, setTransacoes] = useState<TransacaoCondicional[]>([])
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
@@ -66,16 +66,72 @@ export default function ModuloCondicional() {
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'recebido' | 'enviado'>('todos')
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoCondicional[]>([])
 
-  useEffect(() => {
-    carregarCategorias()
-    carregarTransacoes()
+  const carregarCategorias = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categorias_estoque')
+        .select('*')
+        .order('nome', { ascending: true })
+
+      if (error) throw error
+      setCategorias(data || [])
+      if (data && data.length > 0) {
+        setItens((prev) => [{ ...prev[0], categoria: data[0].nome }])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error)
+    }
+  }, [])
+
+  const carregarTransacoes = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('transacoes_condicionais')
+        .select(`
+          *,
+          itens_condicionais (
+            *,
+            produtos (descricao, categoria)
+          )
+        `)
+        .order('data_transacao', { ascending: false })
+
+      if (error) throw error
+
+      const transacoesFormatadas = data?.map((t: any) => ({
+        id: t.id,
+        numero_transacao: t.numero_transacao,
+        tipo: t.tipo,
+        origem: t.origem,
+        data_transacao: t.data_transacao,
+        observacao: t.observacao,
+        status: t.status,
+        itens: t.itens_condicionais?.map((i: any) => ({
+          id: i.id,
+          produto_id: i.produto_id,
+          descricao: i.produtos?.descricao || '',
+          quantidade: i.quantidade,
+          categoria: i.produtos?.categoria || '',
+          status: i.status,
+          valor_efetivado: i.valor_efetivado,
+          preco_custo: 0,
+          preco_venda: 0,
+        })) || [],
+      })) || []
+
+      setTransacoes(transacoesFormatadas)
+    } catch (error) {
+      console.error('Erro ao carregar transações:', error)
+      setErro('Erro ao carregar transações condicionais')
+    }
   }, [])
 
   useEffect(() => {
-    aplicarFiltros()
-  }, [transacoes, filtroOrigem, filtroDataInicio, filtroDataFim, filtroStatus, filtroTipo])
+    carregarCategorias()
+    carregarTransacoes()
+  }, [carregarCategorias, carregarTransacoes])
 
-  const aplicarFiltros = () => {
+  const aplicarFiltros = useCallback(() => {
     let resultado = [...transacoes]
 
     if (filtroOrigem) {
@@ -101,7 +157,11 @@ export default function ModuloCondicional() {
     }
 
     setTransacoesFiltradas(resultado)
-  }
+  }, [transacoes, filtroOrigem, filtroDataInicio, filtroDataFim, filtroStatus, filtroTipo])
+
+  useEffect(() => {
+    aplicarFiltros()
+  }, [aplicarFiltros])
 
   const limparFiltros = () => {
     setFiltroOrigem('')
@@ -146,65 +206,6 @@ export default function ModuloCondicional() {
     setTransacoesExpandidas(novasExpandidas)
   }
 
-  const carregarCategorias = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('categorias_estoque')
-        .select('*')
-        .order('nome', { ascending: true })
-
-      if (error) throw error
-      setCategorias(data || [])
-      if (data && data.length > 0) {
-        setItens((prev) => [{ ...prev[0], categoria: data[0].nome }])
-      }
-    } catch (error) {
-      console.error('Erro ao carregar categorias:', error)
-    }
-  }
-
-  const carregarTransacoes = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('transacoes_condicionais')
-        .select(`
-          *,
-          itens_condicionais (
-            *,
-            produtos (descricao, categoria)
-          )
-        `)
-        .order('data_transacao', { ascending: false })
-
-      if (error) throw error
-
-      const transacoesFormatadas = data?.map((t: any) => ({
-        id: t.id,
-        numero_transacao: t.numero_transacao,
-        tipo: t.tipo,
-        origem: t.origem,
-        data_transacao: t.data_transacao,
-        observacao: t.observacao,
-        status: t.status,
-        itens: t.itens_condicionais?.map((i: any) => ({
-          id: i.id,
-          produto_id: i.produto_id,
-          descricao: i.produtos?.descricao || '',
-          quantidade: i.quantidade,
-          categoria: i.produtos?.categoria || '',
-          status: i.status,
-          valor_efetivado: i.valor_efetivado,
-          preco_custo: 0,
-          preco_venda: 0,
-        })) || [],
-      })) || []
-
-      setTransacoes(transacoesFormatadas)
-    } catch (error) {
-      console.error('Erro ao carregar transações:', error)
-      setErro('Erro ao carregar transações condicionais')
-    }
-  }
 
   const adicionarItem = () => {
     setItens((prev) =>

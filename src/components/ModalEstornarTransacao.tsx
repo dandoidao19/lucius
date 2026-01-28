@@ -153,7 +153,7 @@ export default function ModalEstornarTransacao({
 
           <p className="text-sm text-gray-600 mb-6">
             <span className="font-bold text-yellow-600">⚠️ ATENÇÃO:</span> Confirmar estorno total desta transação? 
-            Esta ação reverterá o status para "Pendente", limpará a data de pagamento, valor pago e juros/descontos.
+            Esta ação reverterá o status para &quot;Pendente&quot;, limpará a data de pagamento, valor pago e juros/descontos.
           </p>
           
           <div className="flex justify-end space-x-3">
