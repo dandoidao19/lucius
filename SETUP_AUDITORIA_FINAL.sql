@@ -1,10 +1,37 @@
 -- ================================================================
--- SCRIPT CONSOLIDADO DE AUDITORIA E FUNÇÕES (VERSÃO V3 - COMPATÍVEL)
+-- SCRIPT DE LIMPEZA E PADRONIZAÇÃO DE AUDITORIA (VERSÃO V4 - FINAL)
 -- ================================================================
--- Este script configura a tabela de logs, os gatilhos (triggers)
--- e as funções de numeração automática, alinhado à estrutura existente.
+-- Este script remove duplicidades de gatilhos (triggers) e garante
+-- que cada tabela tenha apenas UM registro de auditoria por ação.
 
--- 1. GARANTIR A TABELA DE AUDITORIA COM ESTRUTURA CORRETA
+-- 1. LIMPEZA PROFUNDA DE GATILHOS ANTIGOS
+-- Este bloco identifica e remove QUALQUER gatilho que aponte para a função de auditoria,
+-- eliminando duplicidades causadas por scripts anteriores com nomes diferentes.
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (
+        SELECT tgname, relname
+        FROM pg_trigger t
+        JOIN pg_class c ON t.tgrelid = c.oid
+        JOIN pg_namespace n ON c.relnamespace = n.oid
+        WHERE n.nspname = 'public'
+        AND (
+            tgfoid = 'public.process_audit_log'::regproc
+            OR tgname ILIKE '%audit%'
+        )
+        AND relname IN (
+            'lancamentos_financeiros', 'transacoes_loja', 'produtos',
+            'compras', 'vendas', 'itens_compra', 'itens_venda',
+            'transacoes_condicionais'
+        )
+    ) LOOP
+        EXECUTE format('DROP TRIGGER IF EXISTS %I ON public.%I', r.tgname, r.relname);
+    END LOOP;
+END $$;
+
+-- 2. GARANTIR ESTRUTURA DA TABELA (old_record / new_record)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'auditoria') THEN
@@ -20,12 +47,10 @@ BEGIN
             new_record JSONB
         );
     ELSE
-        -- Garantir nome correto da coluna de tempo (evitar erro 400 por palavra reservada 'timestamp')
+        -- Garantir nomes de colunas compatíveis
         IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='timestamp') THEN
             ALTER TABLE public.auditoria RENAME COLUMN "timestamp" TO data_hora;
         END IF;
-
-        -- Garantir que as colunas de dados usem o nome padrão 'old_record' e 'new_record'
         IF EXISTS (SELECT FROM information_schema.columns WHERE table_name='auditoria' AND column_name='old_data') THEN
             ALTER TABLE public.auditoria RENAME COLUMN "old_data" TO old_record;
         END IF;
@@ -35,18 +60,7 @@ BEGIN
     END IF;
 END $$;
 
--- 2. SEGURANÇA E ACESSOS
-ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "Leitura pública para autenticados" ON public.auditoria;
-CREATE POLICY "Leitura pública para autenticados" ON public.auditoria
-FOR SELECT TO authenticated USING (true);
-
-GRANT ALL ON TABLE public.auditoria TO authenticated;
-GRANT ALL ON TABLE public.auditoria TO service_role;
-GRANT ALL ON TABLE public.auditoria TO postgres;
-
--- 3. FUNÇÃO DE GERAÇÃO DE LOGS (USANDO TO_JSONB E NOMES COMPATÍVEIS)
+-- 3. REINSTALAR FUNÇÃO DE AUDITORIA (UNIFICADA)
 CREATE OR REPLACE FUNCTION public.process_audit_log()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -54,16 +68,12 @@ DECLARE
     v_user_email TEXT;
     v_record_id TEXT;
 BEGIN
-    -- Obter dados do usuário da sessão Supabase
     v_user_id := (auth.uid());
     v_user_email := (auth.jwt() ->> 'email');
 
-    -- Determinar o ID do registro (assume que a coluna se chama 'id')
     BEGIN
-        IF (TG_OP = 'DELETE') THEN
-            v_record_id := OLD.id::text;
-        ELSE
-            v_record_id := NEW.id::text;
+        IF (TG_OP = 'DELETE') THEN v_record_id := OLD.id::text;
+        ELSE v_record_id := NEW.id::text;
         END IF;
     EXCEPTION WHEN OTHERS THEN
         v_record_id := 'unknown';
@@ -86,7 +96,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 4. APLICAR TRIGGERS EM TODAS AS TABELAS RELEVANTES
+-- 4. CRIAR GATILHOS ÚNICOS PADRONIZADOS
 DO $$
 DECLARE
     t text;
@@ -102,15 +112,20 @@ DECLARE
     ];
 BEGIN
     FOREACH t IN ARRAY tables_to_audit LOOP
-        -- Verifica se a tabela existe antes de criar o trigger
         IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = t) THEN
-            EXECUTE format('DROP TRIGGER IF EXISTS tr_audit_%I ON public.%I', t, t);
-            EXECUTE format('CREATE TRIGGER tr_audit_%I AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.process_audit_log()', t, t);
+            -- Nome padrão único: tr_audit_principal_[nome_da_tabela]
+            EXECUTE format('CREATE TRIGGER tr_audit_unique_%I AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.process_audit_log()', t, t);
         END IF;
     END LOOP;
 END $$;
 
--- 5. FUNÇÃO DE PRÓXIMO NÚMERO DE TRANSAÇÃO (FIX PARA LANÇAMENTO AVULSO)
+-- 5. SEGURANÇA
+ALTER TABLE public.auditoria ENABLE ROW LEVEL SECURITY;
+GRANT ALL ON TABLE public.auditoria TO authenticated;
+GRANT ALL ON TABLE public.auditoria TO service_role;
+GRANT ALL ON TABLE public.auditoria TO postgres;
+
+-- 6. FUNÇÃO DE PRÓXIMO NÚMERO (GARANTIR QUE ESTÁ CORRETA)
 CREATE OR REPLACE FUNCTION public.obter_proximo_numero_transacao()
 RETURNS INTEGER AS $$
 DECLARE
@@ -124,11 +139,6 @@ BEGIN
         UNION ALL
         SELECT MAX(numero_transacao) as max_num FROM public.transacoes_loja
     ) as all_trans;
-
     RETURN next_num;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- ================================================================
--- FIM DO SCRIPT
--- ================================================================

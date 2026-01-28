@@ -54,10 +54,14 @@ const LogAuditoria = () => {
       if (dbError) {
         console.error('Erro Supabase Auditoria:', dbError)
         const detalhe = dbError.details || dbError.hint || ''
-        setError(`Erro [${dbError.code}]: ${dbError.message}. ${detalhe} Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA_CONSOLIDADO.sql.`)
+        setError(`Erro [${dbError.code}]: ${dbError.message}. ${detalhe} Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA_FINAL.sql.`)
       } else {
-        setLogs(data as Log[])
-        console.log('Logs carregados:', data?.length)
+        // Remover duplicidades por ID (camada de proteção extra)
+        const uniqueLogs = (data as Log[]).filter((log, index, self) =>
+          index === self.findIndex((t) => t.id === log.id)
+        )
+        setLogs(uniqueLogs)
+        console.log('Logs carregados:', uniqueLogs.length, data?.length !== uniqueLogs.length ? `(Removidos ${data!.length - uniqueLogs.length} duplicados)` : '')
       }
     } catch (err: any) {
       console.error('Erro inesperado auditoria:', err)
