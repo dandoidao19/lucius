@@ -13,6 +13,7 @@ interface Transacao {
   tipo: 'entrada' | 'saida'
   valor_pago?: number | null
   status_pagamento?: string | null
+  observacao?: string | null
 }
 
 interface FormularioLancamentoLojaProps {
@@ -27,6 +28,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   const [data, setData] = useState(getDataAtualBrasil())
   const [tipo, setTipo] = useState('saida')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
+  const [observacao, setObservacao] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -39,12 +41,14 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       setData(lancamentoInicial.data)
       setTipo(lancamentoInicial.tipo)
       setStatusPagamento(lancamentoInicial.status_pagamento || 'pendente')
+      setObservacao(lancamentoInicial.observacao || '')
     } else {
       setClienteFornecedor('')
       setValor(0)
       setData(getDataAtualBrasil())
       setTipo('saida')
       setStatusPagamento('pendente')
+      setObservacao('')
     }
   }, [lancamentoInicial, isEditMode])
 
@@ -72,6 +76,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         status_pagamento: statusPagamento,
         data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
         valor_pago: statusPagamento === 'pago' ? valor : null,
+        observacao: observacao.trim() || null,
       }
 
       if (isEditMode && lancamentoInicial) {
@@ -194,6 +199,19 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
                 <option value="pago">Pago</option>
             </select>
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Observações
+          </label>
+          <textarea
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            placeholder="Notas adicionais sobre este lançamento..."
+            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={2}
+          />
         </div>
 
         <div className="flex items-center gap-2 pt-2">
