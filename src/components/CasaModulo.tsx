@@ -152,13 +152,17 @@ export default function CasaModulo() {
     lancamento: Lancamento | null;
     passo: 'inicial' | 'valor' | 'decisao' | 'nova_data';
     valorPago: number | null;
+    dataPagamento: string;
     novaDataVencimento: string;
+    pagarTotal: boolean;
   }>({
     aberto: false,
     lancamento: null,
     passo: 'inicial',
     valorPago: null,
-    novaDataVencimento: getDataAtualBrasil()
+    dataPagamento: getDataAtualBrasil(),
+    novaDataVencimento: getDataAtualBrasil(),
+    pagarTotal: true
   })
 
   const [modalExcluir, setModalExcluir] = useState<{ aberto: boolean; lancamento: Lancamento | null }>({
@@ -370,14 +374,13 @@ export default function CasaModulo() {
   }
 
   const processarPagamento = async (criarNovaParcela: boolean = false) => {
-    const { lancamento, valorPago } = modalPagar
+    const { lancamento, valorPago, dataPagamento, novaDataVencimento } = modalPagar
     
     if (!lancamento || !user) return
 
     setLoading(true)
 
     try {
-      const dataAtual = getDataAtualBrasil()
       const valorOriginal = lancamento.valor
       const valorPagoFinal = valorPago !== null ? valorPago : valorOriginal
       const valorRestante = Math.max(0, valorOriginal - valorPagoFinal)
@@ -402,7 +405,7 @@ export default function CasaModulo() {
         .update([{
           status: 'realizado',
           valor: valorPagoFinal,
-          data_lancamento: dataAtual,
+          data_lancamento: dataPagamento,
           descricao: novaDescricaoOriginal,
           parcelamento: novoParcelamento
         }])
@@ -420,8 +423,8 @@ export default function CasaModulo() {
           valor: valorRestante,
           tipo: lancamento.tipo,
           centro_custo_id: lancamento.centro_custo_id,
-          data_lancamento: modalPagar.novaDataVencimento,
-          data_prevista: modalPagar.novaDataVencimento,
+          data_lancamento: novaDataVencimento,
+          data_prevista: novaDataVencimento,
           status: 'previsto',
           caixa_id: lancamento.caixa_id || CAIXA_ID_CASA,
           origem: lancamento.origem,
@@ -442,7 +445,9 @@ export default function CasaModulo() {
         lancamento: null, 
         passo: 'inicial',
         valorPago: null, 
-        novaDataVencimento: getDataAtualBrasil() 
+        dataPagamento: getDataAtualBrasil(),
+        novaDataVencimento: getDataAtualBrasil(),
+        pagarTotal: true
       })
 
       alert('✅ Pagamento processado com sucesso!')
@@ -1057,7 +1062,15 @@ export default function CasaModulo() {
                             </button>
                             {lancamento.status === 'previsto' && (
                               <button
-                                onClick={() => setModalPagar({...modalPagar, aberto: true, lancamento})}
+                                onClick={() => setModalPagar({
+                                  aberto: true,
+                                  lancamento,
+                                  passo: 'inicial',
+                                  valorPago: null,
+                                  dataPagamento: getDataAtualBrasil(),
+                                  novaDataVencimento: getDataAtualBrasil(),
+                                  pagarTotal: true
+                                })}
                                 className="text-green-500 hover:text-green-700 font-bold"
                                 title="Pagar"
                               >

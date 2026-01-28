@@ -29,7 +29,9 @@ interface ModalPagarState {
   lancamento: Lancamento | null
   passo: PassoPagamentoCasa
   valorPago: number | null
+  dataPagamento: string
   novaDataVencimento: string
+  pagarTotal: boolean
 }
 
 interface ModalPagarAvancadoProps {
@@ -53,7 +55,9 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
     lancamento: null, 
     passo: 'inicial',
     valorPago: null, 
-    novaDataVencimento: getDataAtualBrasil() 
+    dataPagamento: getDataAtualBrasil(),
+    novaDataVencimento: getDataAtualBrasil(),
+    pagarTotal: true
   })
 
   const avancarPasso = (passo: PassoPagamentoCasa, valor?: number) => {
@@ -61,7 +65,6 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
       ...prev,
       passo,
       valorPago: valor !== undefined ? valor : prev.valorPago,
-      novaDataVencimento: prev.novaDataVencimento || getDataAtualBrasil()
     }))
   }
 
@@ -70,8 +73,21 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
     setModalPagar(prev => ({ ...prev, valorPago: isNaN(valor) ? null : valor }))
   }
 
+  const handleDataPagamentoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setModalPagar(prev => ({ ...prev, dataPagamento: e.target.value }))
+  }
+
   const handleNovaDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setModalPagar(prev => ({ ...prev, novaDataVencimento: e.target.value }))
+  }
+
+  const handlePagarTotalToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked
+    setModalPagar(prev => ({
+      ...prev,
+      pagarTotal: checked,
+      valorPago: checked ? null : prev.valorPago
+    }))
   }
 
   const renderPasso = () => {
@@ -84,37 +100,51 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <div className="h-1 w-12 bg-green-500 rounded"></div>
             </div>
             
-            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-6 rounded">
-              <p className="text-sm text-gray-700">
-                <span className="font-semibold">Lançamento:</span> {lancamento.descricao}
-              </p>
-              <p className="text-sm text-gray-700 mt-2">
-                <span className="font-semibold">Valor Total:</span> <span className="text-lg font-bold text-green-600">R$ {lancamento.valor.toFixed(2)}</span>
-              </p>
+            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded text-sm space-y-1">
+              <p><span className="font-semibold text-gray-700">Lançamento:</span> {lancamento.descricao}</p>
+              <p><span className="font-semibold text-gray-700">Valor Total:</span> <span className="text-lg font-bold text-green-700">R$ {lancamento.valor.toFixed(2)}</span></p>
             </div>
 
-            <p className="text-sm text-gray-600 mb-6">
-              Deseja pagar o valor total deste lançamento?
-            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Data do Pagamento *</label>
+                <input
+                  type="date"
+                  value={modalPagar.dataPagamento}
+                  onChange={handleDataPagamentoChange}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="pagarTotalCasa"
+                  checked={modalPagar.pagarTotal}
+                  onChange={handlePagarTotalToggle}
+                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                />
+                <label htmlFor="pagarTotalCasa" className="ml-2 text-sm font-medium text-gray-700">
+                  Pagar valor total deste lançamento
+                </label>
+              </div>
+            </div>
             
-            <div className="flex justify-end space-x-3">
+            <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={fecharModal}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => avancarPasso('valor', 0)}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-yellow-100 rounded-lg hover:bg-yellow-200 transition-colors"
+                onClick={() => {
+                  if (modalPagar.pagarTotal) processarPagamento(false)
+                  else avancarPasso('valor', 0)
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
               >
-                Pagamento Parcial
-              </button>
-              <button
-                onClick={() => processarPagamento(false)}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-              >
-                Pagar Total
+                {modalPagar.pagarTotal ? 'Confirmar Pagamento' : 'Próximo'}
               </button>
             </div>
           </>
@@ -127,32 +157,24 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <div className="h-1 w-12 bg-yellow-500 rounded"></div>
             </div>
             
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-6 rounded">
-              <p className="text-sm text-gray-700">
-                <span className="font-semibold">Lançamento:</span> {lancamento.descricao}
-              </p>
-              <p className="text-sm text-gray-700 mt-2">
-                <span className="font-semibold">Valor Original:</span> <span className="text-lg font-bold text-yellow-600">R$ {lancamento.valor.toFixed(2)}</span>
-              </p>
-            </div>
-
-            <div className="mb-6">
+            <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Quanto você está pagando? *</label>
               <input
                 type="number"
                 step="0.01"
                 value={modalPagar.valorPago === null ? '' : modalPagar.valorPago}
                 onChange={handleValorPagoChange}
-                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 outline-none text-sm"
                 placeholder="0.00"
                 autoFocus
               />
+              <p className="text-xs text-gray-500 mt-2">Valor original: R$ {lancamento.valor.toFixed(2)}</p>
             </div>
             
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => avancarPasso('inicial')}
-                className="px-4 py-2.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Voltar
               </button>
@@ -169,7 +191,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
                   }
                 }}
                 disabled={modalPagar.valorPago === null || modalPagar.valorPago <= 0}
-                className="px-4 py-2.5 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 disabled:opacity-50 transition-colors"
               >
                 Próximo
               </button>
@@ -228,7 +250,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
                 type="date"
                 value={modalPagar.novaDataVencimento}
                 onChange={handleNovaDataChange}
-                className="block w-full px-3 py-2.5 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-sm"
                 autoFocus
               />
               <p className="text-xs text-gray-500 mt-2">
@@ -246,7 +268,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <button
                 onClick={() => processarPagamento(true)}
                 disabled={!modalPagar.novaDataVencimento}
-                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
               >
                 Confirmar e Gerar Parcela
               </button>
