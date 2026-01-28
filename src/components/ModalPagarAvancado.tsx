@@ -2,31 +2,13 @@
 
 import React from 'react'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
-
-// Interfaces sincronizadas com o CasaModulo
-interface Lancamento {
-  id: string
-  descricao: string
-  valor: number
-  tipo: 'entrada' | 'saida'
-  data_lancamento?: string
-  data_prevista?: string
-  centro_custo_id: string
-  status: 'previsto' | 'realizado'
-  parcelamento?: { atual: number; total: number }
-  recorrencia?: unknown
-  caixa_id?: string
-  origem?: string
-  centros_de_custo?: {
-    nome: string
-  }
-}
+import { LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 
 export type PassoPagamentoCasa = 'inicial' | 'valor' | 'decisao' | 'nova_data'
 
 interface ModalPagarState {
   aberto: boolean
-  lancamento: Lancamento | null
+  lancamento: LancamentoFinanceiro | null
   passo: PassoPagamentoCasa
   valorPago: number | null
   dataPagamento: string
@@ -299,7 +281,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 overflow-y-auto h-full w-full z-50 flex justify-center items-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-md max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           {renderPasso()}
         </div>

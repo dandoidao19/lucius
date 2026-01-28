@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
 import SeletorProduto from './SeletorProduto'

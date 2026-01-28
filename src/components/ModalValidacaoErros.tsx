@@ -177,7 +177,7 @@ export default function ModalValidacaoErros({
                               <div className="font-medium text-red-800">{erro.campo}</div>
                               <div className="text-sm text-red-700 mt-1">{erro.mensagem}</div>
                               <div className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded font-mono">
-                                Valor recebido: <span className="font-semibold">&quot;{erro.valor}&quot;</span>
+                                Valor recebido: <span className="font-semibold">&quot;{String(erro.valor)}&quot;</span>
                               </div>
                             </div>
                           </div>

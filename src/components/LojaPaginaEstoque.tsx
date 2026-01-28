@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import ModalEditarProduto from './ModalEditarProduto'
 import ModalLogProduto from './ModalLogProduto'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
-import { formatarDataParaExibicao } from '@/lib/dateUtils' // ADICIONADO: Importação corrigida
+import { formatarDataParaExibicao } from '@/lib/dateUtils'
 
 interface Produto {
   id: string
@@ -59,18 +59,10 @@ export default function LojaPaginaEstoque() {
     }
   }, [])
 
-  useEffect(() => {
-    carregarProdutos()
-  }, [carregarProdutos])
-
-  useEffect(() => {
-    aplicarFiltrosEOrdenacao()
-  }, [aplicarFiltrosEOrdenacao])
-
   const aplicarFiltrosEOrdenacao = useCallback(() => {
     let resultado = [...produtos]
 
-    // TAREFA 2.1: Aplicar prioridade de ordenação: saldo positivo → negativo → zerado
+    // Aplicar prioridade de ordenação: saldo positivo → negativo → zerado
     resultado.sort((a, b) => {
       const qtdA = (a.quantidade || 0)
       const qtdB = (b.quantidade || 0)
@@ -133,7 +125,15 @@ export default function LojaPaginaEstoque() {
     setProdutosCondicionais(condicionais)
   }, [produtos, filtroDescricao, filtroCodigo, filtroStatus, ordenacaoPor, ordenacaoDirecao])
 
-  // CORREÇÃO: Funções para calcular os novos valores do estoque
+  useEffect(() => {
+    carregarProdutos()
+  }, [carregarProdutos])
+
+  useEffect(() => {
+    aplicarFiltrosEOrdenacao()
+  }, [aplicarFiltrosEOrdenacao])
+
+  // Funções para calcular os novos valores do estoque
   const calcularValorRealizadoVenda = () => {
     return produtosFiltrados.reduce((total, produto) => {
       if ((produto.status_item || 'resolvido') === 'resolvido') {
@@ -517,7 +517,6 @@ export default function LojaPaginaEstoque() {
                         R$ {(Number(produto.preco_venda) || 0).toFixed(2)}
                       </td>
                       <td className="px-1.5 py-1 text-gray-600 text-xs">
-                        {/* CORREÇÃO: Usar formatarDataParaExibicao para data correta */}
                         {formatarDataParaExibicao(produto.data_ultima_compra)}
                       </td>
                       <td className="px-1.5 py-1 text-center">
