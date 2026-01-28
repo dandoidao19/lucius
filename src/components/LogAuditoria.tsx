@@ -67,13 +67,89 @@ const LogAuditoria = () => {
     fetchLogs()
   }, [])
 
-  const renderJsonData = (data: Record<string, unknown> | null) => {
-    if (!data) return <span className="text-gray-400">N/A</span>
-    return (
-      <pre className="bg-gray-100 p-2 rounded text-xs whitespace-pre-wrap break-all">
-        {JSON.stringify(data, null, 2)}
-      </pre>
-    )
+  const renderAlteracoes = (log: Log) => {
+    const { action, old_data, new_data } = log
+
+    if (action === 'INSERT') {
+      return (
+        <div className="space-y-2">
+          <p className="font-semibold text-green-700">Resumo da Inclusão:</p>
+          <div className="grid grid-cols-1 gap-1">
+            {Object.entries(new_data || {}).map(([key, value]) => (
+              <div key={key} className="flex border-b border-gray-100 py-1">
+                <span className="font-medium w-1/3 text-gray-600">{key}:</span>
+                <span className="w-2/3 break-all">{String(value ?? '—')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    if (action === 'DELETE') {
+      return (
+        <div className="space-y-2">
+          <p className="font-semibold text-red-700">Dados Excluídos:</p>
+          <div className="grid grid-cols-1 gap-1">
+            {Object.entries(old_data || {}).map(([key, value]) => (
+              <div key={key} className="flex border-b border-gray-100 py-1 text-gray-500 italic">
+                <span className="font-medium w-1/3">{key}:</span>
+                <span className="w-2/3 break-all">{String(value ?? '—')}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    if (action === 'UPDATE') {
+      const changes: { field: string; old: unknown; new: unknown }[] = []
+
+      const allKeys = new Set([
+        ...Object.keys(old_data || {}),
+        ...Object.keys(new_data || {})
+      ])
+
+      allKeys.forEach(key => {
+        const oldVal = (old_data as Record<string, unknown>)?.[key]
+        const newVal = (new_data as Record<string, unknown>)?.[key]
+
+        // Compara valores (convertendo para string para simplificar comparação de datas/números)
+        if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+          changes.push({ field: key, old: oldVal, new: newVal })
+        }
+      })
+
+      if (changes.length === 0) return <p className="text-gray-500 italic">Nenhuma alteração detectada nos campos.</p>
+
+      return (
+        <div className="space-y-3">
+          <p className="font-semibold text-yellow-700">Campos Alterados:</p>
+          <div className="overflow-hidden border border-gray-200 rounded-lg">
+            <table className="min-w-full divide-y divide-gray-200 text-xs">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left font-bold text-gray-700">Campo</th>
+                  <th className="px-3 py-2 text-left font-bold text-gray-700">Valor Antigo</th>
+                  <th className="px-3 py-2 text-left font-bold text-gray-700">Valor Novo</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {changes.map(change => (
+                  <tr key={change.field}>
+                    <td className="px-3 py-2 font-medium text-gray-900 bg-gray-50/50">{change.field}</td>
+                    <td className="px-3 py-2 text-red-600 line-through bg-red-50/30">{String(change.old ?? '—')}</td>
+                    <td className="px-3 py-2 text-green-700 font-semibold bg-green-50/30">{String(change.new ?? '—')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )
+    }
+
+    return null
   }
 
   return (
@@ -145,14 +221,33 @@ const LogAuditoria = () => {
               <p><strong>ID do Registro:</strong> {selectedLog.record_id}</p>
             </div>
             
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-bold text-sm mb-2">Dados Antigos (Old)</h4>
-                {renderJsonData(selectedLog.old_data)}
-              </div>
-              <div>
-                <h4 className="font-bold text-sm mb-2">Dados Novos (New)</h4>
-                {renderJsonData(selectedLog.new_data)}
+            <div className="mt-6 border-t pt-4">
+              {renderAlteracoes(selectedLog)}
+            </div>
+
+            <div className="mt-8 pt-4 border-t border-dashed border-gray-200">
+              <button
+                onClick={(e) => {
+                  const el = e.currentTarget.nextElementSibling
+                  if (el) el.classList.toggle('hidden')
+                }}
+                className="text-[10px] text-gray-400 hover:text-gray-600 underline uppercase tracking-widest"
+              >
+                Ver JSON Bruto
+              </button>
+              <div className="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase">Dados Originais (Old)</h4>
+                  <pre className="bg-gray-50 p-2 rounded text-[10px] text-gray-500 overflow-x-auto">
+                    {JSON.stringify(selectedLog.old_data, null, 2)}
+                  </pre>
+                </div>
+                <div>
+                  <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase">Novos Dados (New)</h4>
+                  <pre className="bg-gray-50 p-2 rounded text-[10px] text-gray-500 overflow-x-auto">
+                    {JSON.stringify(selectedLog.new_data, null, 2)}
+                  </pre>
+                </div>
               </div>
             </div>
 
