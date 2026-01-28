@@ -5,6 +5,7 @@ import { QueryProvider } from "@/providers/QueryProvider";
 import { RealtimeSubscriber } from "@/components/RealtimeSubscriber";
 import CabecalhoSistema from "@/components/CabecalhoSistema";
 import AtalhosGlobais from "@/components/AtalhosGlobais";
+import { DadosFinanceirosProvider } from "@/context/DadosFinanceirosContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,15 +33,17 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <RealtimeSubscriber />
-          {/* Cabeçalho do Sistema LUCIUS com Logos */}
-          <CabecalhoSistema />
+          <DadosFinanceirosProvider>
+            <RealtimeSubscriber />
+            {/* Cabeçalho do Sistema LUCIUS com Logos */}
+            <CabecalhoSistema />
 
-          {/* Conteúdo das páginas */}
-          {children}
+            {/* Conteúdo das páginas */}
+            {children}
 
-          {/* Atalhos Globais (Balões Flutuantes) */}
-          <AtalhosGlobais />
+            {/* Atalhos Globais (Balões Flutuantes) */}
+            <AtalhosGlobais />
+          </DadosFinanceirosProvider>
         </QueryProvider>
       </body>
     </html>

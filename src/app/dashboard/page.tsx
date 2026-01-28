@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { DadosFinanceirosProvider } from '@/context/DadosFinanceirosContext'
 import { isDevFeaturesEnabled } from '@/lib/envUtils'
 
 const ResumoCaixas = dynamic(() => import('@/components/ResumoCaixas'), { ssr: false })
@@ -94,74 +93,72 @@ export default function Dashboard() {
   }
 
   return (
-    <DadosFinanceirosProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <div className="container mx-auto px-3 py-2">
-          {/* Header com Usuário e Logout - COMPACTADO */}
-          <div className="flex justify-between items-center mb-2">
-            <div>
-              <h1 className="text-lg md:text-xl font-bold text-gray-800">
-                {getTitleBySection()}
-              </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
-                Bem-vindo, <span className="font-semibold text-gray-800">{user?.email}</span>
-              </p>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors shadow-md text-xs"
-            >
-              🚪 Sair
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+      <div className="container mx-auto px-3 py-2">
+        {/* Header com Usuário e Logout - COMPACTADO */}
+        <div className="flex justify-between items-center mb-2">
+          <div>
+            <h1 className="text-lg md:text-xl font-bold text-gray-800">
+              {getTitleBySection()}
+            </h1>
+            <p className="text-xs text-gray-600 mt-0.5">
+              Bem-vindo, <span className="font-semibold text-gray-800">{user?.email}</span>
+            </p>
           </div>
-
-          {/* Menu de Navegação com Ícones - COMPACTADO */}
-          <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
-            <div className="flex flex-wrap gap-1">
-              {menuItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
-                >
-                  <span>{item.icon}</span>
-                  <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Conteúdo Dinâmico */}
-          {isDevFeaturesEnabled() && activeSection === 'dashboard' && (
-            <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-1">
-                <ResumoCaixas />
-              </div>
-              <div className="col-span-2">
-                {/* Espaço para futuros componentes */}
-              </div>
-            </div>
-          )}
-
-          {activeSection === 'casa' && (
-            <div>
-              <CasaModulo />
-            </div>
-          )}
-
-          {activeSection === 'loja' && (
-            <div>
-              <LojaModulo />
-            </div>
-          )}
-
-          {activeSection === 'configuracoes' && (
-            <div>
-              <ModuloConfiguracoes />
-            </div>
-          )}
+          <button
+            onClick={handleLogout}
+            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors shadow-md text-xs"
+          >
+            🚪 Sair
+          </button>
         </div>
+
+        {/* Menu de Navegação com Ícones - COMPACTADO */}
+        <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
+          <div className="flex flex-wrap gap-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
+              >
+                <span>{item.icon}</span>
+                <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Conteúdo Dinâmico */}
+        {isDevFeaturesEnabled() && activeSection === 'dashboard' && (
+          <div className="grid grid-cols-3 gap-4">
+            <div className="col-span-1">
+              <ResumoCaixas />
+            </div>
+            <div className="col-span-2">
+              {/* Espaço para futuros componentes */}
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'casa' && (
+          <div>
+            <CasaModulo />
+          </div>
+        )}
+
+        {activeSection === 'loja' && (
+          <div>
+            <LojaModulo />
+          </div>
+        )}
+
+        {activeSection === 'configuracoes' && (
+          <div>
+            <ModuloConfiguracoes />
+          </div>
+        )}
       </div>
-    </DadosFinanceirosProvider>
+    </div>
   )
 }
