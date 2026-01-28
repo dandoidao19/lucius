@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { isDevFeaturesEnabled } from '@/lib/envUtils'
+import { User } from '@supabase/supabase-js'
 
 const ResumoCaixas = dynamic(() => import('@/components/ResumoCaixas'), { ssr: false })
 const CasaModulo = dynamic(() => import('@/components/CasaModulo'), { ssr: false })
@@ -13,7 +14,7 @@ const ModuloConfiguracoes = dynamic(() => import('@/components/ModuloConfiguraco
 const LojaModulo = dynamic(() => import('@/components/LojaModulo'), { ssr: false })
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeSection, setActiveSection] = useState('dashboard') // Inicia em 'dashboard' por padrão
   const router = useRouter()

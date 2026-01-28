@@ -7,6 +7,26 @@ import SeletorProduto from './SeletorProduto'
 
 type TipoTransacao = 'venda' | 'compra' | 'pedido_venda' | 'pedido_compra' | 'condicional_cliente' | 'condicional_fornecedor'
 
+interface ItemTransacao {
+  id: string
+  produto_id: string | null
+  descricao: string
+  quantidade: number
+  categoria: string
+  preco_custo: number
+  valor_repasse: number
+  preco_venda: number
+  estoque_atual: number
+  minimizado: boolean
+  isNovoCadastro: boolean
+}
+
+interface Categoria {
+  id: string
+  nome: string
+  percentual_repasse?: number
+}
+
 interface ModalTransacaoUnificadaProps {
   aberto: boolean
   onClose: () => void
@@ -17,7 +37,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
   const [tipo, setTipo] = useState<TipoTransacao | ''>('')
   const [data, setData] = useState(getDataAtualBrasil())
   const [entidade, setEntidade] = useState('') // Cliente ou Fornecedor
-  const [itens, setItens] = useState<any[]>([
+  const [itens, setItens] = useState<ItemTransacao[]>([
     {
       id: Date.now().toString(),
       produto_id: null,
@@ -36,11 +56,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
   const [prazoParcelas, setPrazoParcelas] = useState('mensal')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
   const [dataVencimento, setDataVencimento] = useState(getDataAtualBrasil())
-  const [categorias, setCategorias] = useState<any[]>([])
+  const [categorias, setCategorias] = useState<Categoria[]>([])
   const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
   const [observacao, setObservacao] = useState('')
   const [loading, setLoading] = useState(false)
-  const [erro, setErro] = useState('')
+  const [, setErro] = useState('')
 
   useEffect(() => {
     if (aberto) {
@@ -107,7 +127,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     }
   }
 
-  const atualizarItem = (idItem: string, campo: string, valor: any) => {
+  const atualizarItem = (idItem: string, campo: keyof ItemTransacao, valor: string | number | boolean | null) => {
     setItens(prevItens => {
       const novosItens = prevItens.map(item => {
         if (item.id === idItem) {
@@ -155,7 +175,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     setResetSeletorKey(Date.now())
   }
 
-  const selecionarProduto = (produto: any, idItem: string) => {
+  const selecionarProduto = (produto: { id: string; descricao?: string; preco_custo?: number; categoria?: string; preco_venda?: number; quantidade?: number }, idItem: string) => {
     const precoCusto = produto.preco_custo || 0
     const categoriaNome = produto.categoria || ''
     const categoriaSelecionada = categorias.find(cat => cat.nome === categoriaNome)
@@ -197,8 +217,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     vencimento: string,
     qtdParcelas: number,
     prazo: string,
-    tipoFinanceiro: 'entrada' | 'saida',
-    numTransacaoOriginal: number
+    tipoFinanceiro: 'entrada' | 'saida'
   ) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -282,7 +301,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
         if (erroVenda) throw erroVenda
 
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', numTransacao)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada')
 
         for (const item of itensValidos) {
           if (item.produto_id) {
@@ -316,7 +335,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
         if (erroCompra) throw erroCompra
 
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', numTransacao)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida')
 
         for (const item of itensValidos) {
           if (item.produto_id) {
@@ -335,9 +354,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       alert('✅ Transação gerada com sucesso!')
       onSucesso()
       handleFechar()
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar transação'
       console.error(err)
-      setErro(err.message || 'Erro ao gerar transação')
+      setErro(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -404,9 +424,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       alert('✅ Pedido/Condicional gerado com sucesso!')
       onSucesso()
       handleFechar()
-    } catch (err: any) {
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar pedido'
       console.error(err)
-      setErro(err.message || 'Erro ao gerar pedido')
+      setErro(errorMsg)
     } finally {
       setLoading(false)
     }
