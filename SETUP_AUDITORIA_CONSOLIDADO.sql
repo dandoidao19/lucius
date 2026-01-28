@@ -1,8 +1,8 @@
 -- ================================================================
--- SCRIPT CONSOLIDADO DE AUDITORIA E FUNÇÕES (VERSÃO FINAL)
+-- SCRIPT CONSOLIDADO DE AUDITORIA E FUNÇÕES (VERSÃO V2 - ROBUSTA)
 -- ================================================================
 -- Este script configura a tabela de logs, os gatilhos (triggers)
--- e as funções de numeração automática necessárias para o sistema.
+-- e as funções de numeração automática com máxima compatibilidade.
 
 -- 1. GARANTIR A TABELA DE AUDITORIA COM ESTRUTURA CORRETA
 DO $$
@@ -38,32 +38,45 @@ GRANT ALL ON TABLE public.auditoria TO authenticated;
 GRANT ALL ON TABLE public.auditoria TO service_role;
 GRANT ALL ON TABLE public.auditoria TO postgres;
 
--- 3. FUNÇÃO DE GERAÇÃO DE LOGS (CAPTURANDO NEW E OLD)
+-- 3. FUNÇÃO DE GERAÇÃO DE LOGS (USANDO TO_JSONB)
 CREATE OR REPLACE FUNCTION public.process_audit_log()
 RETURNS TRIGGER AS $$
 DECLARE
     v_user_id UUID;
     v_user_email TEXT;
+    v_record_id TEXT;
 BEGIN
+    -- Obter dados do usuário da sessão Supabase
     v_user_id := (auth.uid());
     v_user_email := (auth.jwt() ->> 'email');
 
+    -- Determinar o ID do registro (assume que a coluna se chama 'id')
+    BEGIN
+        IF (TG_OP = 'DELETE') THEN
+            v_record_id := OLD.id::text;
+        ELSE
+            v_record_id := NEW.id::text;
+        END IF;
+    EXCEPTION WHEN OTHERS THEN
+        v_record_id := 'unknown';
+    END;
+
     IF (TG_OP = 'INSERT') THEN
         INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, new_data)
-        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, (row_to_json(NEW)->>'id')::text, row_to_json(NEW)::jsonb);
+        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(NEW));
         RETURN NEW;
     ELSIF (TG_OP = 'UPDATE') THEN
         INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_data, new_data)
-        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, (row_to_json(OLD)->>'id')::text, row_to_json(OLD)::jsonb, row_to_json(NEW)::jsonb);
+        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(OLD), to_jsonb(NEW));
         RETURN NEW;
     ELSIF (TG_OP = 'DELETE') THEN
         INSERT INTO public.auditoria (user_id, user_email, action, table_name, record_id, old_data)
-        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, (row_to_json(OLD)->>'id')::text, row_to_json(OLD)::jsonb);
+        VALUES (v_user_id, v_user_email, TG_OP, TG_TABLE_NAME, v_record_id, to_jsonb(OLD));
         RETURN OLD;
     END IF;
     RETURN NULL;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 4. APLICAR TRIGGERS EM TODAS AS TABELAS RELEVANTES
 DO $$
@@ -81,8 +94,11 @@ DECLARE
     ];
 BEGIN
     FOREACH t IN ARRAY tables_to_audit LOOP
-        EXECUTE format('DROP TRIGGER IF EXISTS tr_audit_%I ON public.%I', t, t);
-        EXECUTE format('CREATE TRIGGER tr_audit_%I AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.process_audit_log()', t, t);
+        -- Verifica se a tabela existe antes de criar o trigger
+        IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = t) THEN
+            EXECUTE format('DROP TRIGGER IF EXISTS tr_audit_%I ON public.%I', t, t);
+            EXECUTE format('CREATE TRIGGER tr_audit_%I AFTER INSERT OR UPDATE OR DELETE ON public.%I FOR EACH ROW EXECUTE FUNCTION public.process_audit_log()', t, t);
+        END IF;
     END LOOP;
 END $$;
 

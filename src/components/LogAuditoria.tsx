@@ -18,66 +18,85 @@ interface Log {
 const LogAuditoria = () => {
   const [logs, setLogs] = useState<Log[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedLog, setSelectedLog] = useState<Log | null>(null)
 
-  useEffect(() => {
-    const fetchLogs = async () => {
-      setLoading(true)
-      setError(null)
+  const fetchLogs = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true)
+    else setLoading(true)
 
-      try {
-        // 1. Verificar Sessão (necessário para as políticas de segurança)
-        const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    setError(null)
 
-        if (sessionError) {
-          setError(`Erro de autenticação: ${sessionError.message}`)
-          setLoading(false)
-          return
-        }
+    try {
+      // 1. Verificar Sessão (necessário para as políticas de segurança)
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
 
-        if (!sessionData.session) {
-          setError("Você precisa estar logado para acessar os logs de auditoria.")
-          setLoading(false)
-          return
-        }
-
-        // 2. Buscar Logs
-        const { data, error: dbError } = await supabase
-          .from('auditoria')
-          .select('*')
-          .order('data_hora', { ascending: false })
-          .limit(1000)
-
-        if (dbError) {
-          console.error('Erro Supabase Auditoria:', dbError)
-          const detalhe = dbError.details || dbError.hint || ''
-          setError(`Erro [${dbError.code}]: ${dbError.message}. ${detalhe} Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA.sql.`)
-        } else {
-          setLogs(data as Log[])
-        }
-      } catch (err: any) {
-        console.error('Erro inesperado auditoria:', err)
-        setError(`Erro inesperado: ${err.message || JSON.stringify(err)}`)
-      } finally {
-        setLoading(false)
+      if (sessionError) {
+        setError(`Erro de autenticação: ${sessionError.message}`)
+        return
       }
-    }
 
+      if (!sessionData.session) {
+        setError("Você precisa estar logado para acessar os logs de auditoria.")
+        return
+      }
+
+      // 2. Buscar Logs
+      const { data, error: dbError } = await supabase
+        .from('auditoria')
+        .select('*')
+        .order('data_hora', { ascending: false })
+        .limit(1000)
+
+      if (dbError) {
+        console.error('Erro Supabase Auditoria:', dbError)
+        const detalhe = dbError.details || dbError.hint || ''
+        setError(`Erro [${dbError.code}]: ${dbError.message}. ${detalhe} Certifique-se de que a tabela "auditoria" existe e você executou o script SETUP_AUDITORIA_CONSOLIDADO.sql.`)
+      } else {
+        setLogs(data as Log[])
+        console.log('Logs carregados:', data?.length)
+      }
+    } catch (err: any) {
+      console.error('Erro inesperado auditoria:', err)
+      setError(`Erro inesperado: ${err.message || JSON.stringify(err)}`)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+    }
+  }
+
+  useEffect(() => {
     fetchLogs()
   }, [])
 
   const renderAlteracoes = (log: Log) => {
     const { action, old_data, new_data } = log
 
+    console.log(`Diagnosticando log #${log.id}:`, { action, old_data, new_data })
+
+    // Função auxiliar para garantir que tratamos os dados como objeto
+    const normalizeData = (data: any): Record<string, unknown> => {
+      if (!data) return {}
+      if (typeof data === 'string') {
+        try { return JSON.parse(data) } catch { return { raw_text: data } }
+      }
+      return data as Record<string, unknown>
+    }
+
+    const normalizedNew = normalizeData(new_data)
+    const normalizedOld = normalizeData(old_data)
+
+    console.log(`Normalizado #${log.id}:`, { normalizedNew, normalizedOld })
+
     if (action === 'INSERT') {
-      const entries = Object.entries(new_data || {})
+      const entries = Object.entries(normalizedNew)
 
       if (entries.length === 0) {
         return (
           <div className="bg-gray-50 p-4 rounded border border-dashed border-gray-300 text-center">
             <p className="text-gray-500 text-sm italic">Nenhum dado detalhado foi capturado para esta inclusão.</p>
-            <p className="text-[10px] text-gray-400 mt-1">Verifique se o trigger no Supabase está configurado corretamente com row_to_json(NEW).</p>
+            <p className="text-[10px] text-gray-400 mt-1">DICA: Execute o script SETUP_AUDITORIA_CONSOLIDADO.sql (V2) e realize um NOVO lançamento para testar.</p>
           </div>
         )
       }
@@ -98,7 +117,7 @@ const LogAuditoria = () => {
     }
 
     if (action === 'DELETE') {
-      const entries = Object.entries(old_data || {})
+      const entries = Object.entries(normalizedOld)
 
       if (entries.length === 0) {
         return (
@@ -127,13 +146,13 @@ const LogAuditoria = () => {
       const changes: { field: string; old: unknown; new: unknown }[] = []
 
       const allKeys = new Set([
-        ...Object.keys(old_data || {}),
-        ...Object.keys(new_data || {})
+        ...Object.keys(normalizedOld),
+        ...Object.keys(normalizedNew)
       ])
 
       allKeys.forEach(key => {
-        const oldVal = (old_data as Record<string, unknown>)?.[key]
-        const newVal = (new_data as Record<string, unknown>)?.[key]
+        const oldVal = normalizedOld[key]
+        const newVal = normalizedNew[key]
 
         // Compara valores (convertendo para string para simplificar comparação de datas/números)
         if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
@@ -175,7 +194,16 @@ const LogAuditoria = () => {
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-md">
-      <h2 className="text-lg font-bold mb-4 text-gray-800">Log de Auditoria do Sistema</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold text-gray-800">Log de Auditoria do Sistema</h2>
+        <button
+          onClick={() => fetchLogs(true)}
+          disabled={loading || refreshing}
+          className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs transition-colors flex items-center gap-2"
+        >
+          {refreshing ? '🔄 Atualizando...' : '🔃 Atualizar Lista'}
+        </button>
+      </div>
 
       {loading && <p className="text-sm text-gray-600">Carregando logs...</p>}
       {error && <p className="text-sm text-red-600 bg-red-100 p-3 rounded">{error}</p>}
@@ -259,15 +287,20 @@ const LogAuditoria = () => {
             </div>
 
             <div className="mt-8 pt-4 border-t border-dashed border-gray-200">
-              <button
-                onClick={(e) => {
-                  const el = e.currentTarget.nextElementSibling
-                  if (el) el.classList.toggle('hidden')
-                }}
-                className="text-[10px] text-gray-400 hover:text-gray-600 underline uppercase tracking-widest"
-              >
-                Ver JSON Bruto
-              </button>
+              <div className="flex justify-between items-center mb-4">
+                <button
+                  onClick={(e) => {
+                    const el = e.currentTarget.parentElement?.nextElementSibling
+                    if (el) el.classList.toggle('hidden')
+                  }}
+                  className="text-[10px] text-gray-400 hover:text-gray-600 underline uppercase tracking-widest"
+                >
+                  Ver JSON Bruto
+                </button>
+                <div className="text-[9px] text-gray-400 italic">
+                  Tipo: {typeof selectedLog.new_data === 'object' ? 'Objeto' : 'Desconhecido'}
+                </div>
+              </div>
               <div className="hidden mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <h4 className="text-[10px] font-bold text-gray-400 mb-2 uppercase">Dados Originais (Old)</h4>
