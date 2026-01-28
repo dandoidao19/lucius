@@ -13,6 +13,14 @@ interface ItemDetalhe {
   categoria?: string
 }
 
+interface ParcelaDetalhe {
+  id: string
+  data: string
+  valor: number
+  status: string
+  descricao: string
+}
+
 interface ModalDetalhesTransacaoProps {
   aberto: boolean
   onClose: () => void
@@ -30,6 +38,7 @@ interface ModalDetalhesTransacaoProps {
 
 export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, tipo, dadosResumo }: ModalDetalhesTransacaoProps) {
   const [itens, setItens] = useState<ItemDetalhe[]>([])
+  const [parcelas, setParcelas] = useState<ParcelaDetalhe[]>([])
   const [loading, setLoading] = useState(false)
 
   const buscarItens = useCallback(async () => {
@@ -66,11 +75,44 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
     }
   }, [transacaoId, tipo])
 
+  const buscarParcelas = useCallback(async () => {
+    if (tipo === 'condicionais') {
+      setParcelas([])
+      return
+    }
+
+    try {
+      const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
+
+      // Busca parcelas que contenham o nome da entidade na descrição
+      const { data, error } = await supabase
+        .from('transacoes_loja')
+        .select('*')
+        .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+        .order('data', { ascending: true })
+
+      if (error) throw error
+
+      const parcelasFormatadas = (data || []).map((p: { id: string; data: string; total: number; status_pagamento: string; descricao: string }) => ({
+        id: p.id,
+        data: p.data,
+        valor: p.total,
+        status: p.status_pagamento,
+        descricao: p.descricao
+      }))
+
+      setParcelas(parcelasFormatadas)
+    } catch (err) {
+      console.error('Erro ao buscar parcelas:', err)
+    }
+  }, [tipo, dadosResumo.entidade])
+
   useEffect(() => {
     if (aberto && transacaoId) {
       buscarItens()
+      buscarParcelas()
     }
-  }, [aberto, transacaoId, buscarItens])
+  }, [aberto, transacaoId, buscarItens, buscarParcelas])
 
   if (!aberto) return null
 
@@ -117,9 +159,10 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
             </div>
           )}
 
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Tabela de Itens */}
           <div>
-            <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
               📦 Itens ({itens.length})
             </h3>
             <div className="border rounded-lg overflow-hidden">
@@ -160,6 +203,57 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                 )}
               </table>
             </div>
+          </div>
+
+          {/* Tabela de Parcelas */}
+          {tipo !== 'condicionais' && (
+            <div>
+              <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                💳 Parcelas / Financeiro ({parcelas.length})
+              </h3>
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-[11px] text-left">
+                  <thead className="bg-gray-100 border-b text-[10px]">
+                    <tr>
+                      <th className="px-2 py-1 font-bold text-gray-600">Vencimento</th>
+                      <th className="px-2 py-1 font-bold text-gray-600">Descrição</th>
+                      <th className="px-2 py-1 font-bold text-gray-600 text-right">Valor</th>
+                      <th className="px-2 py-1 font-bold text-gray-600 text-center">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {parcelas.length === 0 ? (
+                      <tr><td colSpan={4} className="px-2 py-4 text-center text-gray-500">Nenhuma parcela encontrada.</td></tr>
+                    ) : (
+                      parcelas.map(p => (
+                        <tr key={p.id} className="hover:bg-gray-50">
+                          <td className="px-2 py-1 text-gray-700 font-medium whitespace-nowrap">{formatarDataParaExibicao(p.data)}</td>
+                          <td className="px-2 py-1 text-gray-600 truncate max-w-[120px]" title={p.descricao}>{p.descricao}</td>
+                          <td className="px-2 py-1 text-right font-bold text-gray-800 whitespace-nowrap">R$ {p.valor.toFixed(2)}</td>
+                          <td className="px-2 py-1 text-center">
+                            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${
+                              p.status === 'pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                  {parcelas.length > 0 && (
+                    <tfoot className="bg-gray-50 font-black border-t">
+                      <tr>
+                        <td colSpan={2} className="px-2 py-1 text-right uppercase">Total:</td>
+                        <td className="px-2 py-1 text-right text-green-700 font-bold">R$ {parcelas.reduce((acc, p) => acc + p.valor, 0).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    </tfoot>
+                  )}
+                </table>
+              </div>
+            </div>
+          )}
           </div>
         </div>
 

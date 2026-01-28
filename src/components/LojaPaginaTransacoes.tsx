@@ -15,6 +15,7 @@ interface TransacaoUnificada {
   entidade: string
   total: number
   status: string
+  quantidade_parcelas: number
   observacao: string
   cor: string
   tabela: 'vendas' | 'compras' | 'condicionais'
@@ -62,6 +63,7 @@ export default function LojaPaginaTransacoes() {
           entidade: v.cliente,
           total: v.total,
           status: v.status_pagamento,
+          quantidade_parcelas: v.quantidade_parcelas || 1,
           observacao: v.observacao || '',
           cor: 'bg-green-100 text-green-800 border-green-200',
           tabela: 'vendas'
@@ -78,6 +80,7 @@ export default function LojaPaginaTransacoes() {
           entidade: c.fornecedor,
           total: c.total,
           status: c.status_pagamento,
+          quantidade_parcelas: c.quantidade_parcelas || 1,
           observacao: c.observacao || '',
           cor: 'bg-blue-100 text-blue-800 border-blue-200',
           tabela: 'compras'
@@ -106,6 +109,7 @@ export default function LojaPaginaTransacoes() {
           entidade: cn.origem,
           total: 0, // Precisaria somar itens se quisesse total aqui, mas condicionais às vezes não tem preço total gravado
           status: cn.status,
+          quantidade_parcelas: 1,
           observacao: cn.observacao || '',
           cor: cor,
           tabela: 'condicionais'
@@ -144,43 +148,45 @@ export default function LojaPaginaTransacoes() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-gray-50 border-b">
               <tr className="text-[10px]">
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase whitespace-nowrap">Data</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Tipo</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center">Nº</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase min-w-[120px]">Cliente/Fornecedor</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase min-w-[200px]">Observações</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-right whitespace-nowrap">Total</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Status</th>
-                <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Ação</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase whitespace-nowrap">Data</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Tipo</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-center">Nº</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase min-w-[120px]">Cliente/Fornecedor</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase min-w-[200px]">Observações</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-right whitespace-nowrap">Total</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Parc.</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Status</th>
+                <th className="px-1 py-1 font-bold text-gray-600 uppercase text-center whitespace-nowrap">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500">Carregando transações...</td>
+                  <td colSpan={9} className="px-1 py-4 text-center text-gray-500 text-xs">Carregando transações...</td>
                 </tr>
               ) : transacoes.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-500">Nenhuma transação encontrada.</td>
+                  <td colSpan={9} className="px-1 py-4 text-center text-gray-500 text-xs">Nenhuma transação encontrada.</td>
                 </tr>
               ) : (
                 transacoes.map((t) => (
                   <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors text-[11px]">
-                    <td className="px-3 py-2 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-1 py-0.5 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
+                    <td className="px-1 py-0.5 text-center">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black border ${t.cor}`}>
                         {t.tipo_exibicao}
                       </span>
                     </td>
-                    <td className="px-3 py-2 font-mono text-gray-500 text-center">#{t.numero}</td>
-                    <td className="px-3 py-2 font-medium text-gray-800 truncate max-w-[150px]" title={t.entidade}>{t.entidade}</td>
-                    <td className="px-3 py-2 text-gray-500 italic truncate max-w-[250px]" title={t.observacao}>
+                    <td className="px-1 py-0.5 font-mono text-gray-500 text-center">#{t.numero}</td>
+                    <td className="px-1 py-0.5 font-medium text-gray-800 truncate max-w-[150px]" title={t.entidade}>{t.entidade}</td>
+                    <td className="px-1 py-0.5 text-gray-500 italic truncate max-w-[250px]" title={t.observacao}>
                       {t.observacao.replace('[PEDIDO]', '').trim() || '—'}
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-gray-700 whitespace-nowrap">
+                    <td className="px-1 py-0.5 text-right font-bold text-gray-700 whitespace-nowrap">
                       {t.total > 0 ? `R$ ${t.total.toFixed(2)}` : '—'}
                     </td>
-                    <td className="px-3 py-2 text-center uppercase font-semibold">
+                    <td className="px-1 py-0.5 text-center text-gray-600">{t.quantidade_parcelas}</td>
+                    <td className="px-1 py-0.5 text-center uppercase font-semibold">
                       <span className={`px-1.5 py-0.5 rounded-full text-[10px] ${
                         t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-100 text-green-700' :
                         t.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
@@ -188,7 +194,7 @@ export default function LojaPaginaTransacoes() {
                         {t.status}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-center">
+                    <td className="px-1 py-0.5 text-center">
                       <button
                         onClick={() => setModalDetalhes({ aberto: true, transacao: t })}
                         className="p-1 hover:bg-blue-100 rounded text-blue-600 transition-colors"
