@@ -118,10 +118,13 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   }
 
   return (
-    <div className="bg-purple-50 rounded-lg shadow-md p-3 space-y-2 border border-purple-200">
-      <h2 className="text-sm font-semibold text-gray-800 mb-2">
-        {isEditMode ? 'Editar Lançamento' : 'Novo Lançamento Avulso'}
-      </h2>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-purple-200">
+      <div className="bg-purple-600 px-3 py-1 flex justify-between items-center text-white border-b border-purple-700">
+        <h2 className="text-xs font-semibold uppercase tracking-widest">
+          {isEditMode ? 'Editar Lançamento' : 'Novo Lançamento Avulso'}
+        </h2>
+      </div>
+      <div className="p-3 space-y-2">
 
       {erro && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs">
@@ -231,6 +234,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
             </button>
         </div>
       </form>
+      </div>
     </div>
   )
 }

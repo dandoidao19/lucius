@@ -56,10 +56,10 @@ export default function FiltrosTransacoes({
   ]
 
   return (
-    <div className="bg-red-700 rounded shadow-sm mb-1 border border-red-800 overflow-hidden">
+    <div className="bg-white rounded shadow-sm mb-1 border border-pink-700 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-0.5 flex items-center justify-between text-[11px] font-semibold text-white uppercase tracking-widest hover:bg-red-800 transition-colors"
+        className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-pink-700 uppercase tracking-widest hover:bg-pink-50 transition-colors"
       >
         <span>🔍 Filtros de Transações</span>
         <span>{aberto ? '▲' : '▼'}</span>

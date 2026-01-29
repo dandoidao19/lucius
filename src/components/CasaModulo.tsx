@@ -977,8 +977,8 @@ export default function CasaModulo() {
         <div className="col-span-2">
           <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
-            <div className="bg-blue-600 flex justify-between items-center px-2 py-1 text-white">
-              <h2 className="text-[11px] font-semibold uppercase tracking-widest">{tituloTabela}</h2>
+            <div className="bg-blue-600 flex justify-between items-center px-3 py-1 text-white border-b border-blue-700">
+              <h2 className="text-xs font-semibold uppercase tracking-widest">{tituloTabela}</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setMostrarTodos(!mostrarTodos)}

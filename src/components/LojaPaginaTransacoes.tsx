@@ -233,11 +233,11 @@ export default function LojaPaginaTransacoes() {
         onGerarPDF={gerarPDF}
       />
 
-      <div className="flex justify-between items-center bg-red-700 px-2 py-1 rounded shadow-sm border border-red-800 text-white">
-        <h2 className="text-[11px] font-semibold uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
+      <div className="flex justify-between items-center bg-pink-700 px-3 py-1 rounded shadow-sm border border-pink-800 text-white">
+        <h2 className="text-xs font-semibold uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
-          className="bg-white text-red-700 hover:bg-red-50 px-3 py-0.5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+          className="bg-white text-pink-700 hover:bg-pink-50 px-3 py-0.5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
         >
           <span>+</span> NOVO LANÇAMENTO
         </button>
@@ -246,7 +246,7 @@ export default function LojaPaginaTransacoes() {
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-red-700 text-white border-b border-red-800">
+            <thead className="bg-pink-700 text-white border-b border-pink-800">
               <tr>
                 <th className="px-1 py-1 font-semibold uppercase w-[85px]">Data</th>
                 <th className="px-1 py-1 font-semibold uppercase text-center w-[85px]">Tipo</th>

@@ -275,7 +275,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2">
       <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border border-purple-200">
         {/* Cabeçalho */}
-        <div className="bg-purple-900 text-white px-4 py-2 flex justify-between items-center">
+        <div className="bg-purple-900 text-white px-4 py-1 flex justify-between items-center">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
               <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : 'Transação'}

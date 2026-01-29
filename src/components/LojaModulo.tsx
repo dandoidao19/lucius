@@ -12,8 +12,8 @@ export default function LojaModulo() {
 
   const abas: { id: AbaLoja; titulo: string; icone: string; corAtiva: string }[] = [
     { id: 'financeiro', titulo: 'Financeiro', icone: '💳', corAtiva: 'bg-purple-600 text-white shadow-md' },
-    { id: 'transacoes', titulo: 'Transações', icone: '🔄', corAtiva: 'bg-red-700 text-white shadow-md' },
-    { id: 'estoque', titulo: 'Estoque', icone: '📦', corAtiva: 'bg-pink-700 text-white shadow-md' },
+    { id: 'transacoes', titulo: 'Transações', icone: '🔄', corAtiva: 'bg-pink-700 text-white shadow-md' },
+    { id: 'estoque', titulo: 'Estoque', icone: '📦', corAtiva: 'bg-red-700 text-white shadow-md' },
   ]
 
   const renderizarConteudo = () => {
@@ -38,7 +38,7 @@ export default function LojaModulo() {
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
-              className={`flex-1 min-w-max px-4 py-1 text-sm font-semibold transition-all rounded ${
+              className={`flex-1 min-w-max px-4 py-1 text-sm font-semibold transition-all rounded flex items-center justify-center ${
                 abaAtiva === aba.id
                   ? aba.corAtiva
                   : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent'

@@ -136,10 +136,10 @@ export default function FiltrosLancamentos({
   }
 
   return (
-    <div className="bg-purple-600 rounded shadow-md mb-1 border border-purple-700 overflow-hidden">
+    <div className="bg-white rounded shadow-sm mb-1 border border-purple-600 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-0.5 flex items-center justify-between text-[11px] font-semibold text-white uppercase tracking-widest hover:bg-purple-700 transition-colors"
+        className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-purple-600 uppercase tracking-widest hover:bg-purple-50 transition-colors"
       >
         <span>🔍 {titulo}</span>
         <span className="text-lg">{aberto ? '▼' : '▶'}</span>

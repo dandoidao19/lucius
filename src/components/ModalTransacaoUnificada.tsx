@@ -690,8 +690,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
       <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all border border-purple-200 ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
         {/* Cabeçalho */}
-        <div className="bg-purple-600 px-4 py-2 flex justify-between items-center text-white">
-          <h2 className="font-bold text-sm uppercase tracking-widest">Lançar Nova Transação</h2>
+        <div className="bg-purple-600 px-3 py-1 flex justify-between items-center text-white border-b border-purple-700">
+          <h2 className="text-xs font-semibold uppercase tracking-widest">Lançar Nova Transação</h2>
           <button onClick={handleFechar} className="hover:bg-purple-700 p-1 rounded text-lg">✕</button>
         </div>
 
@@ -966,25 +966,25 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         {/* Rodapé fixo quando tipo selecionado */}
         {tipo && (
-          <div className="p-4 border-t bg-gray-50 flex justify-between gap-3">
+          <div className="p-4 border-t bg-gray-50 flex justify-between items-center gap-3">
             <button
               onClick={handleFechar}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition-all"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition-all flex items-center justify-center"
             >
               Cancelar
             </button>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <button
                 onClick={handleGerarPedido}
                 disabled={loading}
-                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm"
+                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm flex items-center justify-center"
               >
                 {loading ? 'Processando...' : transacaoInicial ? 'Salvar Pedido' : 'Gerar Pedido'}
               </button>
               <button
                 onClick={handleGerarTransacao}
                 disabled={loading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm flex items-center justify-center"
               >
                 {loading ? 'Processando...' : transacaoInicial ? 'Salvar Transação' : 'Gerar Transação'}
               </button>

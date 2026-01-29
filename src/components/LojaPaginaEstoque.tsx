@@ -280,17 +280,17 @@ export default function LojaPaginaEstoque() {
   return (
     <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-pink-700 rounded shadow-sm overflow-hidden border border-pink-800">
+      <div className="bg-white rounded shadow-sm overflow-hidden border border-red-700">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-3 py-0.5 flex justify-between items-center hover:bg-pink-800 transition-colors text-white"
+          className="w-full px-3 py-1 flex justify-between items-center hover:bg-red-50 transition-colors text-red-700"
         >
-          <span className="text-[11px] font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
+          <span className="text-xs font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-400">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
-          <div className="p-2 bg-white border-t border-pink-100">
+          <div className="p-2 bg-white border-t border-red-100">
             <div className="grid grid-cols-4 gap-1.5 mb-1.5">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
@@ -377,14 +377,14 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded shadow-sm px-2 py-1 border border-gray-200">
-        <div className="flex justify-between items-start mb-1">
+      <div className="bg-white rounded shadow-sm px-3 py-1 border border-gray-200">
+        <div className="flex justify-between items-center mb-1">
           <button
             onClick={() => {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-pink-700 hover:bg-pink-800 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
+            className="bg-red-700 hover:bg-red-800 text-white px-3 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
           >
             + CADASTRAR ITEM
           </button>
@@ -441,8 +441,8 @@ export default function LojaPaginaEstoque() {
 
       {/* Tabela de Estoque */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-        <div className="bg-pink-700 flex justify-between items-center px-2 py-1 text-white">
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest">Lista de Produtos ({produtosFiltrados.length})</h2>
+        <div className="bg-red-700 flex justify-between items-center px-3 py-1 text-white border-b border-red-800">
+          <h2 className="text-xs font-semibold uppercase tracking-widest">Lista de Produtos ({produtosFiltrados.length})</h2>
         </div>
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
@@ -451,7 +451,7 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-pink-700 text-white border-b border-pink-800">
+              <thead className="bg-red-700 text-white border-b border-red-800">
                 <tr>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>
@@ -521,7 +521,7 @@ export default function LojaPaginaEstoque() {
                         <div className="flex gap-0.5 justify-center">
                           <button
                             onClick={() => abrirModalEditar(produto)}
-                            className="bg-pink-700 hover:bg-pink-800 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
+                            className="bg-red-700 hover:bg-red-800 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                             title="Editar produto"
                           >
                             ✏️
