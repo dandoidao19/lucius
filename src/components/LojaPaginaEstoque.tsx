@@ -293,7 +293,7 @@ export default function LojaPaginaEstoque() {
           <div className="p-1.5 border-t border-gray-100">
             <div className="grid grid-cols-4 gap-1.5 mb-1.5">
               <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
                 <input
                   type="text"
                   value={filtroDescricao}
@@ -304,7 +304,7 @@ export default function LojaPaginaEstoque() {
               </div>
               
               <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Código</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Código</label>
                 <input
                   type="text"
                   value={filtroCodigo}
@@ -315,7 +315,7 @@ export default function LojaPaginaEstoque() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Status</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Status</label>
                 <select
                   value={filtroStatus}
                   onChange={(e) => setFiltroStatus(e.target.value as 'todos' | 'resolvido' | 'condicional')}
@@ -330,20 +330,20 @@ export default function LojaPaginaEstoque() {
               <div className="flex items-end gap-1">
                 <button
                   onClick={limparFiltros}
-                  className="px-2 py-0.5 bg-gray-500 text-white text-[10px] font-bold rounded hover:bg-gray-600"
+                  className="px-2 py-0.5 bg-gray-500 text-white text-xs font-bold rounded hover:bg-gray-600"
                 >
                   LIMPAR
                 </button>
                 <button
                   onClick={gerarPDF}
-                  className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700"
+                  className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700"
                 >
                   📄 PDF
                 </button>
               </div>
             </div>
 
-            <div className="text-[10px] text-gray-600">
+            <div className="text-xs text-gray-600">
               <strong className="uppercase">Ordenar por:</strong>
               <div className="flex gap-1 mt-0.5 flex-wrap">
                 <button
@@ -450,17 +450,17 @@ export default function LojaPaginaEstoque() {
             <table className="w-full text-xs">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <th className="px-1.5 py-1 text-left font-semibold text-gray-700 text-[11px]">Código</th>
-                  <th className="px-1.5 py-1 text-left font-semibold text-gray-700 text-[11px]">Descrição</th>
-                  <th className="px-1.5 py-1 text-center font-semibold text-gray-700 text-[11px]">Categoria</th>
-                  <th className="px-1.5 py-1 text-center font-semibold text-gray-700 text-[11px]">Status</th>
-                  <th className="px-1.5 py-1 text-center font-semibold text-gray-700 text-[11px]">Qtd Cond.</th>
-                  <th className="px-1.5 py-1 text-center font-semibold text-gray-700 text-[11px]">Qtd Efet.</th>
-                  <th className="px-1.5 py-1 text-right font-semibold text-gray-700 text-[11px]">Custo</th>
-                  <th className="px-1.5 py-1 text-right font-semibold text-gray-700 text-[11px]">Repasse</th>
-                  <th className="px-1.5 py-1 text-right font-semibold text-gray-700 text-[11px]">Venda</th>
-                  <th className="px-1.5 py-1 text-left font-semibold text-gray-700 text-[11px]">Ult. Compra</th>
-                  <th className="px-1.5 py-1 text-center font-semibold text-gray-700 text-[11px]">Ações</th>
+                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Código</th>
+                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Descrição</th>
+                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Categoria</th>
+                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Status</th>
+                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Qtd Cond.</th>
+                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Qtd Efet.</th>
+                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Custo</th>
+                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Repasse</th>
+                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Venda</th>
+                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Ult. Compra</th>
+                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -479,12 +479,12 @@ export default function LojaPaginaEstoque() {
                       <td className="px-1.5 py-1 text-gray-800 font-medium text-xs">{produto.codigo}</td>
                       <td className="px-1.5 py-1 text-gray-800 text-xs">{produto.descricao}</td>
                       <td className="px-1.5 py-1 text-center text-xs">
-                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-[9px] font-medium">
+                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-medium">
                           {produto.categoria || 'Sem categoria'}
                         </span>
                       </td>
                       <td className="px-1.5 py-1 text-center">
-                        <span className={`inline-block px-1 py-0.5 rounded-full font-medium text-[9px] ${
+                        <span className={`inline-block px-1 py-0.5 rounded-full font-medium ${
                           (produto.status_item || 'resolvido') === 'resolvido' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-yellow-100 text-yellow-800'
@@ -518,14 +518,14 @@ export default function LojaPaginaEstoque() {
                         <div className="flex gap-0.5 justify-center">
                           <button
                             onClick={() => abrirModalEditar(produto)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded text-[8px] font-medium transition-colors"
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                             title="Editar produto"
                           >
                             ✏️
                           </button>
                           <button
                             onClick={() => abrirModalLog(produto)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-1.5 py-0.5 rounded text-[8px] font-medium transition-colors"
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                             title="Ver log de entradas e saídas"
                           >
                             📋

@@ -749,7 +749,6 @@ export default function CasaModulo() {
 
   return (
     <div className="space-y-1">
-      
       {/* ✅ FILTROS CASA */}
       <FiltrosCasa
         filtroDataInicio={filtroDataInicio}
@@ -776,12 +775,12 @@ export default function CasaModulo() {
       />
       <ModalExcluir />
 
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden">
         <button
           onClick={() => setFormularioAberto(!formularioAberto)}
           className="w-full px-2 py-1 flex justify-between items-center hover:bg-gray-50 transition-colors"
         >
-          <span className="text-xs font-semibold text-gray-800">
+          <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
             {editandoLancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
           </span>
           <span className="text-xs text-gray-600">{formularioAberto ? '▲' : '▼'}</span>

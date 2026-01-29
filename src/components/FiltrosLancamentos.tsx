@@ -20,7 +20,7 @@ interface FiltrosLancamentosProps {
   filtroCDC?: string
   setFiltroCDC?: (v: string) => void
   
-  centrosCusto?: any[]
+  centrosCusto?: { id: string; nome: string }[]
   
   onLimpar: () => void
   onGerarPDF?: () => void
@@ -48,12 +48,8 @@ export default function FiltrosLancamentos({
   setFiltroTipo,
   filtroStatus,
   setFiltroStatus,
-  filtroCDC,
-  setFiltroCDC,
-  centrosCusto = [],
   onLimpar,
   onGerarPDF,
-  mostrarCDC = true,
   mostrarNumeroTransacao = true,
   mostrarTipo = false,
   labelsDataComoVencimento = false,
@@ -153,48 +149,48 @@ export default function FiltrosLancamentos({
         <div className="px-3 pb-3 pt-2 border-t border-gray-200">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-1">
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 {getDataLabel('Início')}
               </label>
               <input
                 type="date"
                 value={filtroDataInicio}
                 onChange={(e) => setFiltroDataInicio(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 {getDataLabel('Fim')}
               </label>
               <input
                 type="date"
                 value={filtroDataFim}
                 onChange={(e) => setFiltroDataFim(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Mês Fechado
               </label>
               <select
                 value={filtroMes}
                 onChange={(e) => setFiltroMes(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Todos</option>
                 {meses.map(m => (
-                  <option key={m.valor} value={m.valor} className="text-[10px]">{m.nome}</option>
+                  <option key={m.valor} value={m.valor}>{m.nome}</option>
                 ))}
               </select>
             </div>
 
             {mostrarNumeroTransacao && (
               <div className="col-span-1">
-                <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">
                   Nº Transação
                 </label>
                 <input
@@ -202,13 +198,13 @@ export default function FiltrosLancamentos({
                   value={filtroNumeroTransacao}
                   onChange={(e) => setFiltroNumeroTransacao(e.target.value)}
                   placeholder="Ex: 123"
-                  className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               </div>
             )}
 
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 {getDescricaoLabel()}
               </label>
               <input
@@ -216,22 +212,22 @@ export default function FiltrosLancamentos({
                 value={filtroDescricao}
                 onChange={(e) => setFiltroDescricao(e.target.value)}
                 placeholder={getDescricaoPlaceholder()}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {mostrarTipo && setFiltroTipo && (
               <div className="col-span-1">
-                <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">
                   Tipo
                 </label>
                 <select
                   value={filtroTipo || 'todos'}
                   onChange={(e) => setFiltroTipo(e.target.value)}
-                  className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                 >
                   {getTipoOptions().map(option => (
-                    <option key={option.value} value={option.value} className="text-[10px]">
+                    <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
                   ))}
@@ -240,16 +236,16 @@ export default function FiltrosLancamentos({
             )}
 
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Status
               </label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {getStatusOptions().map(option => (
-                  <option key={option.value} value={option.value} className="text-[10px]">
+                  <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
@@ -260,7 +256,7 @@ export default function FiltrosLancamentos({
           <div className="flex gap-2 mt-2">
             <button
               onClick={onLimpar}
-              className="px-2 py-0.5 bg-gray-500 text-white text-[10px] rounded hover:bg-gray-600 transition-colors"
+              className="px-2 py-0.5 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 transition-colors"
             >
               🗑️ Limpar
             </button>
@@ -268,7 +264,7 @@ export default function FiltrosLancamentos({
             {onGerarPDF && (
               <button
                 onClick={onGerarPDF}
-                className="px-2 py-0.5 bg-red-500 text-white text-[10px] rounded hover:bg-red-600 transition-colors"
+                className="px-2 py-0.5 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
               >
                 📄 PDF
               </button>

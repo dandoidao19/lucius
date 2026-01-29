@@ -247,49 +247,49 @@ export default function LojaPaginaTransacoes() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-gray-100 border-b border-gray-300">
-              <tr className="text-[10px]">
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase w-[75px]">Data</th>
+              <tr>
+                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase w-[85px]">Data</th>
                 <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[85px]">Tipo</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Nº</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase min-w-[120px]">Cliente/Fornecedor</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Nº</th>
+                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase min-w-[90px]">Cliente/Fornecedor</th>
                 <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase min-w-[150px]">Observações</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-right w-[65px]">Total</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Parc.</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Itens</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[70px]">Status</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[40px]">Ação</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-right w-[60px]">Total</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[30px]">Parc.</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[30px]">Itens</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[65px]">Status</th>
+                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={10} className="px-1 py-4 text-center text-gray-500 text-xs">Carregando transações...</td>
+                  <td colSpan={10} className="px-1 py-4 text-center text-gray-500">Carregando transações...</td>
                 </tr>
               ) : transacoesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-1 py-4 text-center text-gray-500 text-xs">Nenhuma transação encontrada.</td>
+                  <td colSpan={10} className="px-1 py-4 text-center text-gray-500">Nenhuma transação encontrada.</td>
                 </tr>
               ) : (
                 transacoesFiltradas.map((t) => (
                   <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
                     <td className="px-1 py-1 text-center">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-black border ${t.cor}`}>
+                      <span className={`inline-block px-1 py-0.5 rounded font-bold border ${t.cor}`}>
                         {t.tipo_exibicao}
                       </span>
                     </td>
-                    <td className="px-1 py-1 text-gray-500 text-center">#{t.numero}</td>
-                    <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[160px]" title={t.entidade}>{t.entidade}</td>
-                    <td className="px-1 py-1 text-gray-500 italic truncate max-w-[250px]" title={t.observacao}>
+                    <td className="px-0.5 py-1 text-gray-500 text-center">#{t.numero}</td>
+                    <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[140px]" title={t.entidade}>{t.entidade}</td>
+                    <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={t.observacao}>
                       {t.observacao.replace('[PEDIDO]', '').trim() || '—'}
                     </td>
-                    <td className="px-1 py-1 text-right font-bold text-gray-700 whitespace-nowrap">
+                    <td className="px-0.5 py-1 text-right font-bold text-gray-700 whitespace-nowrap">
                       {t.total > 0 ? `R$ ${t.total.toFixed(2)}` : '—'}
                     </td>
-                    <td className="px-1 py-1 text-center text-gray-600">{t.quantidade_parcelas}</td>
-                    <td className="px-1 py-1 text-center text-gray-600 font-bold">{t.quantidade_itens}</td>
-                    <td className="px-1 py-1 text-center uppercase">
-                      <span className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                    <td className="px-0.5 py-1 text-center text-gray-600">{t.quantidade_parcelas}</td>
+                    <td className="px-0.5 py-1 text-center text-gray-600 font-bold">{t.quantidade_itens}</td>
+                    <td className="px-0.5 py-1 text-center uppercase">
+                      <span className={`px-1 py-0.5 rounded font-bold ${
                         t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-100 text-green-700' :
                         t.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
                       }`}>

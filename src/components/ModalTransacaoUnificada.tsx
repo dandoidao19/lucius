@@ -277,6 +277,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     setErro('')
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
       const { data: numTransacao } = await supabase.rpc('obter_proximo_numero_transacao')
       const total = calcularTotal()
       const isVenda = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
@@ -304,11 +307,47 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada')
 
         for (const item of itensValidos) {
-          if (item.produto_id) {
-            await supabase.rpc('atualizar_estoque', { produto_id_param: item.produto_id, quantidade_param: -item.quantidade })
-            await supabase.from('itens_venda').insert({ ...item, venda_id: venda.id })
+          let prodId = item.produto_id
+
+          // Se for novo cadastro, cria o produto primeiro
+          if (item.isNovoCadastro && !prodId) {
+            const { data: novoProd, error: erroNovoProd } = await supabase
+              .from('produtos')
+              .insert({
+                descricao: item.descricao.toUpperCase(),
+                categoria: item.categoria,
+                preco_custo: item.preco_custo,
+                valor_repasse: item.valor_repasse,
+                preco_venda: item.preco_venda,
+                quantidade: 0, // Inicializa com zero, a movimentação ajustará
+                user_id: user.id
+              })
+              .select()
+              .single()
+
+            if (erroNovoProd) throw erroNovoProd
+            prodId = novoProd.id
+          }
+
+          if (prodId) {
+            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
+
+            const dbItem = {
+              venda_id: venda.id,
+              produto_id: prodId,
+              descricao: item.descricao,
+              quantidade: item.quantidade,
+              preco_venda: item.preco_venda,
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse
+            }
+
+            const { error: erroIt } = await supabase.from('itens_venda').insert(dbItem)
+            if (erroIt) throw erroIt
+
             await supabase.from('movimentacoes_estoque').insert({
-              produto_id: item.produto_id,
+              produto_id: prodId,
               tipo: 'saida',
               quantidade: item.quantidade,
               observacao: `Venda #${numTransacao}`
@@ -338,11 +377,47 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida')
 
         for (const item of itensValidos) {
-          if (item.produto_id) {
-            await supabase.rpc('atualizar_estoque', { produto_id_param: item.produto_id, quantidade_param: item.quantidade })
-            await supabase.from('itens_compra').insert({ ...item, compra_id: compra.id })
+          let prodId = item.produto_id
+
+          // Se for novo cadastro, cria o produto primeiro
+          if (item.isNovoCadastro && !prodId) {
+            const { data: novoProd, error: erroNovoProd } = await supabase
+              .from('produtos')
+              .insert({
+                descricao: item.descricao.toUpperCase(),
+                categoria: item.categoria,
+                preco_custo: item.preco_custo,
+                valor_repasse: item.valor_repasse,
+                preco_venda: item.preco_venda,
+                quantidade: 0,
+                user_id: user.id
+              })
+              .select()
+              .single()
+
+            if (erroNovoProd) throw erroNovoProd
+            prodId = novoProd.id
+          }
+
+          if (prodId) {
+            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
+
+            const dbItem = {
+              compra_id: compra.id,
+              produto_id: prodId,
+              descricao: item.descricao,
+              quantidade: item.quantidade,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse,
+              preco_venda: item.preco_venda,
+              categoria: item.categoria
+            }
+
+            const { error: erroIt } = await supabase.from('itens_compra').insert(dbItem)
+            if (erroIt) throw erroIt
+
             await supabase.from('movimentacoes_estoque').insert({
-              produto_id: item.produto_id,
+              produto_id: prodId,
               tipo: 'entrada',
               quantidade: item.quantidade,
               observacao: `Compra #${numTransacao}`
@@ -379,6 +454,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     setErro('')
 
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
       const { data: ultimaTransacao } = await supabase
         .from('transacoes_condicionais')
         .select('numero_transacao')
@@ -407,18 +485,41 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       if (erroTransacao) throw erroTransacao
 
       for (const item of itensValidos) {
-        await supabase
-          .from('itens_condicionais')
-          .insert({
-            transacao_id: transacao.id,
-            produto_id: item.produto_id,
-            descricao: item.descricao,
-            quantidade: item.quantidade,
-            categoria: item.categoria,
-            preco_custo: item.preco_custo,
-            preco_venda: item.preco_venda,
-            status: 'pendente',
-          })
+        let prodId = item.produto_id
+
+        // Suporte a novo cadastro no condicional também
+        if (item.isNovoCadastro && !prodId) {
+          const { data: novoProd, error: erroNovoProd } = await supabase
+            .from('produtos')
+            .insert({
+              descricao: item.descricao.toUpperCase(),
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse,
+              preco_venda: item.preco_venda,
+              quantidade: 0,
+              user_id: user.id
+            })
+            .select()
+            .single()
+
+          if (erroNovoProd) throw erroNovoProd
+          prodId = novoProd.id
+        }
+
+        const dbItem = {
+          transacao_id: transacao.id,
+          produto_id: prodId,
+          descricao: item.descricao,
+          quantidade: item.quantidade,
+          categoria: item.categoria,
+          preco_custo: item.preco_custo,
+          preco_venda: item.preco_venda,
+          status: 'pendente',
+        }
+
+        const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
+        if (erroIt) throw erroIt
       }
 
       alert('✅ Pedido/Condicional gerado com sucesso!')
@@ -485,15 +586,15 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className={`bg-white rounded-lg shadow-xl w-full max-h-[90vh] overflow-hidden flex flex-col transition-all ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
         {/* Cabeçalho */}
-        <div className="bg-blue-600 px-4 py-3 flex justify-between items-center text-white">
-          <h2 className="font-bold">Lançar Nova Transação</h2>
-          <button onClick={handleFechar} className="hover:bg-blue-700 p-1 rounded">✕</button>
+        <div className="bg-blue-600 px-4 py-2 flex justify-between items-center text-white">
+          <h2 className="font-bold text-sm uppercase">Lançar Nova Transação</h2>
+          <button onClick={handleFechar} className="hover:bg-blue-700 p-1 rounded text-lg">✕</button>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1">
+        <div className="p-3 overflow-y-auto flex-1 text-xs">
           {!tipo ? (
             <div className="space-y-3">
               <p className="text-center text-gray-600 font-medium mb-4">Selecione o tipo de transação:</p>
@@ -612,7 +713,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                                  onChange={() => toggleNovoCadastro(item.id)}
                                  className="w-3 h-3"
                                />
-                               <span className="text-[10px] font-medium">Novo Cadastro</span>
+                               <span className="text-xs font-medium">Novo Cadastro</span>
                              </label>
                            </div>
 
@@ -634,7 +735,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
                            <div className="grid grid-cols-3 gap-2">
                              <div>
-                               <label className="block text-[9px] text-gray-600">Categoria</label>
+                               <label className="block text-xs text-gray-600">Categoria</label>
                                {item.isNovoCadastro ? (
                                  <select
                                    value={item.categoria}
@@ -649,7 +750,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                                )}
                              </div>
                              <div>
-                               <label className="block text-[9px] text-gray-600">Quantidade</label>
+                               <label className="block text-xs text-gray-600">Quantidade</label>
                                <input
                                  type="number"
                                  value={item.quantidade}
@@ -658,7 +759,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                                />
                              </div>
                              <div>
-                               <label className="block text-[9px] text-gray-600">Preço</label>
+                               <label className="block text-xs text-gray-600">Preço</label>
                               <div className="flex gap-1">
                                 <input
                                   type="number"
@@ -684,11 +785,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                            {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') && (
                              <div className="grid grid-cols-2 gap-2">
                                 <div>
-                                  <label className="block text-[9px] text-gray-600">Valor Repasse (Calc.)</label>
+                                  <label className="block text-xs text-gray-600">Valor Repasse (Calc.)</label>
                                   <input type="text" value={`R$ ${(item.valor_repasse || 0).toFixed(2)}`} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
                                 </div>
                                 <div>
-                                  <label className="block text-[9px] text-gray-600">Preço Venda Sugerido</label>
+                                  <label className="block text-xs text-gray-600">Preço Venda Sugerido</label>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -712,19 +813,19 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                </div>
 
                {/* Informações de Pagamento (Apenas para Transações) */}
-               <div className="border-t pt-2">
-                 <h3 className="font-semibold text-gray-700 text-xs mb-2">Pagamento / Condições</h3>
+               <div className="border-t pt-2 border-gray-100">
+                 <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">Pagamento / Condições</h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
-                     <label className="block text-[9px] text-gray-600">Vencimento</label>
+                     <label className="block text-xs text-gray-600">Vencimento</label>
                      <input type="date" value={dataVencimento} onChange={(e) => setDataVencimento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
                    </div>
                    <div>
-                     <label className="block text-[9px] text-gray-600">Parcelas</label>
+                     <label className="block text-xs text-gray-600">Parcelas</label>
                      <input type="number" min="1" value={quantidadeParcelas} onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
                    </div>
                    <div>
-                     <label className="block text-[9px] text-gray-600">Prazo</label>
+                     <label className="block text-xs text-gray-600">Prazo</label>
                      <select value={prazoParcelas} onChange={(e) => setPrazoParcelas(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
                        <option value="diaria">Diária</option>
                        <option value="semanal">Semanal</option>
@@ -732,7 +833,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                      </select>
                    </div>
                    <div>
-                     <label className="block text-[9px] text-gray-600">Status</label>
+                     <label className="block text-xs text-gray-600">Status</label>
                      <select value={statusPagamento} onChange={(e) => setStatusPagamento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
                        <option value="pendente">Pendente</option>
                        <option value="pago">Pago</option>

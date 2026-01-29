@@ -43,10 +43,10 @@ export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaD
   }
 
   // Estilos permanecem os mesmos
-  const caixaTituloStyle: React.CSSProperties = { fontSize: '11px', marginBottom: 2, whiteSpace: 'nowrap' }
+  const caixaTituloStyle: React.CSSProperties = { fontSize: '12px', marginBottom: 2, whiteSpace: 'nowrap' }
   const caixaValorStyle: React.CSSProperties = { fontSize: '1.5rem', fontWeight: 700, lineHeight: '1.05', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
-  const periodoLinhaStyle: React.CSSProperties = { fontSize: '11px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
+  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
+  const periodoLinhaStyle: React.CSSProperties = { fontSize: '12px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
   const botoesContainerStyle: React.CSSProperties = { display: 'flex', gap: 6, alignItems: 'center', whiteSpace: 'nowrap' }
 
   const formatarMoeda = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
@@ -96,7 +96,7 @@ export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaD
           <p className="text-gray-500 text-center py-2" style={{ fontSize: '12px' }}>Carregando...</p>
         ) : caixaPrevistoGeral.length > 0 ? (
           <div className="overflow-x-auto">
-            <div className="text-[10px] text-gray-500 mb-1">
+            <div className="text-xs text-gray-500 mb-1">
               Mostrando {caixaPrevistoGeral.length} dias
             </div>
             <table className="w-full text-xs border-collapse">

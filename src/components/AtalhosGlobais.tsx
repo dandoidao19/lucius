@@ -23,7 +23,7 @@ export default function AtalhosGlobais() {
           title="Novo Lançamento Casa"
         >
           <span className="text-xl">🏠</span>
-          <span className="absolute left-14 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Lançamento Casa</span>
+          <span className="absolute left-14 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Lançamento Casa</span>
         </button>
 
         {/* Nova Transação Loja */}
@@ -33,7 +33,7 @@ export default function AtalhosGlobais() {
           title="Nova Transação Loja"
         >
           <span className="text-xl">🛒</span>
-          <span className="absolute left-14 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Transação Loja</span>
+          <span className="absolute left-14 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Transação Loja</span>
         </button>
 
         {/* Financeiro Avulso Loja */}
@@ -43,7 +43,7 @@ export default function AtalhosGlobais() {
           title="Financeiro Avulso Loja"
         >
           <span className="text-xl">💵</span>
-          <span className="absolute left-14 bg-gray-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Financeiro Avulso</span>
+          <span className="absolute left-14 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Financeiro Avulso</span>
         </button>
       </div>
 

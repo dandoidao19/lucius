@@ -453,7 +453,7 @@ export default function LojaPaginaFinanceiro() {
                 >
                   {caixaMinimizado ? '📊 Exibir Caixas' : '◀ Recolher'}
                 </button>
-                <h3 className="font-semibold text-gray-800 text-sm">
+                <h3 className="font-bold text-gray-800 text-xs uppercase tracking-tight">
                   {tituloLista}
                   {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
                 </h3>
@@ -481,18 +481,18 @@ export default function LojaPaginaFinanceiro() {
                 <table className="w-full border-collapse text-xs">
                   <thead>
                     <tr className="bg-gray-100 border-b border-gray-300">
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase w-[75px]">Venc.</th>
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase w-[75px]">Pagto.</th>
+                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase w-[85px]">Venc.</th>
+                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase w-[85px]">Pagto.</th>
                       <th className="px-0.5 py-0.5 text-left font-semibold text-gray-600 uppercase w-[35px]">Nº</th>
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase min-w-[100px]">Cliente/Fornecedor</th>
+                      <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase min-w-[90px]">Cliente/Fornecedor</th>
                       <th className="px-1 py-0.5 text-left font-semibold text-gray-600 uppercase min-w-[150px]">Observações</th>
-                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[65px]">Valor</th>
-                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[65px]">Pago</th>
-                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[45px]">Dif.</th>
-                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[35px]">Parc.</th>
-                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[55px]">Tipo</th>
-                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[70px]">Status</th>
-                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[40px]">Ação</th>
+                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[60px]">Valor</th>
+                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[60px]">Pago</th>
+                      <th className="px-0.5 py-0.5 text-right font-semibold text-gray-600 uppercase w-[40px]">Dif.</th>
+                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[30px]">Parc.</th>
+                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[50px]">Tipo</th>
+                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[65px]">Status</th>
+                      <th className="px-0.5 py-0.5 text-center font-semibold text-gray-600 uppercase w-[35px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -505,20 +505,20 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-semibold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-gray-500">#{transacao.numero_transacao || '—'}</td>
-                          <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[160px]" title={transacao.descricao}>{transacao.descricao}</td>
-                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[300px]" title={transacao.observacao}>{transacao.observacao || '—'}</td>
+                          <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
+                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={transacao.observacao}>{transacao.observacao || '—'}</td>
                           <td className="px-0.5 py-1 text-right whitespace-nowrap">
-                            <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]' : 'bg-red-600 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>
+                            <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>
                               R$ {transacao.valor.toFixed(2)}
                             </span>
                           </td>
                           <td className="px-0.5 py-1 text-right whitespace-nowrap">
-                            {temPag ? <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]' : 'bg-red-600 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
+                            {temPag ? <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
                           </td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]' : 'bg-blue-600 text-white font-bold px-1 py-0.5 rounded inline-block text-[10px]') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-center text-gray-500"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold text-[9px] ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase text-[10px] ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {transacao.status_pagamento === 'pago' ? (

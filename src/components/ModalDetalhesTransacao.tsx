@@ -125,36 +125,36 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
             <h2 className="text-base font-bold flex items-center gap-2">
               <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : 'Transação'}
             </h2>
-            <p className="text-[10px] text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
+            <p className="text-xs text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
           </div>
           <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded transition-colors text-lg">✕</button>
         </div>
 
-        <div className="p-3 overflow-y-auto space-y-3 text-[12px]">
+        <div className="p-2 overflow-y-auto space-y-2 text-xs">
           {/* Resumo */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-gray-50 p-2 rounded border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-gray-50 p-1.5 rounded border">
             <div>
-              <p className="text-[9px] font-bold text-gray-500 uppercase">Cliente/Fornecedor</p>
-              <p className="font-semibold text-gray-800">{dadosResumo.entidade}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">Entidade</p>
+              <p className="font-bold text-gray-800 truncate">{dadosResumo.entidade}</p>
             </div>
             <div>
-              <p className="text-[9px] font-bold text-gray-500 uppercase">Status</p>
-              <span className={`inline-block text-[10px] font-bold px-2 py-0 rounded ${
-                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+              <p className="text-xs font-bold text-gray-500 uppercase">Status</p>
+              <span className={`inline-block text-xs font-black px-1.5 rounded ${
+                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white'
               }`}>
                 {dadosResumo.status.toUpperCase()}
               </span>
             </div>
             <div>
-              <p className="text-[9px] font-bold text-gray-500 uppercase">Valor Total</p>
-              <p className="text-sm font-bold text-blue-700">R$ {dadosResumo.total.toFixed(2)}</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">Total</p>
+              <p className="text-sm font-black text-blue-700">R$ {dadosResumo.total.toFixed(2)}</p>
             </div>
           </div>
 
           {/* Observações (se houver) */}
           {dadosResumo.observacao && (
             <div className="bg-blue-50 p-2 rounded border border-blue-100">
-              <p className="text-[9px] font-bold text-blue-600 uppercase mb-0.5">Observações</p>
+              <p className="text-xs font-bold text-blue-600 uppercase mb-0.5">Observações</p>
               <p className="italic text-blue-800">{dadosResumo.observacao}</p>
             </div>
           )}
@@ -167,7 +167,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
             <div className="border rounded overflow-x-auto shadow-sm">
               <table className="w-full text-left min-w-[500px]">
                 <thead className="bg-gray-100 border-b">
-                  <tr className="text-[10px]">
+                  <tr className="text-xs">
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase">Descrição</th>
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase">Categoria</th>
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center">Qtd</th>
@@ -193,9 +193,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                   )}
                 </tbody>
                 {!loading && itens.length > 0 && (
-                  <tfoot className="bg-gray-50 font-bold border-t text-[11px]">
+                  <tfoot className="bg-gray-50 font-bold border-t text-xs">
                     <tr>
-                      <td colSpan={4} className="px-2 py-1 text-right uppercase text-[9px]">Total Itens:</td>
+                      <td colSpan={4} className="px-2 py-1 text-right uppercase">Total Itens:</td>
                       <td className="px-2 py-1 text-right text-blue-700">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
                     </tr>
                   </tfoot>
@@ -213,7 +213,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
               <div className="border rounded overflow-x-auto shadow-sm">
                 <table className="w-full text-left min-w-[500px]">
                   <thead className="bg-gray-100 border-b">
-                    <tr className="text-[10px]">
+                    <tr className="text-xs">
                       <th className="px-2 py-1 font-bold text-gray-600 uppercase">Vencimento</th>
                       <th className="px-2 py-1 font-bold text-gray-600 uppercase">Descrição</th>
                       <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right">Valor</th>
@@ -230,7 +230,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                           <td className="px-2 py-1 text-gray-600">{p.descricao}</td>
                           <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {p.valor.toFixed(2)}</td>
                           <td className="px-2 py-1 text-center">
-                            <span className={`inline-block px-1.5 py-0 rounded text-[9px] font-bold uppercase ${
+                            <span className={`inline-block px-1.5 py-0 rounded text-xs font-bold uppercase ${
                               p.status === 'pago' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                             }`}>
                               {p.status}
@@ -241,9 +241,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                     )}
                   </tbody>
                   {parcelas.length > 0 && (
-                    <tfoot className="bg-gray-50 font-bold border-t text-[11px]">
+                    <tfoot className="bg-gray-50 font-bold border-t text-xs">
                       <tr>
-                        <td colSpan={2} className="px-2 py-1 text-right uppercase text-[9px]">Total:</td>
+                        <td colSpan={2} className="px-2 py-1 text-right uppercase">Total:</td>
                         <td className="px-2 py-1 text-right text-green-700">R$ {parcelas.reduce((acc, p) => acc + p.valor, 0).toFixed(2)}</td>
                         <td></td>
                       </tr>

@@ -69,7 +69,7 @@ export default function FiltrosTransacoes({
         <div className="px-3 pb-3 pt-2 border-t border-gray-100">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Início</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Início</label>
               <input
                 type="date"
                 value={filtroDataInicio}
@@ -78,7 +78,7 @@ export default function FiltrosTransacoes({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Fim</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Fim</label>
               <input
                 type="date"
                 value={filtroDataFim}
@@ -87,7 +87,7 @@ export default function FiltrosTransacoes({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Nº Transação</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Nº Transação</label>
               <input
                 type="text"
                 value={filtroNumero}
@@ -97,7 +97,7 @@ export default function FiltrosTransacoes({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Cliente/Fornecedor</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Cliente/Fornecedor</label>
               <input
                 type="text"
                 value={filtroEntidade}
@@ -107,7 +107,7 @@ export default function FiltrosTransacoes({
               />
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Tipo</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Tipo</label>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value)}
@@ -117,7 +117,7 @@ export default function FiltrosTransacoes({
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Status</label>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Status</label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
@@ -128,10 +128,10 @@ export default function FiltrosTransacoes({
             </div>
           </div>
           <div className="flex gap-2 mt-3">
-            <button onClick={onLimpar} className="px-3 py-1 bg-gray-500 text-white text-[10px] font-bold rounded hover:bg-gray-600 transition-colors">
+            <button onClick={onLimpar} className="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded hover:bg-gray-600 transition-colors">
               🗑️ LIMPAR
             </button>
-            <button onClick={onGerarPDF} className="px-3 py-1 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700 transition-colors">
+            <button onClick={onGerarPDF} className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition-colors">
               📄 GERAR PDF
             </button>
           </div>
