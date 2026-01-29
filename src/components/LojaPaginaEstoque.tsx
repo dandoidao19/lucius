@@ -280,17 +280,17 @@ export default function LojaPaginaEstoque() {
   return (
     <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
+      <div className="bg-purple-600 rounded shadow-sm overflow-hidden border border-purple-700">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-2 py-1 flex justify-between items-center hover:bg-purple-50 transition-colors"
+          className="w-full px-3 py-2 flex justify-between items-center hover:bg-purple-700 transition-colors text-white"
         >
-          <span className="text-xs font-bold text-gray-700 tracking-tight uppercase">🔍 Filtros e Ordenação</span>
+          <span className="text-xs font-black tracking-widest uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-600">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
-          <div className="p-1.5 border-t border-gray-100">
+          <div className="p-2 bg-white border-t border-purple-200">
             <div className="grid grid-cols-4 gap-1.5 mb-1.5">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
@@ -377,7 +377,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-purple-50 rounded shadow-sm p-1.5 border border-purple-100">
+      <div className="bg-white rounded shadow-sm p-2 border border-gray-200">
         <div className="flex justify-between items-start mb-1.5">
           <button
             onClick={() => {
@@ -440,7 +440,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Tabela de Estoque */}
-      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
+      <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
             <p className="text-xs">Nenhum produto encontrado com os filtros aplicados</p>
@@ -448,19 +448,19 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-purple-50/50 border-b border-purple-100">
+              <thead className="bg-purple-600 text-white">
                 <tr>
-                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Código</th>
-                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Descrição</th>
-                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Categoria</th>
-                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Status</th>
-                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Qtd Cond.</th>
-                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Qtd Efet.</th>
-                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Custo</th>
-                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Repasse</th>
-                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Venda</th>
-                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Ult. Compra</th>
-                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Ações</th>
+                <th className="px-1.5 py-1 text-left font-black uppercase">Código</th>
+                <th className="px-1.5 py-1 text-left font-black uppercase">Descrição</th>
+                <th className="px-1.5 py-1 text-center font-black uppercase">Categoria</th>
+                <th className="px-1.5 py-1 text-center font-black uppercase">Status</th>
+                <th className="px-1.5 py-1 text-center font-black uppercase">Qtd Cond.</th>
+                <th className="px-1.5 py-1 text-center font-black uppercase">Qtd Efet.</th>
+                <th className="px-1.5 py-1 text-right font-black uppercase">Custo</th>
+                <th className="px-1.5 py-1 text-right font-black uppercase">Repasse</th>
+                <th className="px-1.5 py-1 text-right font-black uppercase">Venda</th>
+                <th className="px-1.5 py-1 text-left font-black uppercase">Ult. Compra</th>
+                <th className="px-1.5 py-1 text-center font-black uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>

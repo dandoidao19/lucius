@@ -62,7 +62,7 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
   }
 
   return (
-    <div className="bg-blue-50 rounded shadow-sm p-1 space-y-1 border border-blue-100" style={{ minWidth: 0 }}>
+    <div className="bg-white rounded shadow-sm p-1 space-y-1 border border-gray-200" style={{ minWidth: 0 }}>
       <h2 className="font-semibold text-gray-800" style={{ fontSize: '12px' }}>{titulo || 'Caixa'}</h2>
 
       <div className={`rounded p-1.5 ${caixaRealCasa < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>

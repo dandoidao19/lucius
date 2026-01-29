@@ -83,66 +83,43 @@ export default function Dashboard() {
     return isActive ? colorStyle.active : colorStyle.inactive
   }
 
-  const getTitleBySection = () => {
-    switch (activeSection) {
-      case 'dashboard':
-        return '📊 Dashboard Principal'
-      case 'casa':
-        return '🏠 Módulo Casa'
-      case 'loja':
-        return '🏪 Módulo Loja'
-      case 'configuracoes':
-        return '⚙️ Configurações'
-      default:
-        return '🏠 Módulo Casa'
-    }
-  }
-
-  const getSectionBg = () => {
-    switch (activeSection) {
-      case 'casa': return 'bg-blue-50/40'
-      case 'loja': return 'bg-purple-50/40'
-      case 'dashboard': return 'bg-slate-900'
-      default: return 'bg-gray-50/40'
-    }
-  }
-
-  const isDark = activeSection === 'dashboard'
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${getSectionBg()}`}>
+    <div className="min-h-screen bg-slate-900 transition-all duration-500">
       <div className="container mx-auto px-3 py-2">
-        {/* Header com Usuário e Logout - COMPACTADO */}
-        <div className="flex justify-between items-center mb-2">
-          <div>
-            <h1 className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-              {getTitleBySection()}
-            </h1>
-            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
-              Bem-vindo, <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>{user?.email}</span>
-            </p>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors shadow-md text-xs"
-          >
-            🚪 Sair
-          </button>
+        {/* Header Branding */}
+        <div className="text-center mb-4 pt-4">
+          <h1 className="text-4xl md:text-5xl font-black text-blue-500 tracking-tighter italic">
+            <span className="text-sm font-bold align-top mr-2 text-blue-400">v3.0</span>
+            LUCIUS
+          </h1>
         </div>
 
-        {/* Menu de Navegação com Ícones - COMPACTADO */}
-        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} rounded-lg shadow-md p-1 mb-2 border`}>
+        {/* Menu de Navegação com Ícones - UNIFICADO COM USUÁRIO */}
+        <div className="bg-white rounded-lg shadow-md p-1 mb-4 border border-gray-100 flex justify-between items-center">
           <div className="flex flex-wrap gap-1">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
+                className={`px-4 py-2 rounded-lg font-bold transition-all duration-200 flex items-center gap-2 text-sm ${getButtonStyle(item.id, item.color)}`}
               >
                 <span>{item.icon}</span>
                 <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
               </button>
             ))}
+          </div>
+
+          <div className="flex items-center gap-4 px-3">
+            <p className="text-xs text-gray-600 hidden md:block">
+              Bem-vindo, <span className="font-bold text-gray-800">{user?.email}</span>
+            </p>
+            <button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors shadow-md text-xs flex items-center gap-1"
+            >
+              🚪 SAIR
+            </button>
           </div>
         </div>
 

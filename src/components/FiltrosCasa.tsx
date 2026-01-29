@@ -85,11 +85,11 @@ export default function FiltrosCasa({
   }
 
   return (
-    <div className="bg-blue-50 rounded shadow-sm mb-1 border border-blue-100">
+    <div className="bg-blue-600 rounded shadow-sm mb-1 border border-blue-700 overflow-hidden">
       {/* Cabeçalho Minimizado */}
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-1.5 flex items-center justify-between text-xs font-bold text-gray-700 hover:bg-blue-100/50 transition-colors"
+        className="w-full px-3 py-2 flex items-center justify-between text-xs font-black text-white uppercase tracking-widest hover:bg-blue-700 transition-colors"
       >
         <span>🔍 Filtros de Lançamentos</span>
         <span className="text-lg">{aberto ? '▼' : '▶'}</span>
@@ -97,7 +97,7 @@ export default function FiltrosCasa({
 
       {/* Conteúdo dos Filtros */}
       {aberto && (
-        <div className="px-3 pb-3 pt-2 border-t border-gray-200">
+        <div className="px-3 pb-3 pt-2 bg-white border-t border-blue-200">
           {/* Grid com 6 colunas - ORDEM: Data Início, Data Fim, Mês, Descrição, CDC, Status */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
             {/* Data Início */}

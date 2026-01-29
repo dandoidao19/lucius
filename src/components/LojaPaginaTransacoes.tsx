@@ -233,31 +233,31 @@ export default function LojaPaginaTransacoes() {
         onGerarPDF={gerarPDF}
       />
 
-      <div className="flex justify-between items-center bg-purple-50 p-2 rounded shadow-sm border border-purple-100">
-        <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Transações Unificadas ({transacoesFiltradas.length})</h2>
+      <div className="flex justify-between items-center bg-purple-600 p-2 rounded shadow-sm border border-purple-500 text-white">
+        <h2 className="text-xs font-black uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs font-bold transition-all shadow-sm flex items-center gap-1"
+          className="bg-white text-purple-600 hover:bg-purple-50 px-3 py-1 rounded text-[10px] font-black uppercase transition-all shadow-sm flex items-center gap-1"
         >
           <span>+</span> NOVO LANÇAMENTO
         </button>
       </div>
 
-      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
+      <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-purple-50/50 border-b border-purple-100">
+            <thead className="bg-purple-600 text-white">
               <tr>
-                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase w-[85px]">Data</th>
-                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase text-center w-[85px]">Tipo</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[45px]">Nº</th>
-                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[90px]">Cliente/Fornecedor</th>
-                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[150px]">Observações</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-right w-[60px]">Total</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[30px]">Parc.</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[30px]">Itens</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[65px]">Status</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[35px]">Ação</th>
+                <th className="px-1 py-1 font-black uppercase w-[85px]">Data</th>
+                <th className="px-1 py-1 font-black uppercase text-center w-[85px]">Tipo</th>
+                <th className="px-0.5 py-1 font-black uppercase text-center w-[45px]">Nº</th>
+                <th className="px-1 py-1 font-black uppercase min-w-[90px]">Cliente/Fornecedor</th>
+                <th className="px-1 py-1 font-black uppercase min-w-[150px]">Observações</th>
+                <th className="px-0.5 py-1 font-black uppercase text-right w-[60px]">Total</th>
+                <th className="px-0.5 py-1 font-black uppercase text-center w-[30px]">Parc.</th>
+                <th className="px-0.5 py-1 font-black uppercase text-center w-[30px]">Itens</th>
+                <th className="px-0.5 py-1 font-black uppercase text-center w-[65px]">Status</th>
+                <th className="px-0.5 py-1 font-black uppercase text-center w-[35px]">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">

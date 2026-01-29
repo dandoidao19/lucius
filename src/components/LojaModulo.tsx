@@ -32,13 +32,13 @@ export default function LojaModulo() {
   return (
     <div className="space-y-1">
       {/* Menu Horizontal */}
-      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
+      <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
         <nav className="flex flex-wrap gap-0">
           {abas.map((aba) => (
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
-              className={`flex-1 min-w-max px-4 py-1 text-xs font-bold transition-all border-b-2 ${
+              className={`flex-1 min-w-max px-4 py-2 text-sm font-bold transition-all border-b-2 ${
                 abaAtiva === aba.id
                   ? 'bg-purple-50 text-purple-600 border-purple-500'
                   : 'bg-white text-gray-700 border-transparent hover:bg-purple-50'

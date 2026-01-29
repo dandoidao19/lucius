@@ -443,30 +443,30 @@ export default function LojaPaginaFinanceiro() {
 
         {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
-          <div className="bg-purple-50 rounded shadow-md p-3 border border-purple-100">
-            <div className="flex justify-between items-center mb-3">
+          <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
+            <div className="bg-purple-600 flex justify-between items-center p-2 text-white">
                <div className="flex items-center gap-4">
                 <button
                   onClick={() => setCaixaMinimizado(!caixaMinimizado)}
-                  className={`p-1.5 rounded-md transition-colors ${caixaMinimizado ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-purple-100 text-purple-600 hover:bg-purple-200'}`}
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-black uppercase transition-all shadow-sm flex items-center gap-1"
                   title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
                 >
-                  {caixaMinimizado ? '📊 Exibir Caixas' : '◀ Recolher'}
+                  <span className="text-sm">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
                 </button>
-                <h3 className="font-bold text-gray-800 text-xs uppercase tracking-tight">
+                <h3 className="font-black text-[11px] uppercase tracking-wider">
                   {tituloLista}
                   {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
                 </h3>
                 <button
                   onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded-md text-xs font-bold uppercase"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-black uppercase transition-all shadow-sm"
                 >
                   {exibirFormularioLancamento ? 'FECHAR' : '+ LANÇAMENTO AVULSO'}
                 </button>
               </div>
               <button
                 onClick={() => setVerTodas(!verTodas)}
-                className={`px-3 py-1 text-xs font-bold uppercase rounded transition-colors ${verTodas ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-black uppercase transition-all shadow-sm"
               >
                 {verTodas ? 'MÊS ATUAL' : 'VER TODAS'}
               </button>
@@ -480,19 +480,19 @@ export default function LojaPaginaFinanceiro() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-xs">
                   <thead>
-                    <tr className="bg-purple-50/50 border-b border-purple-100">
-                      <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase w-[85px]">Venc.</th>
-                      <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase w-[85px]">Pagto.</th>
-                      <th className="px-0.5 py-0.5 text-left font-bold text-purple-800 uppercase w-[45px]">Nº</th>
-                      <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase min-w-[90px]">Cliente/Fornecedor</th>
-                      <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase min-w-[150px]">Observações</th>
-                      <th className="px-0.5 py-0.5 text-right font-bold text-purple-800 uppercase w-[60px]">Valor</th>
-                      <th className="px-0.5 py-0.5 text-right font-bold text-purple-800 uppercase w-[60px]">Pago</th>
-                      <th className="px-0.5 py-0.5 text-right font-bold text-purple-800 uppercase w-[40px]">Dif.</th>
-                      <th className="px-0.5 py-0.5 text-center font-bold text-purple-800 uppercase w-[30px]">Parc.</th>
-                      <th className="px-0.5 py-0.5 text-center font-bold text-purple-800 uppercase w-[50px]">Tipo</th>
-                      <th className="px-0.5 py-0.5 text-center font-bold text-purple-800 uppercase w-[65px]">Status</th>
-                      <th className="px-0.5 py-0.5 text-center font-bold text-purple-800 uppercase w-[35px]">Ação</th>
+                    <tr className="bg-purple-600 text-white">
+                      <th className="px-1 py-1 text-left font-black uppercase w-[85px]">Venc.</th>
+                      <th className="px-1 py-1 text-left font-black uppercase w-[85px]">Pagto.</th>
+                      <th className="px-0.5 py-1 text-left font-black uppercase w-[45px]">Nº</th>
+                      <th className="px-1 py-1 text-left font-black uppercase min-w-[90px]">Cliente/Fornecedor</th>
+                      <th className="px-1 py-1 text-left font-black uppercase min-w-[150px]">Observações</th>
+                      <th className="px-0.5 py-1 text-right font-black uppercase w-[60px]">Valor</th>
+                      <th className="px-0.5 py-1 text-right font-black uppercase w-[60px]">Pago</th>
+                      <th className="px-0.5 py-1 text-right font-black uppercase w-[40px]">Dif.</th>
+                      <th className="px-0.5 py-1 text-center font-black uppercase w-[30px]">Parc.</th>
+                      <th className="px-0.5 py-1 text-center font-black uppercase w-[50px]">Tipo</th>
+                      <th className="px-0.5 py-1 text-center font-black uppercase w-[65px]">Status</th>
+                      <th className="px-0.5 py-1 text-center font-black uppercase w-[35px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
