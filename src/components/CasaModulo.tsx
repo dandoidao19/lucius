@@ -780,7 +780,7 @@ export default function CasaModulo() {
           onClick={() => setFormularioAberto(!formularioAberto)}
           className="w-full px-3 py-2 flex justify-between items-center hover:bg-blue-700 transition-colors text-white"
         >
-          <span className="text-xs font-black uppercase tracking-widest">
+          <span className="text-xs font-semibold uppercase tracking-widest">
             {editandoLancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
           </span>
           <span className="text-xs text-gray-600">{formularioAberto ? '▲' : '▼'}</span>
@@ -978,11 +978,11 @@ export default function CasaModulo() {
           <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
             <div className="bg-blue-600 flex justify-between items-center p-2 text-white">
-              <h2 className="text-xs font-black uppercase tracking-widest">{tituloTabela}</h2>
+              <h2 className="text-xs font-semibold uppercase tracking-widest">{tituloTabela}</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setMostrarTodos(!mostrarTodos)}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-[10px] font-black uppercase transition-all shadow-sm"
+                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-[10px] font-semibold uppercase transition-all shadow-sm"
                 >
                   {mostrarTodos ? '11 DIAS' : 'VER TUDO'}
                 </button>
@@ -999,14 +999,14 @@ export default function CasaModulo() {
             ) : (
               <div className="overflow-x-auto p-1">
                 <table className="min-w-full table-fixed text-xs">
-                  <thead className="bg-blue-600 text-white">
+                  <thead className="bg-blue-600 text-white border-b border-blue-500">
                     <tr>
-                      <th className="w-1/12 px-1 py-1 text-left font-black uppercase text-xs">Data</th>
-                      <th className="w-1/12 px-1 py-1 text-left font-black uppercase text-xs">Status</th>
-                      <th className="w-2/12 px-1 py-1 text-right font-black uppercase text-xs">Valor</th>
-                      <th className="w-4/12 px-1 py-1 text-left font-black uppercase text-xs">Descrição</th>
-                      <th className="w-2/12 px-1 py-1 text-left font-black uppercase text-xs">CDC</th>
-                      <th className="w-2/12 px-1 py-1 text-center font-black uppercase text-xs">Ações</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Data</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Status</th>
+                      <th className="w-2/12 px-1 py-1 text-right font-semibold uppercase text-xs">Valor</th>
+                      <th className="w-4/12 px-1 py-1 text-left font-semibold uppercase text-xs">Descrição</th>
+                      <th className="w-2/12 px-1 py-1 text-left font-semibold uppercase text-xs">CDC</th>
+                      <th className="w-2/12 px-1 py-1 text-center font-semibold uppercase text-xs">Ações</th>
                     </tr>
                   </thead>
                   <tbody>

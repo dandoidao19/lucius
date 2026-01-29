@@ -31,9 +31,9 @@ export default function CabecalhoSistema() {
 
         {/* Nome do Sistema (Centro) */}
         <div className="text-center">
-          <h1 className="text-4xl font-black tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic">
-            <span className="text-sm align-top mr-2 opacity-80">v3.0</span>
+          <h1 className="text-4xl font-black tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative">
             LUCIUS
+            <span className="absolute -top-1 -right-8 text-[10px] font-normal tracking-normal text-blue-400/80 not-italic">v3.0</span>
           </h1>
         </div>
 

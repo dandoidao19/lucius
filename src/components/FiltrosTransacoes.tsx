@@ -59,7 +59,7 @@ export default function FiltrosTransacoes({
     <div className="bg-purple-600 rounded shadow-sm mb-2 border border-purple-700 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-2 flex items-center justify-between text-xs font-black text-white uppercase tracking-widest hover:bg-purple-700 transition-colors"
+        className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-white uppercase tracking-widest hover:bg-purple-700 transition-colors"
       >
         <span>🔍 Filtros de Transações</span>
         <span>{aberto ? '▲' : '▼'}</span>
@@ -128,10 +128,10 @@ export default function FiltrosTransacoes({
             </div>
           </div>
           <div className="flex gap-2 mt-3">
-            <button onClick={onLimpar} className="px-3 py-1 bg-gray-500 text-white text-xs font-bold rounded hover:bg-gray-600 transition-colors">
+            <button onClick={onLimpar} className="px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded hover:bg-gray-600 transition-colors">
               🗑️ LIMPAR
             </button>
-            <button onClick={onGerarPDF} className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700 transition-colors">
+            <button onClick={onGerarPDF} className="px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 transition-colors">
               📄 GERAR PDF
             </button>
           </div>

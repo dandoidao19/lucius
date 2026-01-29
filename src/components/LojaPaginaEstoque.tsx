@@ -285,8 +285,8 @@ export default function LojaPaginaEstoque() {
           onClick={() => setFiltroAberto(!filtroAberto)}
           className="w-full px-3 py-2 flex justify-between items-center hover:bg-purple-700 transition-colors text-white"
         >
-          <span className="text-xs font-black tracking-widest uppercase">🔍 Filtros e Ordenação</span>
-          <span className="text-xs text-gray-600">{filtroAberto ? '▲' : '▼'}</span>
+          <span className="text-xs font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
+          <span className="text-xs text-gray-400">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
@@ -330,13 +330,13 @@ export default function LojaPaginaEstoque() {
               <div className="flex items-end gap-1">
                 <button
                   onClick={limparFiltros}
-                  className="px-2 py-0.5 bg-gray-500 text-white text-xs font-bold rounded hover:bg-gray-600"
+                  className="px-2 py-0.5 bg-gray-500 text-white text-xs font-semibold rounded hover:bg-gray-600"
                 >
                   LIMPAR
                 </button>
                 <button
                   onClick={gerarPDF}
-                  className="px-2 py-0.5 bg-red-600 text-white text-xs font-bold rounded hover:bg-red-700"
+                  className="px-2 py-0.5 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700"
                 >
                   📄 PDF
                 </button>
@@ -384,14 +384,14 @@ export default function LojaPaginaEstoque() {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold transition-colors shadow-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition-colors shadow-sm"
           >
             + CADASTRAR ITEM
           </button>
 
           <div className="text-right">
-            <p className="text-xs font-bold text-gray-500 uppercase">Total de Produtos</p>
-            <p className="text-sm font-black text-gray-800">
+            <p className="text-xs font-semibold text-gray-500 uppercase">Total de Produtos</p>
+            <p className="text-sm font-semibold text-gray-800">
               {produtosFiltrados.length}
             </p>
           </div>
@@ -448,19 +448,19 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-purple-600 text-white">
+              <thead className="bg-purple-600 text-white border-b border-purple-500">
                 <tr>
-                <th className="px-1.5 py-1 text-left font-black uppercase">Código</th>
-                <th className="px-1.5 py-1 text-left font-black uppercase">Descrição</th>
-                <th className="px-1.5 py-1 text-center font-black uppercase">Categoria</th>
-                <th className="px-1.5 py-1 text-center font-black uppercase">Status</th>
-                <th className="px-1.5 py-1 text-center font-black uppercase">Qtd Cond.</th>
-                <th className="px-1.5 py-1 text-center font-black uppercase">Qtd Efet.</th>
-                <th className="px-1.5 py-1 text-right font-black uppercase">Custo</th>
-                <th className="px-1.5 py-1 text-right font-black uppercase">Repasse</th>
-                <th className="px-1.5 py-1 text-right font-black uppercase">Venda</th>
-                <th className="px-1.5 py-1 text-left font-black uppercase">Ult. Compra</th>
-                <th className="px-1.5 py-1 text-center font-black uppercase">Ações</th>
+                <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
+                <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Categoria</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Status</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Cond.</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Efet.</th>
+                <th className="px-1.5 py-1 text-right font-semibold uppercase">Custo</th>
+                <th className="px-1.5 py-1 text-right font-semibold uppercase">Repasse</th>
+                <th className="px-1.5 py-1 text-right font-semibold uppercase">Venda</th>
+                <th className="px-1.5 py-1 text-left font-semibold uppercase">Ult. Compra</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>
