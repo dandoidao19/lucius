@@ -59,23 +59,28 @@ export default function Dashboard() {
     const isActive = activeSection === id
     const colors: Record<string, { active: string; inactive: string }> = {
       blue: {
-        active: 'bg-blue-600 text-white shadow-lg shadow-blue-500/50',
+        active: 'bg-blue-600 text-white shadow-lg shadow-blue-500/50 border-blue-600',
         inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300'
       },
       green: {
-        active: 'bg-green-600 text-white shadow-lg shadow-green-500/50',
+        active: 'bg-green-600 text-white shadow-lg shadow-green-500/50 border-green-600',
         inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-green-300'
       },
       purple: {
-        active: 'bg-purple-600 text-white shadow-lg shadow-purple-500/50',
+        active: 'bg-purple-600 text-white shadow-lg shadow-purple-500/50 border-purple-600',
         inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-purple-300'
       },
       gray: {
-        active: 'bg-gray-600 text-white shadow-lg shadow-gray-500/50',
+        active: 'bg-gray-700 text-white shadow-lg shadow-gray-500/50 border-gray-700',
         inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
+      },
+      slate: {
+        active: 'bg-slate-700 text-white shadow-lg shadow-slate-500/50 border-slate-700',
+        inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-slate-300'
       }
     }
-    return isActive ? colors[color].active : colors[color].inactive
+    const colorStyle = colors[color] || colors.gray
+    return isActive ? colorStyle.active : colorStyle.inactive
   }
 
   const getTitleBySection = () => {
@@ -97,22 +102,24 @@ export default function Dashboard() {
     switch (activeSection) {
       case 'casa': return 'bg-blue-50/40'
       case 'loja': return 'bg-purple-50/40'
-      case 'dashboard': return 'bg-slate-50/40'
+      case 'dashboard': return 'bg-slate-900'
       default: return 'bg-gray-50/40'
     }
   }
 
+  const isDark = activeSection === 'dashboard'
+
   return (
-    <div className={`min-h-screen transition-colors duration-500 ${getSectionBg()}`}>
+    <div className={`min-h-screen transition-all duration-500 ${getSectionBg()}`}>
       <div className="container mx-auto px-3 py-2">
         {/* Header com Usuário e Logout - COMPACTADO */}
         <div className="flex justify-between items-center mb-2">
           <div>
-            <h1 className="text-lg md:text-xl font-bold text-gray-800">
+            <h1 className={`text-lg md:text-xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
               {getTitleBySection()}
             </h1>
-            <p className="text-xs text-gray-600 mt-0.5">
-              Bem-vindo, <span className="font-semibold text-gray-800">{user?.email}</span>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-300' : 'text-gray-600'}`}>
+              Bem-vindo, <span className={`font-semibold ${isDark ? 'text-white' : 'text-gray-800'}`}>{user?.email}</span>
             </p>
           </div>
           <button
