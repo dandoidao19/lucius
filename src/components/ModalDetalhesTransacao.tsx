@@ -3,13 +3,16 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
+import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 
 interface ItemDetalhe {
   id: string
+  produto_id: string | null
   descricao: string
   quantidade: number
-  preco_unitario: number
-  subtotal: number
+  preco_venda: number
+  preco_custo: number
+  valor_repasse: number
   categoria?: string
 }
 
@@ -40,6 +43,24 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
   const [itens, setItens] = useState<ItemDetalhe[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDetalhe[]>([])
   const [loading, setLoading] = useState(false)
+  const [loadingExcluir, setLoadingExcluir] = useState(false)
+  const [transacaoFull, setTransacaoFull] = useState<Record<string, any> | null>(null)
+  const [editAberto, setEditAberto] = useState(false)
+
+  const buscarFull = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from(tipo)
+        .select('*')
+        .eq('id', transacaoId)
+        .single()
+
+      if (error) throw error
+      setTransacaoFull(data)
+    } catch (err) {
+      console.error('Erro ao buscar transação full:', err)
+    }
+  }, [transacaoId, tipo])
 
   const buscarItens = useCallback(async () => {
     setLoading(true)
@@ -58,12 +79,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
 
       if (error) throw error
 
-      const itensFormatados = (data || []).map((item: { id: string; descricao?: string; quantidade?: number; preco_venda?: number; valor_repasse?: number; preco_custo?: number; categoria?: string }) => ({
+      const itensFormatados = (data || []).map((item: Record<string, any>) => ({
         id: item.id,
+        produto_id: item.produto_id,
         descricao: item.descricao || '',
         quantidade: item.quantidade || 0,
-        preco_unitario: tipo === 'vendas' ? (item.preco_venda || 0) : (item.valor_repasse || item.preco_custo || 0),
-        subtotal: (item.quantidade || 0) * (tipo === 'vendas' ? (item.preco_venda || 0) : (item.valor_repasse || item.preco_custo || 0)),
+        preco_venda: item.preco_venda || 0,
+        preco_custo: item.preco_custo || 0,
+        valor_repasse: item.valor_repasse || 0,
         categoria: item.categoria
       }))
 
@@ -74,6 +97,77 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
       setLoading(false)
     }
   }, [transacaoId, tipo])
+
+  const handleExcluir = async () => {
+    if (!window.confirm(`⚠️ TEM CERTEZA? Esta ação irá EXCLUIR permanentemente esta transação e REVERTER todos os impactos no ESTOQUE e FINANCEIRO.`)) {
+      return
+    }
+
+    setLoadingExcluir(true)
+    try {
+      // 1. Reverter Estoque
+      for (const item of itens) {
+        const { data: prod } = await supabase
+          .from('produtos')
+          .select('id')
+          .ilike('descricao', item.descricao)
+          .single()
+
+        if (prod) {
+          const multiplicador = tipo === 'vendas' ? 1 : -1 // Venda: devolve pro estoque. Compra: retira do estoque.
+          await supabase.rpc('atualizar_estoque', {
+            produto_id_param: prod.id,
+            quantidade_param: item.quantidade * multiplicador
+          })
+
+          await supabase.from('movimentacoes_estoque').insert({
+            produto_id: prod.id,
+            tipo: tipo === 'vendas' ? 'entrada' : 'saida',
+            quantidade: item.quantidade,
+            observacao: `EXTORNO/EXCLUSÃO: #${dadosResumo.numero} (${tipo})`
+          })
+        }
+      }
+
+      // 2. Deletar Financeiro (transacoes_loja)
+      // Buscamos pelo prefixo e numero na descricao ou algo mais seguro
+      // Infelizmente não temos o ID da transação vinculado diretamente em cada parcela de forma fácil sem uma coluna extra.
+      // Mas podemos usar a lógica de busca que já usamos no buscarParcelas.
+      const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
+      if (tipo !== 'condicionais') {
+        const { data: parcelasLoja } = await supabase
+          .from('transacoes_loja')
+          .select('id')
+          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+
+        if (parcelasLoja && parcelasLoja.length > 0) {
+          const ids = parcelasLoja.map(p => p.id)
+          await supabase.from('transacoes_loja').delete().in('id', ids)
+        }
+      }
+
+      // 3. Deletar a Transação Principal e Itens
+      if (tipo === 'vendas') {
+        await supabase.from('itens_venda').delete().eq('venda_id', transacaoId)
+        await supabase.from('vendas').delete().eq('id', transacaoId)
+      } else if (tipo === 'compras') {
+        await supabase.from('itens_compra').delete().eq('compra_id', transacaoId)
+        await supabase.from('compras').delete().eq('id', transacaoId)
+      } else {
+        await supabase.from('itens_condicionais').delete().eq('transacao_id', transacaoId)
+        await supabase.from('transacoes_condicionais').delete().eq('id', transacaoId)
+      }
+
+      alert('✅ Transação excluída com sucesso!')
+      onClose()
+      window.location.reload() // Recarrega para atualizar as listas
+    } catch (err) {
+      console.error('Erro ao excluir transação:', err)
+      alert('❌ Erro ao excluir transação')
+    } finally {
+      setLoadingExcluir(false)
+    }
+  }
 
   const buscarParcelas = useCallback(async () => {
     if (tipo === 'condicionais') {
@@ -109,12 +203,73 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
 
   useEffect(() => {
     if (aberto && transacaoId) {
+      buscarFull()
       buscarItens()
       buscarParcelas()
     }
-  }, [aberto, transacaoId, buscarItens, buscarParcelas])
+  }, [aberto, transacaoId, buscarFull, buscarItens, buscarParcelas])
 
   if (!aberto) return null
+
+  const handleEditClick = () => {
+    setEditAberto(true)
+  }
+
+  const handleEditSucesso = () => {
+    setEditAberto(false)
+    onClose()
+    window.location.reload()
+  }
+
+  if (editAberto && transacaoFull) {
+    const isPedido = transacaoFull.observacao?.includes('[PEDIDO]')
+    let tipoMapeado = ''
+    if (tipo === 'vendas') tipoMapeado = 'venda'
+    else if (tipo === 'compras') tipoMapeado = 'compra'
+    else {
+      if (isPedido) {
+        tipoMapeado = transacaoFull.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
+      } else {
+        tipoMapeado = transacaoFull.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor'
+      }
+    }
+
+    // Mapear dados para o formato esperado pelo ModalTransacaoUnificada
+    const transacaoInicial = {
+      id: transacaoId,
+      tipo: tipoMapeado as any,
+      data: tipo === 'vendas' ? transacaoFull.data_venda : (tipo === 'compras' ? transacaoFull.data_compra : transacaoFull.data_transacao),
+      entidade: tipo === 'vendas' ? transacaoFull.cliente : (tipo === 'compras' ? transacaoFull.fornecedor : transacaoFull.origem),
+      total: transacaoFull.total || 0,
+      status_pagamento: transacaoFull.status_pagamento || transacaoFull.status || 'pendente',
+      quantidade_parcelas: transacaoFull.quantidade_parcelas || 1,
+      prazoparcelas: transacaoFull.prazoparcelas || 'mensal',
+      observacao: transacaoFull.observacao || '',
+      numero_transacao: transacaoFull.numero_transacao,
+      itens: itens.map(i => ({
+        id: i.id,
+        produto_id: i.produto_id,
+        descricao: i.descricao,
+        quantidade: i.quantidade,
+        categoria: i.categoria || '',
+        preco_custo: i.preco_custo,
+        valor_repasse: i.valor_repasse,
+        preco_venda: i.preco_venda,
+        estoque_atual: 0,
+        minimizado: true,
+        isNovoCadastro: false
+      }))
+    }
+
+    return (
+      <ModalTransacaoUnificada
+        aberto={editAberto}
+        onClose={() => setEditAberto(false)}
+        onSucesso={handleEditSucesso}
+        transacaoInicial={transacaoInicial}
+      />
+    )
+  }
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2">
@@ -186,8 +341,8 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                         <td className="px-2 py-1 font-medium text-gray-800">{item.descricao}</td>
                         <td className="px-2 py-1 text-gray-600">{item.categoria || '—'}</td>
                         <td className="px-2 py-1 text-center">{item.quantidade}</td>
-                        <td className="px-2 py-1 text-right">R$ {item.preco_unitario.toFixed(2)}</td>
-                        <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {item.subtotal.toFixed(2)}</td>
+                        <td className="px-2 py-1 text-right">R$ {(tipo === 'vendas' ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {(item.quantidade * (tipo === 'vendas' ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
                       </tr>
                     ))
                   )}
@@ -196,7 +351,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                   <tfoot className="bg-purple-50 font-bold border-t text-xs">
                     <tr>
                       <td colSpan={4} className="px-2 py-1 text-right uppercase">Total Itens:</td>
-                      <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
+                      <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + (i.quantidade * (tipo === 'vendas' ? i.preco_venda : i.valor_repasse)), 0).toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 )}
@@ -255,7 +410,23 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
           )}
         </div>
 
-        <div className="p-2 bg-gray-50 border-t flex justify-end">
+        <div className="p-2 bg-gray-50 border-t flex justify-between items-center">
+          <div className="flex gap-2">
+            <button
+              onClick={handleEditClick}
+              disabled={loadingExcluir || !transacaoFull}
+              className="px-4 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-all text-xs disabled:opacity-50"
+            >
+              Editar
+            </button>
+            <button
+              onClick={handleExcluir}
+              disabled={loadingExcluir}
+              className="px-4 py-1.5 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs disabled:opacity-50"
+            >
+              {loadingExcluir ? 'Excluindo...' : 'Excluir'}
+            </button>
+          </div>
           <button
             onClick={onClose}
             className="px-4 py-1.5 bg-gray-800 text-white rounded font-bold hover:bg-gray-900 transition-all text-xs"

@@ -38,7 +38,7 @@ export default function LojaModulo() {
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
-              className={`flex-1 min-w-max px-4 py-2 text-sm font-semibold transition-all border-b-2 ${
+              className={`flex-1 min-w-max px-4 py-1.5 text-sm font-semibold transition-all border-b-2 ${
                 abaAtiva === aba.id
                   ? 'bg-purple-50 text-purple-600 border-purple-500'
                   : 'bg-white text-gray-700 border-transparent hover:bg-purple-50'

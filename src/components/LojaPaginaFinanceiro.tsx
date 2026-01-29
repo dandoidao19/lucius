@@ -444,29 +444,29 @@ export default function LojaPaginaFinanceiro() {
         {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
-            <div className="bg-purple-600 flex justify-between items-center p-2 text-white">
+            <div className="bg-purple-600 flex justify-between items-center px-2 py-1 text-white">
                <div className="flex items-center gap-4">
                 <button
                   onClick={() => setCaixaMinimizado(!caixaMinimizado)}
-                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
                   title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
                 >
                   <span className="text-sm">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
                 </button>
-                <h3 className="font-semibold text-[11px] uppercase tracking-wider">
+                <h3 className="font-semibold text-[10px] uppercase tracking-wider">
                   {tituloLista}
                   {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
                 </h3>
                 <button
                   onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
-                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm"
                 >
                   {exibirFormularioLancamento ? 'FECHAR' : '+ LANÇAMENTO AVULSO'}
                 </button>
               </div>
               <button
                 onClick={() => setVerTodas(!verTodas)}
-                className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-1 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm"
+                className="bg-white text-purple-600 hover:bg-purple-50 px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase transition-all shadow-sm"
               >
                 {verTodas ? 'MÊS ATUAL' : 'VER TODAS'}
               </button>

@@ -778,7 +778,7 @@ export default function CasaModulo() {
       <div className="bg-blue-600 rounded shadow-sm overflow-hidden border border-blue-700">
         <button
           onClick={() => setFormularioAberto(!formularioAberto)}
-          className="w-full px-3 py-2 flex justify-between items-center hover:bg-blue-700 transition-colors text-white"
+          className="w-full px-3 py-1 flex justify-between items-center hover:bg-blue-700 transition-colors text-white"
         >
           <span className="text-xs font-semibold uppercase tracking-widest">
             {editandoLancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
@@ -977,8 +977,8 @@ export default function CasaModulo() {
         <div className="col-span-2">
           <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
-            <div className="bg-blue-600 flex justify-between items-center p-2 text-white">
-              <h2 className="text-xs font-semibold uppercase tracking-widest">{tituloTabela}</h2>
+            <div className="bg-blue-600 flex justify-between items-center px-2 py-1 text-white">
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest">{tituloTabela}</h2>
               <div className="flex gap-1">
                 <button
                   onClick={() => setMostrarTodos(!mostrarTodos)}

@@ -31,13 +31,26 @@ interface ModalTransacaoUnificadaProps {
   aberto: boolean
   onClose: () => void
   onSucesso: () => void
+  transacaoInicial?: {
+    id: string
+    tipo: TipoTransacao
+    data: string
+    entidade: string
+    total: number
+    status_pagamento: string
+    quantidade_parcelas: number
+    prazoparcelas: string
+    observacao: string
+    numero_transacao: number
+    itens: ItemTransacao[]
+  }
 }
 
-export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: ModalTransacaoUnificadaProps) {
-  const [tipo, setTipo] = useState<TipoTransacao | ''>('')
-  const [data, setData] = useState(getDataAtualBrasil())
-  const [entidade, setEntidade] = useState('') // Cliente ou Fornecedor
-  const [itens, setItens] = useState<ItemTransacao[]>([
+export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
+  const [tipo, setTipo] = useState<TipoTransacao | ''>(transacaoInicial?.tipo || '')
+  const [data, setData] = useState(transacaoInicial?.data || getDataAtualBrasil())
+  const [entidade, setEntidade] = useState(transacaoInicial?.entidade || '') // Cliente ou Fornecedor
+  const [itens, setItens] = useState<ItemTransacao[]>(transacaoInicial?.itens || [
     {
       id: Date.now().toString(),
       produto_id: null,
@@ -52,13 +65,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       isNovoCadastro: false,
     },
   ])
-  const [quantidadeParcelas, setQuantidadeParcelas] = useState(1)
-  const [prazoParcelas, setPrazoParcelas] = useState('mensal')
-  const [statusPagamento, setStatusPagamento] = useState('pendente')
-  const [dataVencimento, setDataVencimento] = useState(getDataAtualBrasil())
+  const [quantidadeParcelas, setQuantidadeParcelas] = useState(transacaoInicial?.quantidade_parcelas || 1)
+  const [prazoParcelas, setPrazoParcelas] = useState(transacaoInicial?.prazoparcelas || 'mensal')
+  const [statusPagamento, setStatusPagamento] = useState(transacaoInicial?.status_pagamento || 'pendente')
+  const [dataVencimento, setDataVencimento] = useState(transacaoInicial?.data || getDataAtualBrasil())
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
-  const [observacao, setObservacao] = useState('')
+  const [observacao, setObservacao] = useState(transacaoInicial?.observacao?.replace('[PEDIDO]', '').trim() || '')
   const [loading, setLoading] = useState(false)
   const [, setErro] = useState('')
 
@@ -261,6 +274,50 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
     if (error) throw error
   }
 
+  const reverterImpactosOld = async () => {
+    if (!transacaoInicial) return;
+
+    try {
+      // 1. Reverter Estoque
+      for (const item of transacaoInicial.itens) {
+        if (item.produto_id) {
+          const multiplicador = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 1 : -1
+          await supabase.rpc('atualizar_estoque', {
+            produto_id_param: item.produto_id,
+            quantidade_param: item.quantidade * multiplicador
+          })
+
+          await supabase.from('movimentacoes_estoque').insert({
+            produto_id: item.produto_id,
+            tipo: multiplicador === 1 ? 'entrada' : 'saida',
+            quantidade: item.quantidade,
+            observacao: `REVERSÃO P/ EDIÇÃO: #${transacaoInicial.numero_transacao}`
+          })
+        }
+      }
+
+      // 2. Deletar Financeiro
+      const prefixo = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 'Venda' : 'Compra'
+      const { data: parcelasLoja } = await supabase
+        .from('transacoes_loja')
+        .select('id')
+        .ilike('descricao', `${prefixo}%${transacaoInicial.entidade}%`)
+
+      if (parcelasLoja && parcelasLoja.length > 0) {
+        await supabase.from('transacoes_loja').delete().in('id', parcelasLoja.map(p => p.id))
+      }
+
+      // 3. Deletar Itens
+      if (transacaoInicial.tipo === 'venda') await supabase.from('itens_venda').delete().eq('venda_id', transacaoInicial.id)
+      else if (transacaoInicial.tipo === 'compra') await supabase.from('itens_compra').delete().eq('compra_id', transacaoInicial.id)
+      else await supabase.from('itens_condicionais').delete().eq('transacao_id', transacaoInicial.id)
+
+    } catch (err) {
+      console.error('Erro ao reverter impactos antigos:', err)
+      throw err
+    }
+  }
+
   const handleGerarTransacao = async () => {
     if (!entidade.trim()) {
       setErro('Informe o cliente/fornecedor')
@@ -280,16 +337,19 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { data: numTransacao } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (transacaoInicial) {
+        await reverterImpactosOld()
+      }
+
+      const numTransacao = transacaoInicial?.numero_transacao || (await supabase.rpc('obter_proximo_numero_transacao')).data
       const total = calcularTotal()
       const isVenda = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
 
+      let transacaoPrincipalId = transacaoInicial?.id
+
       if (isVenda) {
-        // Fluxo de Venda
-        const { data: venda, error: erroVenda } = await supabase
-          .from('vendas')
-          .insert({
-            numero_transacao: numTransacao,
+        if (transacaoInicial) {
+          await supabase.from('vendas').update({
             data_venda: prepararDataParaInsert(data),
             cliente: entidade,
             total,
@@ -298,11 +358,27 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             observacao: observacao.trim() || null
-          })
-          .select()
-          .single()
+          }).eq('id', transacaoInicial.id)
+        } else {
+          const { data: novaVenda, error: erroVenda } = await supabase
+            .from('vendas')
+            .insert({
+              numero_transacao: numTransacao,
+              data_venda: prepararDataParaInsert(data),
+              cliente: entidade,
+              total,
+              quantidade_itens: itensValidos.length,
+              status_pagamento: statusPagamento,
+              quantidade_parcelas: quantidadeParcelas,
+              prazoparcelas: prazoParcelas,
+              observacao: observacao.trim() || null
+            })
+            .select()
+            .single()
 
-        if (erroVenda) throw erroVenda
+          if (erroVenda) throw erroVenda
+          transacaoPrincipalId = novaVenda.id
+        }
 
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada')
 
@@ -333,7 +409,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
             await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
 
             const dbItem = {
-              venda_id: venda.id,
+              venda_id: transacaoPrincipalId,
               produto_id: prodId,
               descricao: item.descricao,
               quantidade: item.quantidade,
@@ -356,10 +432,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
         }
       } else {
         // Fluxo de Compra
-        const { data: compra, error: erroCompra } = await supabase
-          .from('compras')
-          .insert({
-            numero_transacao: numTransacao,
+        if (transacaoInicial) {
+          await supabase.from('compras').update({
             data_compra: prepararDataParaInsert(data),
             fornecedor: entidade,
             total,
@@ -368,11 +442,27 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             observacao: observacao.trim() || null
-          })
-          .select()
-          .single()
+          }).eq('id', transacaoInicial.id)
+        } else {
+          const { data: compra, error: erroCompra } = await supabase
+            .from('compras')
+            .insert({
+              numero_transacao: numTransacao,
+              data_compra: prepararDataParaInsert(data),
+              fornecedor: entidade,
+              total,
+              quantidade_itens: itensValidos.length,
+              status_pagamento: statusPagamento,
+              quantidade_parcelas: quantidadeParcelas,
+              prazoparcelas: prazoParcelas,
+              observacao: observacao.trim() || null
+            })
+            .select()
+            .single()
 
-        if (erroCompra) throw erroCompra
+          if (erroCompra) throw erroCompra
+          transacaoPrincipalId = compra.id
+        }
 
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida')
 
@@ -403,7 +493,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
             await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
 
             const dbItem = {
-              compra_id: compra.id,
+              compra_id: transacaoPrincipalId,
               produto_id: prodId,
               descricao: item.descricao,
               quantidade: item.quantidade,
@@ -457,32 +547,43 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      const { data: ultimaTransacao } = await supabase
-        .from('transacoes_condicionais')
-        .select('numero_transacao')
-        .order('numero_transacao', { ascending: false })
-        .limit(1)
-        .single()
+      if (transacaoInicial) {
+        await reverterImpactosOld()
+      }
 
-      const proximoNumero = (ultimaTransacao?.numero_transacao || 0) + 1
+      const numTransacao = transacaoInicial?.numero_transacao || (await supabase.rpc('obter_proximo_numero_transacao')).data
+
       const isVendaPedido = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
       const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
       const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
 
-      const { data: transacao, error: erroTransacao } = await supabase
-        .from('transacoes_condicionais')
-        .insert({
-          numero_transacao: proximoNumero,
+      let transacaoId = transacaoInicial?.id
+
+      if (transacaoInicial) {
+        await supabase.from('transacoes_condicionais').update({
           tipo: isVendaPedido ? 'enviado' : 'recebido',
           origem: entidade,
           data_transacao: prepararDataParaInsert(data),
           observacao: (prefixoPedido + observacao).trim() || null,
           status: 'pendente',
-        })
-        .select()
-        .single()
+        }).eq('id', transacaoInicial.id)
+      } else {
+        const { data: transacao, error: erroTransacao } = await supabase
+          .from('transacoes_condicionais')
+          .insert({
+            numero_transacao: numTransacao,
+            tipo: isVendaPedido ? 'enviado' : 'recebido',
+            origem: entidade,
+            data_transacao: prepararDataParaInsert(data),
+            observacao: (prefixoPedido + observacao).trim() || null,
+            status: 'pendente',
+          })
+          .select()
+          .single()
 
-      if (erroTransacao) throw erroTransacao
+        if (erroTransacao) throw erroTransacao
+        transacaoId = transacao.id
+      }
 
       for (const item of itensValidos) {
         let prodId = item.produto_id
@@ -508,7 +609,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
         }
 
         const dbItem = {
-          transacao_id: transacao.id,
+          transacao_id: transacaoId,
           produto_id: prodId,
           descricao: item.descricao,
           quantidade: item.quantidade,
@@ -878,14 +979,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                 disabled={loading}
                 className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm"
               >
-                {loading ? 'Processando...' : 'Gerar Pedido'}
+                {loading ? 'Processando...' : transacaoInicial ? 'Salvar Pedido' : 'Gerar Pedido'}
               </button>
               <button
                 onClick={handleGerarTransacao}
                 disabled={loading}
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm"
               >
-                {loading ? 'Processando...' : 'Gerar Transação'}
+                {loading ? 'Processando...' : transacaoInicial ? 'Salvar Transação' : 'Gerar Transação'}
               </button>
             </div>
           </div>

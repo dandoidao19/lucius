@@ -89,7 +89,7 @@ export default function FiltrosCasa({
       {/* Cabeçalho Minimizado */}
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-white uppercase tracking-widest hover:bg-blue-700 transition-colors"
+        className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-white uppercase tracking-widest hover:bg-blue-700 transition-colors"
       >
         <span>🔍 Filtros de Lançamentos</span>
         <span className="text-lg">{aberto ? '▼' : '▶'}</span>

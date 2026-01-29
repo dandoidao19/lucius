@@ -283,9 +283,9 @@ export default function LojaPaginaEstoque() {
       <div className="bg-purple-600 rounded shadow-sm overflow-hidden border border-purple-700">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-3 py-2 flex justify-between items-center hover:bg-purple-700 transition-colors text-white"
+          className="w-full px-3 py-1 flex justify-between items-center hover:bg-purple-700 transition-colors text-white"
         >
-          <span className="text-xs font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
+          <span className="text-[11px] font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-400">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
@@ -377,14 +377,14 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded shadow-sm p-2 border border-gray-200">
-        <div className="flex justify-between items-start mb-1.5">
+      <div className="bg-white rounded shadow-sm px-2 py-1 border border-gray-200">
+        <div className="flex justify-between items-start mb-1">
           <button
             onClick={() => {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition-colors shadow-sm"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
           >
             + CADASTRAR ITEM
           </button>
@@ -398,8 +398,8 @@ export default function LojaPaginaEstoque() {
         </div>
 
         {/* NOVO: Quadro de Valores do Estoque */}
-        <div className="mt-1.5 border-t border-gray-100 pt-1.5">
-          <p className="text-xs font-semibold text-gray-800 mb-1">VALOR EM ESTOQUE</p>
+        <div className="mt-1 border-t border-gray-100 pt-1">
+          <p className="text-[10px] font-semibold text-gray-800 mb-0.5">VALOR EM ESTOQUE</p>
           
           <div className="grid grid-cols-2 gap-2">
             {/* Coluna Esquerda - Realizado (Destaque Principal) */}
@@ -441,6 +441,9 @@ export default function LojaPaginaEstoque() {
 
       {/* Tabela de Estoque */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
+        <div className="bg-blue-600 flex justify-between items-center px-2 py-1 text-white">
+          <h2 className="text-[11px] font-semibold uppercase tracking-widest">Lista de Produtos ({produtosFiltrados.length})</h2>
+        </div>
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
             <p className="text-xs">Nenhum produto encontrado com os filtros aplicados</p>
@@ -448,7 +451,7 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-purple-600 text-white border-b border-purple-500">
+              <thead className="bg-blue-600 text-white border-b border-blue-500">
                 <tr>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>

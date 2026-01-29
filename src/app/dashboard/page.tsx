@@ -88,13 +88,13 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 transition-all duration-500">
       <div className="container mx-auto px-3 py-2">
         {/* Menu de Navegação com Ícones - UNIFICADO COM USUÁRIO */}
-        <div className="bg-white rounded-lg shadow-md p-1 mb-4 border border-gray-100 flex justify-between items-center">
+        <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100 flex justify-between items-center">
           <div className="flex flex-wrap gap-1">
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`px-4 py-2 rounded-lg font-bold transition-all duration-200 flex items-center gap-2 text-sm ${getButtonStyle(item.id, item.color)}`}
+                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-200 flex items-center gap-1 text-[13px] ${getButtonStyle(item.id, item.color)}`}
               >
                 <span>{item.icon}</span>
                 <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>

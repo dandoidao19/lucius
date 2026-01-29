@@ -233,11 +233,11 @@ export default function LojaPaginaTransacoes() {
         onGerarPDF={gerarPDF}
       />
 
-      <div className="flex justify-between items-center bg-purple-600 p-2 rounded shadow-sm border border-purple-500 text-white">
-        <h2 className="text-xs font-semibold uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
+      <div className="flex justify-between items-center bg-purple-600 px-2 py-1 rounded shadow-sm border border-purple-500 text-white">
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
-          className="bg-white text-purple-600 hover:bg-purple-50 px-3 py-1 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+          className="bg-white text-purple-600 hover:bg-purple-50 px-3 py-0.5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
         >
           <span>+</span> NOVO LANÇAMENTO
         </button>
