@@ -233,31 +233,31 @@ export default function LojaPaginaTransacoes() {
         onGerarPDF={gerarPDF}
       />
 
-      <div className="flex justify-between items-center bg-white p-2 rounded shadow-sm">
+      <div className="flex justify-between items-center bg-white p-2 rounded shadow-sm border-t-4 border-purple-500">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs font-bold transition-all shadow-sm flex items-center gap-1"
+          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-xs font-bold transition-all shadow-sm flex items-center gap-1"
         >
           <span>+</span> NOVO LANÇAMENTO
         </button>
       </div>
 
-      <div className="bg-white rounded shadow-sm overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
-            <thead className="bg-gray-100 border-b border-gray-300">
+            <thead className="bg-purple-50/50 border-b border-purple-100">
               <tr>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase w-[85px]">Data</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase text-center w-[85px]">Tipo</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Nº</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase min-w-[90px]">Cliente/Fornecedor</th>
-                <th className="px-1 py-0.5 font-semibold text-gray-600 uppercase min-w-[150px]">Observações</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-right w-[60px]">Total</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[30px]">Parc.</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[30px]">Itens</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[65px]">Status</th>
-                <th className="px-0.5 py-0.5 font-semibold text-gray-600 uppercase text-center w-[35px]">Ação</th>
+                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase w-[85px]">Data</th>
+                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase text-center w-[85px]">Tipo</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[35px]">Nº</th>
+                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[90px]">Cliente/Fornecedor</th>
+                <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[150px]">Observações</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-right w-[60px]">Total</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[30px]">Parc.</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[30px]">Itens</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[65px]">Status</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[35px]">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -290,8 +290,8 @@ export default function LojaPaginaTransacoes() {
                     <td className="px-0.5 py-1 text-center text-gray-600 font-bold">{t.quantidade_itens}</td>
                     <td className="px-0.5 py-1 text-center uppercase">
                       <span className={`px-1 py-0.5 rounded font-bold ${
-                        t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-100 text-green-700' :
-                        t.status === 'pendente' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600'
+                        t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-600 text-white' :
+                        t.status === 'pendente' ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700'
                       }`}>
                         {t.status === 'pago' ? 'PAGO' : t.status === 'resolvido' ? 'RESOLVIDO' : t.status}
                       </span>
@@ -299,7 +299,7 @@ export default function LojaPaginaTransacoes() {
                     <td className="px-1 py-1 text-center">
                       <button
                         onClick={() => setModalDetalhes({ aberto: true, transacao: t })}
-                        className="p-1 hover:bg-blue-50 rounded text-blue-600 transition-colors"
+                        className="p-1 hover:bg-purple-100 rounded text-purple-600 transition-colors"
                         title="Ver Detalhes"
                       >
                         👁️

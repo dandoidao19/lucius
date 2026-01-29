@@ -271,19 +271,19 @@ export default function LojaPaginaEstoque() {
   }
 
   const IconeOrdenacao = ({ campo }: { campo: OrdenacaoTipo }) => {
-    if (ordenacaoPor !== campo) return <span className="text-gray-400 text-[10px]">⇅</span>
+    if (ordenacaoPor !== campo) return <span className="text-gray-400 text-xs">⇅</span>
     return ordenacaoDirecao === 'asc' ? 
-      <span className="text-blue-600 text-[10px]">↑</span> : 
-      <span className="text-blue-600 text-[10px]">↓</span>
+      <span className="text-blue-600 text-xs">↑</span> :
+      <span className="text-blue-600 text-xs">↓</span>
   }
 
   return (
     <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-white rounded shadow-sm overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-2 py-1 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          className="w-full px-2 py-1 flex justify-between items-center hover:bg-purple-50 transition-colors"
         >
           <span className="text-xs font-bold text-gray-700 tracking-tight uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-600">{filtroAberto ? '▲' : '▼'}</span>
@@ -377,7 +377,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded shadow-sm p-1.5">
+      <div className="bg-white rounded shadow-sm p-1.5 border-t-4 border-purple-500">
         <div className="flex justify-between items-start mb-1.5">
           <button
             onClick={() => {
@@ -390,7 +390,7 @@ export default function LojaPaginaEstoque() {
           </button>
 
           <div className="text-right">
-            <p className="text-[9px] font-bold text-gray-500 uppercase">Total de Produtos</p>
+            <p className="text-xs font-bold text-gray-500 uppercase">Total de Produtos</p>
             <p className="text-sm font-black text-gray-800">
               {produtosFiltrados.length}
             </p>
@@ -405,14 +405,14 @@ export default function LojaPaginaEstoque() {
             {/* Coluna Esquerda - Realizado (Destaque Principal) */}
             <div className="space-y-1">
               <div className="bg-green-50 border border-green-300 rounded p-1 shadow-sm">
-                <p className="text-[9px] text-green-800 font-medium">Realizado (Venda)</p>
+                <p className="text-xs text-green-800 font-medium uppercase">Realizado (Venda)</p>
                 <p className="text-lg font-bold text-green-700">
                   R$ {calcularValorRealizadoVenda().toFixed(2)}
                 </p>
               </div>
               
               <div className="bg-blue-50 border border-blue-300 rounded p-1">
-                <p className="text-[9px] text-blue-800 font-medium">Realizado (Repasse)</p>
+                <p className="text-xs text-blue-800 font-medium uppercase">Realizado (Repasse)</p>
                 <p className="text-sm font-semibold text-blue-700">
                   R$ {calcularValorRealizadoRepasse().toFixed(2)}
                 </p>
@@ -422,14 +422,14 @@ export default function LojaPaginaEstoque() {
             {/* Coluna Direita - Condicional (Menor Destaque) */}
             <div className="space-y-1">
               <div className="bg-yellow-50 border border-yellow-300 rounded p-1">
-                <p className="text-[9px] text-yellow-800 font-medium">Condicional (Venda)</p>
+                <p className="text-xs text-yellow-800 font-medium uppercase">Condicional (Venda)</p>
                 <p className="text-sm font-semibold text-yellow-700">
                   R$ {calcularValorCondicionalVenda().toFixed(2)}
                 </p>
               </div>
               
               <div className="bg-orange-50 border border-orange-300 rounded p-1">
-                <p className="text-[9px] text-orange-800 font-medium">Condicional (Repasse)</p>
+                <p className="text-xs text-orange-800 font-medium uppercase">Condicional (Repasse)</p>
                 <p className="text-sm font-semibold text-orange-700">
                   R$ {calcularValorCondicionalRepasse().toFixed(2)}
                 </p>
@@ -440,7 +440,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Tabela de Estoque */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
             <p className="text-xs">Nenhum produto encontrado com os filtros aplicados</p>
@@ -448,19 +448,19 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-purple-50/50 border-b border-purple-100">
                 <tr>
-                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Código</th>
-                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Descrição</th>
-                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Categoria</th>
-                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Status</th>
-                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Qtd Cond.</th>
-                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Qtd Efet.</th>
-                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Custo</th>
-                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Repasse</th>
-                <th className="px-1.5 py-1 text-right font-semibold text-gray-700">Venda</th>
-                <th className="px-1.5 py-1 text-left font-semibold text-gray-700">Ult. Compra</th>
-                <th className="px-1.5 py-1 text-center font-semibold text-gray-700">Ações</th>
+                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Código</th>
+                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Descrição</th>
+                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Categoria</th>
+                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Status</th>
+                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Qtd Cond.</th>
+                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Qtd Efet.</th>
+                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Custo</th>
+                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Repasse</th>
+                <th className="px-1.5 py-1 text-right font-bold text-purple-800 uppercase">Venda</th>
+                <th className="px-1.5 py-1 text-left font-bold text-purple-800 uppercase">Ult. Compra</th>
+                <th className="px-1.5 py-1 text-center font-bold text-purple-800 uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -518,7 +518,7 @@ export default function LojaPaginaEstoque() {
                         <div className="flex gap-0.5 justify-center">
                           <button
                             onClick={() => abrirModalEditar(produto)}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                             title="Editar produto"
                           >
                             ✏️

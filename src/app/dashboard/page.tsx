@@ -49,10 +49,10 @@ export default function Dashboard() {
 
   // Define itens do menu
   const menuItems = [
-    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue' },
-    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green' },
+    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'gray' },
+    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'blue' },
     { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple' },
-    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray' }
+    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'slate' }
   ]
 
   const getButtonStyle = (id: string, color: string) => {
@@ -93,8 +93,17 @@ export default function Dashboard() {
     }
   }
 
+  const getSectionBg = () => {
+    switch (activeSection) {
+      case 'casa': return 'bg-blue-50/40'
+      case 'loja': return 'bg-purple-50/40'
+      case 'dashboard': return 'bg-slate-50/40'
+      default: return 'bg-gray-50/40'
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div className={`min-h-screen transition-colors duration-500 ${getSectionBg()}`}>
       <div className="container mx-auto px-3 py-2">
         {/* Header com Usuário e Logout - COMPACTADO */}
         <div className="flex justify-between items-center mb-2">

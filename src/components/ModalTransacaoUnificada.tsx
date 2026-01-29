@@ -587,11 +587,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
-      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
+      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all border-t-4 border-purple-600 ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
         {/* Cabeçalho */}
-        <div className="bg-blue-600 px-4 py-2 flex justify-between items-center text-white">
-          <h2 className="font-bold text-sm uppercase">Lançar Nova Transação</h2>
-          <button onClick={handleFechar} className="hover:bg-blue-700 p-1 rounded text-lg">✕</button>
+        <div className="bg-purple-600 px-4 py-2 flex justify-between items-center text-white">
+          <h2 className="font-bold text-sm uppercase tracking-widest">Lançar Nova Transação</h2>
+          <button onClick={handleFechar} className="hover:bg-purple-700 p-1 rounded text-lg">✕</button>
         </div>
 
         <div className="p-3 overflow-y-auto flex-1 text-xs">
@@ -601,17 +601,17 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={() => handleTipoSelect('venda')}
-                  className="p-3 border rounded-lg hover:bg-green-50 hover:border-green-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-green-50 hover:border-green-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-green-700">💰 Venda</span>
-                  <span className="text-xs text-gray-400">Direto ao estoque e financeiro</span>
+                  <span className="font-bold text-gray-700 group-hover:text-green-700">💰 VENDA</span>
+                  <span className="text-xs text-gray-400 italic">Direto ao estoque e financeiro</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('compra')}
-                  className="p-3 border rounded-lg hover:bg-blue-50 hover:border-blue-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-purple-50 hover:border-purple-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-blue-700">📥 Compra</span>
-                  <span className="text-xs text-gray-400">Entrada de mercadoria</span>
+                  <span className="font-bold text-gray-700 group-hover:text-purple-700">📥 COMPRA</span>
+                  <span className="text-xs text-gray-400 italic">Entrada de mercadoria</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('pedido_venda')}
@@ -645,9 +645,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
             </div>
           ) : (
             <div className="space-y-4">
-               <div className="flex justify-between items-center bg-gray-50 p-2 rounded border">
-                 <span className="text-sm font-bold text-gray-700">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
-                 <button onClick={() => setTipo('')} className="text-xs text-blue-600 hover:underline">Alterar Tipo</button>
+               <div className="flex justify-between items-center bg-purple-50 p-2 rounded border border-purple-100">
+                 <span className="text-sm font-black text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
+                 <button onClick={() => setTipo('')} className="text-xs font-bold text-purple-600 hover:underline">ALTERAR TIPO</button>
                </div>
 
                {/* Data e Entidade */}
@@ -691,7 +691,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
                  <div className="space-y-2">
                    {itens.map((item, idx) => (
-                     <div key={item.id} className={`border rounded p-2 ${item.minimizado ? 'bg-gray-50' : 'bg-blue-50 border-blue-200'}`}>
+                     <div key={item.id} className={`border rounded p-2 transition-colors ${item.minimizado ? 'bg-gray-50 border-gray-200' : 'bg-purple-50 border-purple-300 shadow-inner'}`}>
                        {item.minimizado ? (
                          <div className="flex justify-between items-center">
                            <span className="text-xs text-gray-700 font-medium truncate flex-1" onClick={() => ativarItemParaEdicao(item.id)}>
@@ -855,9 +855,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
                  />
                </div>
 
-               <div className="bg-gray-100 p-3 rounded flex justify-between items-center">
-                  <span className="font-bold text-gray-700">TOTAL DA OPERAÇÃO:</span>
-                  <span className="text-xl font-black text-blue-700">R$ {calcularTotal().toFixed(2)}</span>
+               <div className="bg-purple-100 p-3 rounded flex justify-between items-center border border-purple-200 shadow-sm">
+                  <span className="font-black text-purple-900 uppercase">TOTAL DA OPERAÇÃO:</span>
+                  <span className="text-xl font-black text-purple-700">R$ {calcularTotal().toFixed(2)}</span>
                </div>
             </div>
           )}

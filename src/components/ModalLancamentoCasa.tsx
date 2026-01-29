@@ -85,16 +85,16 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden">
-        <div className="bg-orange-600 px-4 py-3 flex justify-between items-center text-white">
-          <h2 className="font-bold">Novo Lançamento Casa</h2>
-          <button onClick={onClose}>✕</button>
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden border-t-4 border-blue-600">
+        <div className="bg-blue-600 px-4 py-2 flex justify-between items-center text-white">
+          <h2 className="font-bold text-sm uppercase tracking-wider">Novo Lançamento Casa</h2>
+          <button onClick={onClose} className="text-lg">✕</button>
         </div>
         <form onSubmit={handleSubmit} className="p-4 space-y-3">
           <input
             type="text"
             placeholder="Descrição *"
-            className="w-full border p-2 rounded text-sm"
+            className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
             value={form.descricao}
             onChange={e => setForm({...form, descricao: e.target.value})}
             required
@@ -104,14 +104,14 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
               type="number"
               step="0.01"
               placeholder="Valor Total *"
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.valor}
               onChange={e => setForm({...form, valor: e.target.value})}
               required
             />
             <input
               type="date"
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.data}
               onChange={e => setForm({...form, data: e.target.value})}
               required
@@ -119,7 +119,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
           </div>
           <div className="grid grid-cols-2 gap-2">
             <select
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.tipo}
               onChange={e => setForm({...form, tipo: e.target.value})}
             >
@@ -127,7 +127,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
               <option value="entrada">Entrada</option>
             </select>
             <select
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.status}
               onChange={e => setForm({...form, status: e.target.value})}
             >
@@ -136,7 +136,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
             </select>
           </div>
           <select
-            className="w-full border p-2 rounded text-sm"
+            className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
             value={form.centroCustoId}
             onChange={e => setForm({...form, centroCustoId: e.target.value})}
             required
@@ -149,12 +149,12 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
               type="number"
               placeholder="Parcelas"
               min="1"
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.parcelas}
               onChange={e => setForm({...form, parcelas: parseInt(e.target.value) || 1})}
             />
             <select
-              className="w-full border p-2 rounded text-sm"
+              className="w-full border border-gray-300 p-1.5 rounded text-xs focus:ring-1 focus:ring-blue-500 outline-none"
               value={form.prazoParcelas}
               onChange={e => setForm({...form, prazoParcelas: e.target.value})}
               disabled={form.parcelas <= 1}
@@ -166,7 +166,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-orange-600 text-white py-2 rounded font-bold hover:bg-orange-700 disabled:bg-gray-400"
+            className="w-full bg-blue-600 text-white py-1.5 rounded font-bold hover:bg-blue-700 disabled:bg-gray-400 text-xs uppercase"
           >
             {loading ? 'Salvando...' : 'Adicionar Lançamento'}
           </button>

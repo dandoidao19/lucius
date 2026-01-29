@@ -775,10 +775,10 @@ export default function CasaModulo() {
       />
       <ModalExcluir />
 
-      <div className="bg-white rounded shadow-sm overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-blue-500">
         <button
           onClick={() => setFormularioAberto(!formularioAberto)}
-          className="w-full px-2 py-1 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          className="w-full px-2 py-1 flex justify-between items-center hover:bg-blue-50 transition-colors"
         >
           <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
             {editandoLancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
@@ -975,9 +975,9 @@ export default function CasaModulo() {
         </div>
 
         <div className="col-span-2">
-          <div className="bg-white rounded-lg shadow-md p-1">
+          <div className="bg-white rounded shadow-md p-1 border-t-4 border-blue-500">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
-            <div className="flex justify-between items-center mb-1">
+            <div className="flex justify-between items-center mb-1 px-1">
               <h2 className="text-xs font-semibold text-gray-800">{tituloTabela}</h2>
               <div className="flex gap-1">
                 <button
@@ -1003,14 +1003,14 @@ export default function CasaModulo() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full table-fixed text-xs">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-blue-50/50">
                     <tr>
-                      <th className="w-1/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Data</th>
-                      <th className="w-1/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Status</th>
-                      <th className="w-2/12 px-1 py-1 text-right font-medium text-gray-700 border-b text-xs">Valor</th>
-                      <th className="w-4/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">Descrição</th>
-                      <th className="w-2/12 px-1 py-1 text-left font-medium text-gray-700 border-b text-xs">CDC</th>
-                      <th className="w-2/12 px-1 py-1 text-center font-medium text-gray-700 border-b text-xs">Ações</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-bold text-blue-800 border-b border-blue-100 text-xs">Data</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-bold text-blue-800 border-b border-blue-100 text-xs">Status</th>
+                      <th className="w-2/12 px-1 py-1 text-right font-bold text-blue-800 border-b border-blue-100 text-xs">Valor</th>
+                      <th className="w-4/12 px-1 py-1 text-left font-bold text-blue-800 border-b border-blue-100 text-xs">Descrição</th>
+                      <th className="w-2/12 px-1 py-1 text-left font-bold text-blue-800 border-b border-blue-100 text-xs">CDC</th>
+                      <th className="w-2/12 px-1 py-1 text-center font-bold text-blue-800 border-b border-blue-100 text-xs">Ações</th>
                     </tr>
                   </thead>
                   <tbody>

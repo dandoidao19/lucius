@@ -118,9 +118,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2">
-      <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh]">
+      <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border-t-4 border-purple-600">
         {/* Cabeçalho */}
-        <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
+        <div className="bg-purple-900 text-white px-4 py-2 flex justify-between items-center">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
               <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : 'Transação'}
@@ -147,15 +147,15 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
             </div>
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase">Total</p>
-              <p className="text-sm font-black text-blue-700">R$ {dadosResumo.total.toFixed(2)}</p>
+              <p className="text-sm font-black text-purple-700">R$ {dadosResumo.total.toFixed(2)}</p>
             </div>
           </div>
 
           {/* Observações (se houver) */}
           {dadosResumo.observacao && (
-            <div className="bg-blue-50 p-2 rounded border border-blue-100">
-              <p className="text-xs font-bold text-blue-600 uppercase mb-0.5">Observações</p>
-              <p className="italic text-blue-800">{dadosResumo.observacao}</p>
+            <div className="bg-purple-50 p-2 rounded border border-purple-100">
+              <p className="text-xs font-bold text-purple-600 uppercase mb-0.5">Observações</p>
+              <p className="italic text-purple-800">{dadosResumo.observacao}</p>
             </div>
           )}
 
@@ -193,10 +193,10 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                   )}
                 </tbody>
                 {!loading && itens.length > 0 && (
-                  <tfoot className="bg-gray-50 font-bold border-t text-xs">
+                  <tfoot className="bg-purple-50 font-bold border-t text-xs">
                     <tr>
                       <td colSpan={4} className="px-2 py-1 text-right uppercase">Total Itens:</td>
-                      <td className="px-2 py-1 text-right text-blue-700">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
+                      <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + i.subtotal, 0).toFixed(2)}</td>
                     </tr>
                   </tfoot>
                 )}
