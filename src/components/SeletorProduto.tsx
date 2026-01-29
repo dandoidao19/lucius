@@ -31,18 +31,26 @@ export default function SeletorProduto({
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [ignorarProximaBusca, setIgnorarProximaBusca] = useState(false)
 
   useEffect(() => {
     setBusca(descricaoPreenchida)
+    setIgnorarProximaBusca(true)
   }, [descricaoPreenchida])
 
   useEffect(() => {
+    if (ignorarProximaBusca) {
+      setIgnorarProximaBusca(false)
+      return
+    }
+
     if (busca.length > 2) {
       buscarProdutos(busca)
     } else {
       setProdutos([])
+      setMostrarSugestoes(false)
     }
-  }, [busca])
+  }, [busca, ignorarProximaBusca])
 
   const buscarProdutos = async (termo: string) => {
     setLoading(true)
@@ -65,9 +73,10 @@ export default function SeletorProduto({
 
   const handleSelecionarProduto = (produto: Produto) => {
     console.log('✅ Produto selecionado no SeletorProduto:', produto.descricao)
-    onSelecionarProduto(produto)
+    setIgnorarProximaBusca(true)
     setBusca(produto.descricao)
     setMostrarSugestoes(false)
+    onSelecionarProduto(produto)
   }
 
   return (

@@ -26,10 +26,10 @@ export default function CaixaGeral() {
     setMesFiltro(e.target.value)
   }
 
-  const caixaTituloStyle: React.CSSProperties = { fontSize: '11px', marginBottom: 2, whiteSpace: 'nowrap' }
+  const caixaTituloStyle: React.CSSProperties = { fontSize: '12px', marginBottom: 2, whiteSpace: 'nowrap' }
   const caixaValorStyle: React.CSSProperties = { fontSize: '1.5rem', fontWeight: 700, lineHeight: '1.05', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
-  const periodoLinhaStyle: React.CSSProperties = { fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
+  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
+  const periodoLinhaStyle: React.CSSProperties = { fontSize: '12px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
   const botoesContainerStyle: React.CSSProperties = { display: 'flex', gap: 6, alignItems: 'center', whiteSpace: 'nowrap' }
 
   const formatarMoeda = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
@@ -60,14 +60,14 @@ export default function CaixaGeral() {
   }
 
   return (
-    <div className="bg-white rounded shadow-sm px-1 py-0.5 space-y-0.5 border border-gray-200" style={{ minWidth: 0 }}>
-      <h2 className="font-semibold text-gray-800 flex items-center" style={{ fontSize: '11px' }}>Caixa Geral</h2>
+    <div className="bg-white rounded shadow-sm p-1 space-y-1 border border-gray-200" style={{ minWidth: 0 }}>
+      <h2 className="font-semibold text-gray-800 flex items-center" style={{ fontSize: '12px' }}>Caixa Geral</h2>
 
-      <div className={`rounded p-1 ${caixaRealGeral < 0 ? 'bg-red-50 border border-red-100' : 'bg-slate-50 border border-gray-100'}`} style={{ minWidth: 0 }}>
+      <div className={`rounded p-1.5 ${caixaRealGeral < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>
         <div>
-          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-700' : 'text-gray-500'}`}>
+          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-100' : 'text-gray-600'}`}>
             <span>Caixa Real:</span>
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
               <span className={caixaRealLoja >= 0 ? 'text-green-600' : 'text-red-600'}>L: {formatarMoeda(caixaRealLoja)}</span>
               <span className="mx-1.5 text-gray-300">|</span>
               <span className={caixaRealCasa >= 0 ? 'text-green-600' : 'text-red-600'}>C: {formatarMoeda(caixaRealCasa)}</span>
@@ -93,22 +93,22 @@ export default function CaixaGeral() {
           <p className="text-gray-500 text-center py-2" style={{ fontSize: '12px' }}>Carregando...</p>
         ) : caixaPrevistoGeral.length > 0 ? (
           <div className="overflow-x-auto">
-            <div className="text-[10px] text-gray-400 mb-1">
+            <div className="text-xs text-gray-500 mb-1">
               Mostrando {caixaPrevistoGeral.length} dias
             </div>
-            <table className="w-full text-[11px] border-collapse">
+            <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-blue-50/50 border-b border-blue-100">
-                  <th className="px-1 py-0.5 text-left font-bold text-blue-800 uppercase">Data</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800 uppercase">Receitas</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800 uppercase">Despesas</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800 uppercase">Acumulado</th>
+                  <th className="px-1 py-0.5 text-left font-bold text-blue-800">Data</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Receitas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Despesas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Acumulado</th>
                 </tr>
               </thead>
               <tbody>
                 {caixaPrevistoGeral.map((dia, idx) => (
                   <tr key={`${dia.data}-${idx}`} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-1 py-0.5 text-gray-700 whitespace-nowrap font-medium">{dia.data_formatada}</td>
+                    <td className="px-1 py-0.5 text-gray-700 whitespace-nowrap">{dia.data_formatada}</td>
                     <td className="px-1 py-0.5 text-right text-green-600 font-medium">{formatarMoedaCompacta(dia.receitas)}</td>
                     <td className="px-1 py-0.5 text-right text-red-600 font-medium">{formatarMoedaCompacta(dia.despesas)}</td>
                     <td className={`px-1 py-0.5 text-right font-bold ${dia.saldo_acumulado >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatarMoedaCompacta(dia.saldo_acumulado)}</td>

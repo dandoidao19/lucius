@@ -14,6 +14,7 @@ interface ItemDetalhe {
   preco_custo: number
   valor_repasse: number
   categoria?: string
+  observacao?: string
 }
 
 interface ParcelaDetalhe {
@@ -87,7 +88,8 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
         preco_venda: (item.preco_venda as number) || 0,
         preco_custo: (item.preco_custo as number) || 0,
         valor_repasse: (item.valor_repasse as number) || 0,
-        categoria: (item.categoria as string)
+        categoria: (item.categoria as string),
+        observacao: (item.observacao as string) || ''
       }))
 
       setItens(itensFormatados)
@@ -255,6 +257,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
         preco_custo: i.preco_custo,
         valor_repasse: i.valor_repasse,
         preco_venda: i.preco_venda,
+        observacao_item: i.observacao,
         estoque_atual: 0,
         minimizado: true,
         isNovoCadastro: false
@@ -338,7 +341,10 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
                   ) : (
                     itens.map(item => (
                       <tr key={item.id} className="hover:bg-gray-50">
-                        <td className="px-2 py-1 font-medium text-gray-800">{item.descricao}</td>
+                        <td className="px-2 py-1">
+                          <div className="font-medium text-gray-800">{item.descricao}</div>
+                          {item.observacao && <div className="text-[10px] text-gray-400 italic leading-tight">{item.observacao}</div>}
+                        </td>
                         <td className="px-2 py-1 text-gray-600">{item.categoria || '—'}</td>
                         <td className="px-2 py-1 text-center">{item.quantidade}</td>
                         <td className="px-2 py-1 text-right">R$ {(tipo === 'vendas' ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>

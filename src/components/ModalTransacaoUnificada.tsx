@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
 import SeletorProduto from './SeletorProduto'
+import SeletorEntidade from './SeletorEntidade'
+import { useFormDraft } from '@/context/FormDraftContext'
 
 type TipoTransacao = 'venda' | 'compra' | 'pedido_venda' | 'pedido_compra' | 'condicional_cliente' | 'condicional_fornecedor'
 
@@ -17,6 +19,7 @@ interface ItemTransacao {
   valor_repasse: number
   preco_venda: number
   estoque_atual: number
+  observacao_item?: string
   minimizado: boolean
   isNovoCadastro: boolean
 }
@@ -47,6 +50,8 @@ interface ModalTransacaoUnificadaProps {
 }
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
+  const { getDraft, setDraft, clearDraft } = useFormDraft()
+
   const [tipo, setTipo] = useState<TipoTransacao | ''>(transacaoInicial?.tipo || '')
   const [data, setData] = useState(transacaoInicial?.data || getDataAtualBrasil())
   const [entidade, setEntidade] = useState(transacaoInicial?.entidade || '') // Cliente ou Fornecedor
@@ -74,12 +79,43 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [observacao, setObservacao] = useState(transacaoInicial?.observacao?.replace('[PEDIDO]', '').trim() || '')
   const [loading, setLoading] = useState(false)
   const [, setErro] = useState('')
+  const [pedidosAbertos, setPedidosAbertos] = useState<any[]>([])
+  const [mostrarBuscaPedido, setMostrarBuscaPedido] = useState(false)
+  const [idPedidoOrigem, setIdPedidoOrigem] = useState<string | null>(null)
 
   useEffect(() => {
     if (aberto) {
       carregarCategorias()
     }
   }, [aberto])
+
+  // Efeito para carregar rascunho apenas no mount
+  useEffect(() => {
+    if (!transacaoInicial) {
+      const draft = getDraft('loja')
+      if (draft) {
+        setTipo(draft.tipo || '')
+        setData(draft.data || getDataAtualBrasil())
+        setEntidade(draft.entidade || '')
+        setItens(draft.itens || [])
+        setQuantidadeParcelas(draft.quantidadeParcelas || 1)
+        setPrazoParcelas(draft.prazoParcelas || 'mensal')
+        setStatusPagamento(draft.statusPagamento || 'pendente')
+        setDataVencimento(draft.dataVencimento || getDataAtualBrasil())
+        setObservacao(draft.observacao || '')
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Efeito para salvar rascunho sempre que algo mudar
+  useEffect(() => {
+    if (aberto && !transacaoInicial && tipo) {
+      setDraft('loja', {
+        tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, observacao
+      })
+    }
+  }, [aberto, transacaoInicial, tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, observacao, setDraft])
 
   if (!aberto) return null
 
@@ -416,7 +452,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               preco_custo: item.preco_custo,
-              valor_repasse: item.valor_repasse
+              valor_repasse: item.valor_repasse,
+              observacao: item.observacao_item || null
             }
 
             const { error: erroIt } = await supabase.from('itens_venda').insert(dbItem)
@@ -500,7 +537,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_custo: item.preco_custo,
               valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
-              categoria: item.categoria
+              categoria: item.categoria,
+              observacao: item.observacao_item || null
             }
 
             const { error: erroIt } = await supabase.from('itens_compra').insert(dbItem)
@@ -516,9 +554,15 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
       }
 
+      if (idPedidoOrigem) {
+        await supabase.from('transacoes_condicionais').update({ status: 'realizado' }).eq('id', idPedidoOrigem)
+      }
+
       alert('✅ Transação gerada com sucesso!')
+      clearDraft('loja')
+      resetForm()
       onSucesso()
-      handleFechar()
+      onClose()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar transação'
       console.error(err)
@@ -617,6 +661,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           preco_custo: item.preco_custo,
           preco_venda: item.preco_venda,
           status: 'pendente',
+          observacao: item.observacao_item || null
         }
 
         const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
@@ -624,8 +669,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       }
 
       alert('✅ Pedido/Condicional gerado com sucesso!')
+      clearDraft('loja')
+      resetForm()
       onSucesso()
-      handleFechar()
+      onClose()
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar pedido'
       console.error(err)
@@ -656,9 +703,64 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const handleTipoSelect = (novoTipo: TipoTransacao) => {
     setTipo(novoTipo)
     setErro('')
+    if (novoTipo === 'venda' || novoTipo === 'compra') {
+      buscarPedidosAbertos(novoTipo)
+    }
   }
 
-  const handleFechar = () => {
+  const buscarPedidosAbertos = async (tipoAtual: string) => {
+    try {
+      const tipoCond = (tipoAtual === 'venda') ? 'enviado' : 'recebido'
+      const { data, error } = await supabase
+        .from('transacoes_condicionais')
+        .select('*, itens_condicionais(*)')
+        .eq('tipo', tipoCond)
+        .eq('status', 'pendente')
+        .ilike('observacao', '%[PEDIDO]%')
+
+      if (error) throw error
+      setPedidosAbertos(data || [])
+    } catch (error) {
+      console.error('Erro ao buscar pedidos:', error)
+    }
+  }
+
+  const importarPedido = (pedido: any) => {
+    if (!window.confirm(`Deseja importar os itens do Pedido #${pedido.numero_transacao}?`)) return
+
+    setEntidade(pedido.origem)
+    setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+
+    const novosItens: ItemTransacao[] = pedido.itens_condicionais.map((it: any) => ({
+      id: Date.now().toString() + Math.random(),
+      produto_id: it.produto_id,
+      descricao: it.descricao,
+      quantidade: it.quantidade,
+      categoria: it.categoria,
+      preco_custo: it.preco_custo || 0,
+      valor_repasse: it.preco_custo || 0, // Simplificado
+      preco_venda: it.preco_venda || 0,
+      estoque_atual: 0,
+      minimizado: true,
+      isNovoCadastro: false
+    }))
+
+    setItens(novosItens)
+    setIdPedidoOrigem(pedido.id)
+    setMostrarBuscaPedido(false)
+    // Se for compra, tentar buscar valor de repasse baseado na categoria
+    if (tipo === 'compra') {
+      novosItens.forEach(it => {
+        const cat = categorias.find(c => c.nome === it.categoria)
+        if (cat && it.preco_custo > 0) {
+           it.valor_repasse = it.preco_custo * (1 + (cat.percentual_repasse || 0) / 100)
+        }
+      })
+      setItens([...novosItens])
+    }
+  }
+
+  const resetForm = useCallback(() => {
     setTipo('')
     setData(getDataAtualBrasil())
     setEntidade('')
@@ -683,7 +785,18 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setDataVencimento(getDataAtualBrasil())
     setObservacao('')
     setErro('')
+  }, [])
+
+  const handleFechar = () => {
     onClose()
+  }
+
+  const handleCancelar = () => {
+    if (window.confirm('Deseja realmente cancelar o lançamento? Todos os dados preenchidos serão perdidos.')) {
+      clearDraft('loja')
+      resetForm()
+      onClose()
+    }
   }
 
   return (
@@ -747,9 +860,40 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           ) : (
             <div className="space-y-4">
                <div className="flex justify-between items-center bg-purple-50 p-2 rounded border border-purple-100">
-                 <span className="text-sm font-black text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
+                 <div className="flex items-center gap-4">
+                    <span className="text-sm font-black text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
+                    {(tipo === 'venda' || tipo === 'compra') && pedidosAbertos.length > 0 && (
+                      <button
+                        onClick={() => setMostrarBuscaPedido(!mostrarBuscaPedido)}
+                        className="bg-yellow-500 text-white px-2 py-0.5 rounded text-[10px] font-bold animate-pulse"
+                      >
+                        {pedidosAbertos.length} PEDIDO(S) EM ABERTO 🔍
+                      </button>
+                    )}
+                 </div>
                  <button onClick={() => setTipo('')} className="text-xs font-bold text-purple-600 hover:underline">ALTERAR TIPO</button>
                </div>
+
+               {mostrarBuscaPedido && (
+                 <div className="bg-yellow-50 border border-yellow-200 p-2 rounded space-y-2">
+                    <p className="font-bold text-yellow-800 text-[10px] uppercase">Selecione um pedido para importar:</p>
+                    <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                      {pedidosAbertos.map(p => (
+                        <button
+                          key={p.id}
+                          onClick={() => importarPedido(p)}
+                          className="flex justify-between items-center p-2 bg-white border border-yellow-100 hover:bg-yellow-100 text-left rounded"
+                        >
+                          <div>
+                            <p className="font-bold text-gray-700">#{p.numero_transacao} - {p.origem}</p>
+                            <p className="text-[10px] text-gray-500 truncate w-64">{p.observacao}</p>
+                          </div>
+                          <span className="text-[10px] font-mono bg-yellow-200 px-1 rounded">Importar</span>
+                        </button>
+                      ))}
+                    </div>
+                 </div>
+               )}
 
                {/* Data e Entidade */}
                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -766,13 +910,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                    <label className="block text-xs font-medium text-gray-700 mb-1">
                      {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'Fornecedor' : 'Cliente'} *
                    </label>
-                   <input
-                     type="text"
-                     value={entidade}
-                     onChange={(e) => setEntidade(e.target.value)}
+                   <SeletorEntidade
+                     valor={entidade}
+                     onChange={(val) => setEntidade(val)}
+                     tipo={(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'fornecedor' : 'cliente'}
                      placeholder={`Nome do ${(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'fornecedor' : 'cliente'}`}
-                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                     required
                    />
                  </div>
                </div>
@@ -902,6 +1044,17 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                              </div>
                            )}
 
+                           <div>
+                             <label className="block text-[10px] text-gray-600">Observação do Item</label>
+                             <input
+                               type="text"
+                               value={item.observacao_item || ''}
+                               onChange={(e) => atualizarItem(item.id, 'observacao_item', e.target.value)}
+                               placeholder="Ex: Cor, tamanho, detalhes..."
+                               className="w-full px-2 py-1 text-[10px] border border-gray-300 rounded"
+                             />
+                           </div>
+
                            <div className="flex justify-end gap-2 pt-1">
                               <button onClick={() => atualizarItem(item.id, 'minimizado', true)} className="text-[10px] text-gray-500">Minimizar</button>
                               <button onClick={() => removerItem(item.id)} className="text-[10px] text-red-500">Remover</button>
@@ -968,7 +1121,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-gray-50 flex justify-between items-center gap-3">
             <button
-              onClick={handleFechar}
+              onClick={handleCancelar}
               className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition-all flex items-center justify-center"
             >
               Cancelar

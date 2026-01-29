@@ -61,8 +61,8 @@ export default function FiltrosTransacoes({
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-pink-700 uppercase tracking-widest hover:bg-pink-50 transition-colors"
       >
-        <span>🔍 Filtros de Transações</span>
-        <span>{aberto ? '▲' : '▼'}</span>
+        <span className="flex items-center gap-1">🔍 Filtros de Transações</span>
+        <span className="flex items-center justify-center h-4 w-4">{aberto ? '▼' : '▶'}</span>
       </button>
 
       {aberto && (

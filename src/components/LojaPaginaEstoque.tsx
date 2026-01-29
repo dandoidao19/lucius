@@ -285,8 +285,8 @@ export default function LojaPaginaEstoque() {
           onClick={() => setFiltroAberto(!filtroAberto)}
           className="w-full px-3 py-1 flex justify-between items-center hover:bg-red-50 transition-colors text-red-700"
         >
-          <span className="text-xs font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
-          <span className="text-xs text-gray-400">{filtroAberto ? '▲' : '▼'}</span>
+          <span className="text-xs font-semibold tracking-widest uppercase flex items-center gap-1">🔍 Filtros e Ordenação</span>
+          <span className="text-xs text-gray-400 flex items-center justify-center h-4 w-4">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
@@ -378,13 +378,13 @@ export default function LojaPaginaEstoque() {
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
       <div className="bg-white rounded shadow-sm px-3 py-1 border border-gray-200">
-        <div className="flex justify-between items-center mb-1">
+        <div className="flex justify-between items-center mb-1 h-8">
           <button
             onClick={() => {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-red-700 hover:bg-red-800 text-white px-3 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
+            className="bg-red-700 hover:bg-red-800 text-white px-3 h-6 flex items-center justify-center rounded text-xs font-semibold transition-colors shadow-sm"
           >
             + CADASTRAR ITEM
           </button>
@@ -441,8 +441,8 @@ export default function LojaPaginaEstoque() {
 
       {/* Tabela de Estoque */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-        <div className="bg-red-700 flex justify-between items-center px-3 py-1 text-white border-b border-red-800">
-          <h2 className="text-xs font-semibold uppercase tracking-widest">Lista de Produtos ({produtosFiltrados.length})</h2>
+        <div className="bg-red-700 flex justify-between items-center px-3 py-1 text-white border-b border-red-800 h-8">
+          <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">Lista de Produtos ({produtosFiltrados.length})</h2>
         </div>
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">

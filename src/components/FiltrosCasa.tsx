@@ -91,8 +91,8 @@ export default function FiltrosCasa({
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors"
       >
-        <span>🔍 Filtros de Lançamentos</span>
-        <span className="text-lg">{aberto ? '▼' : '▶'}</span>
+        <span className="flex items-center gap-1">🔍 Filtros de Lançamentos</span>
+        <span className="flex items-center justify-center h-4 w-4">{aberto ? '▼' : '▶'}</span>
       </button>
 
       {/* Conteúdo dos Filtros */}

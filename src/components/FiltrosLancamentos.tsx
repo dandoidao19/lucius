@@ -141,8 +141,8 @@ export default function FiltrosLancamentos({
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-purple-600 uppercase tracking-widest hover:bg-purple-50 transition-colors"
       >
-        <span>🔍 {titulo}</span>
-        <span className="text-lg">{aberto ? '▼' : '▶'}</span>
+        <span className="flex items-center gap-1">🔍 {titulo}</span>
+        <span className="flex items-center justify-center h-4 w-4">{aberto ? '▼' : '▶'}</span>
       </button>
 
       {aberto && (

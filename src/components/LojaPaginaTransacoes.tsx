@@ -234,12 +234,12 @@ export default function LojaPaginaTransacoes() {
       />
 
       <div className="flex justify-between items-center bg-pink-700 px-3 py-1 rounded shadow-sm border border-pink-800 text-white">
-        <h2 className="text-xs font-semibold uppercase tracking-widest">Transações Unificadas ({transacoesFiltradas.length})</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
-          className="bg-white text-pink-700 hover:bg-pink-50 px-3 py-0.5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+          className="bg-white text-pink-700 hover:bg-pink-50 px-3 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center gap-1"
         >
-          <span>+</span> NOVO LANÇAMENTO
+          <span className="text-sm">+</span> NOVO LANÇAMENTO
         </button>
       </div>
 

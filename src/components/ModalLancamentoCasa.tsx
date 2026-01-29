@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
+import { useFormDraft } from '@/context/FormDraftContext'
 
 interface ModalLancamentoCasaProps {
   aberto: boolean
@@ -14,7 +15,9 @@ const CAIXA_ID_CASA = '69bebc06-f495-4fed-b0b1-beafb50c017b'
 
 export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamentoCasaProps) {
   const { dados, recarregarDados } = useDadosFinanceiros()
+  const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [loading, setLoading] = useState(false)
+
   const [form, setForm] = useState({
     descricao: '',
     valor: '',
@@ -25,6 +28,18 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
     parcelas: 1,
     prazoParcelas: 'mensal',
   })
+
+  useEffect(() => {
+    const draft = getDraft('casa')
+    if (draft) setForm(draft)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (aberto && form.descricao) {
+      setDraft('casa', form)
+    }
+  }, [aberto, form, setDraft])
 
   if (!aberto) return null
 
@@ -74,6 +89,17 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
       if (error) throw error
 
       alert('✅ Lançamento Casa realizado!')
+      clearDraft('casa')
+      setForm({
+        descricao: '',
+        valor: '',
+        tipo: 'saida',
+        centroCustoId: '',
+        data: getDataAtualBrasil(),
+        status: 'previsto',
+        parcelas: 1,
+        prazoParcelas: 'mensal',
+      })
       recarregarDados()
       onClose()
     } catch (err: any) {

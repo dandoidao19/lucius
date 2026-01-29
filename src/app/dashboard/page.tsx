@@ -94,7 +94,7 @@ export default function Dashboard() {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`px-3 py-1.5 rounded-lg font-bold transition-all duration-200 flex items-center gap-1 text-[13px] ${getButtonStyle(item.id, item.color)}`}
+                className={`px-3 h-8 rounded-lg font-bold transition-all duration-200 flex items-center justify-center gap-1 text-[13px] ${getButtonStyle(item.id, item.color)}`}
               >
                 <span>{item.icon}</span>
                 <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
@@ -108,7 +108,7 @@ export default function Dashboard() {
             </p>
             <button
               onClick={handleLogout}
-              className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors shadow-md text-xs flex items-center gap-1"
+              className="bg-red-600 hover:bg-red-700 text-white px-3 h-8 rounded-lg font-bold transition-colors shadow-md text-xs flex items-center justify-center gap-1"
             >
               🚪 SAIR
             </button>

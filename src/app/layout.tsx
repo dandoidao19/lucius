@@ -6,6 +6,7 @@ import { RealtimeSubscriber } from "@/components/RealtimeSubscriber";
 import CabecalhoSistema from "@/components/CabecalhoSistema";
 import AtalhosGlobais from "@/components/AtalhosGlobais";
 import { DadosFinanceirosProvider } from "@/context/DadosFinanceirosContext";
+import { FormDraftProvider } from "@/context/FormDraftContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,6 +35,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <DadosFinanceirosProvider>
+            <FormDraftProvider>
             <RealtimeSubscriber />
             {/* Cabeçalho do Sistema LUCIUS com Logos */}
             <CabecalhoSistema />
@@ -43,6 +45,7 @@ export default function RootLayout({
 
             {/* Atalhos Globais (Balões Flutuantes) */}
             <AtalhosGlobais />
+            </FormDraftProvider>
           </DadosFinanceirosProvider>
         </QueryProvider>
       </body>
