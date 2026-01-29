@@ -27,7 +27,6 @@ type OrdenacaoDirecao = 'asc' | 'desc'
 export default function LojaPaginaEstoque() {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [produtosFiltrados, setProdutosFiltrados] = useState<Produto[]>([])
-  const [produtosCondicionais, setProdutosCondicionais] = useState<Produto[]>([])
   const [loading, setLoading] = useState(true)
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
   const [modalLogAberto, setModalLogAberto] = useState(false)
@@ -119,10 +118,6 @@ export default function LojaPaginaEstoque() {
     })
 
     setProdutosFiltrados(resultado)
-    
-    // Separar produtos condicionais
-    const condicionais = resultado.filter(p => (p.status_item || 'resolvido') === 'condicional')
-    setProdutosCondicionais(condicionais)
   }, [produtos, filtroDescricao, filtroCodigo, filtroStatus, ordenacaoPor, ordenacaoDirecao])
 
   useEffect(() => {
@@ -283,48 +278,48 @@ export default function LojaPaginaEstoque() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white rounded shadow-sm overflow-hidden">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-2 py-1.5 flex justify-between items-center hover:bg-gray-50 transition-colors"
+          className="w-full px-2 py-1 flex justify-between items-center hover:bg-gray-50 transition-colors"
         >
-          <span className="text-xs font-semibold text-gray-800">🔍 Filtros e Ordenação</span>
+          <span className="text-xs font-bold text-gray-700 tracking-tight uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-600">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
-          <div className="p-2 border-t border-gray-200">
-            <div className="grid grid-cols-4 gap-2 mb-2">
+          <div className="p-1.5 border-t border-gray-100">
+            <div className="grid grid-cols-4 gap-1.5 mb-1.5">
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">Descrição</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
                 <input
                   type="text"
                   value={filtroDescricao}
                   onChange={(e) => setFiltroDescricao(e.target.value)}
-                  placeholder="Filtrar por descrição"
-                  className="w-full px-2 py-0.5 border border-gray-300 rounded text-xs"
+                  placeholder="Filtrar..."
+                  className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-xs outline-none"
                 />
               </div>
               
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">Código</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Código</label>
                 <input
                   type="text"
                   value={filtroCodigo}
                   onChange={(e) => setFiltroCodigo(e.target.value)}
-                  placeholder="Filtrar por código"
-                  className="w-full px-2 py-0.5 border border-gray-300 rounded text-xs"
+                  placeholder="Filtrar..."
+                  className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-xs outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-0.5">Status</label>
+                <label className="block text-[10px] font-bold text-gray-500 uppercase mb-0.5">Status</label>
                 <select
                   value={filtroStatus}
                   onChange={(e) => setFiltroStatus(e.target.value as 'todos' | 'resolvido' | 'condicional')}
-                  className="w-full px-2 py-0.5 border border-gray-300 rounded text-xs"
+                  className="w-full px-1.5 py-0.5 border border-gray-300 rounded text-xs outline-none"
                 >
                   <option value="todos">Todos</option>
                   <option value="resolvido">Resolvido</option>
@@ -335,45 +330,45 @@ export default function LojaPaginaEstoque() {
               <div className="flex items-end gap-1">
                 <button
                   onClick={limparFiltros}
-                  className="px-2 py-0.5 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
+                  className="px-2 py-0.5 bg-gray-500 text-white text-[10px] font-bold rounded hover:bg-gray-600"
                 >
-                  Limpar
+                  LIMPAR
                 </button>
                 <button
                   onClick={gerarPDF}
-                  className="px-2 py-0.5 bg-red-500 text-white rounded text-xs hover:bg-red-600"
+                  className="px-2 py-0.5 bg-red-600 text-white text-[10px] font-bold rounded hover:bg-red-700"
                 >
                   📄 PDF
                 </button>
               </div>
             </div>
 
-            <div className="text-xs text-gray-600">
-              <strong>Ordenar por:</strong>
-              <div className="flex gap-1 mt-1 flex-wrap">
+            <div className="text-[10px] text-gray-600">
+              <strong className="uppercase">Ordenar por:</strong>
+              <div className="flex gap-1 mt-0.5 flex-wrap">
                 <button
                   onClick={() => alternarOrdenacao('descricao')}
-                  className={`px-2 py-0.5 rounded text-xs ${ordenacaoPor === 'descricao' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'descricao' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
-                  Descrição <IconeOrdenacao campo="descricao" />
+                  DESCRIÇÃO <IconeOrdenacao campo="descricao" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('preco_venda')}
-                  className={`px-2 py-0.5 rounded text-xs ${ordenacaoPor === 'preco_venda' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'preco_venda' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
-                  Preço <IconeOrdenacao campo="preco_venda" />
+                  PREÇO <IconeOrdenacao campo="preco_venda" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('categoria')}
-                  className={`px-2 py-0.5 rounded text-xs ${ordenacaoPor === 'categoria' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'categoria' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
-                  Categoria <IconeOrdenacao campo="categoria" />
+                  CATEGORIA <IconeOrdenacao campo="categoria" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('quantidade')}
-                  className={`px-2 py-0.5 rounded text-xs ${ordenacaoPor === 'quantidade' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'quantidade' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
-                  Quantidade <IconeOrdenacao campo="quantidade" />
+                  QUANTIDADE <IconeOrdenacao campo="quantidade" />
                 </button>
               </div>
             </div>
@@ -382,28 +377,28 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded-lg shadow-md p-2">
-        <div className="flex justify-between items-start mb-2">
+      <div className="bg-white rounded shadow-sm p-1.5">
+        <div className="flex justify-between items-start mb-1.5">
           <button
             onClick={() => {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-bold transition-colors shadow-sm"
           >
-            + Cadastrar Item
+            + CADASTRAR ITEM
           </button>
 
           <div className="text-right">
-            <p className="text-[9px] text-gray-600">Total de Produtos</p>
-            <p className="text-base font-bold text-gray-800">
-              {produtosFiltrados.length} {produtosFiltrados.length === 1 ? 'produto' : 'produtos'}
+            <p className="text-[9px] font-bold text-gray-500 uppercase">Total de Produtos</p>
+            <p className="text-sm font-black text-gray-800">
+              {produtosFiltrados.length}
             </p>
           </div>
         </div>
 
         {/* NOVO: Quadro de Valores do Estoque */}
-        <div className="mt-2 border-t pt-2">
+        <div className="mt-1.5 border-t border-gray-100 pt-1.5">
           <p className="text-xs font-semibold text-gray-800 mb-1">VALOR EM ESTOQUE</p>
           
           <div className="grid grid-cols-2 gap-2">
