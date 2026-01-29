@@ -85,16 +85,8 @@ export default function Dashboard() {
 
 
   return (
-    <div className="min-h-screen bg-slate-900 transition-all duration-500">
+    <div className="min-h-screen bg-slate-50 transition-all duration-500">
       <div className="container mx-auto px-3 py-2">
-        {/* Header Branding */}
-        <div className="text-center mb-4 pt-4">
-          <h1 className="text-4xl md:text-5xl font-black text-blue-500 tracking-tighter italic">
-            <span className="text-sm font-bold align-top mr-2 text-blue-400">v3.0</span>
-            LUCIUS
-          </h1>
-        </div>
-
         {/* Menu de Navegação com Ícones - UNIFICADO COM USUÁRIO */}
         <div className="bg-white rounded-lg shadow-md p-1 mb-4 border border-gray-100 flex justify-between items-center">
           <div className="flex flex-wrap gap-1">
