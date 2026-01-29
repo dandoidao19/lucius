@@ -280,17 +280,17 @@ export default function LojaPaginaEstoque() {
   return (
     <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-purple-600 rounded shadow-sm overflow-hidden border border-purple-700">
+      <div className="bg-pink-700 rounded shadow-sm overflow-hidden border border-pink-800">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
-          className="w-full px-3 py-1 flex justify-between items-center hover:bg-purple-700 transition-colors text-white"
+          className="w-full px-3 py-0.5 flex justify-between items-center hover:bg-pink-800 transition-colors text-white"
         >
           <span className="text-[11px] font-semibold tracking-widest uppercase">🔍 Filtros e Ordenação</span>
           <span className="text-xs text-gray-400">{filtroAberto ? '▲' : '▼'}</span>
         </button>
         
         {filtroAberto && (
-          <div className="p-2 bg-white border-t border-purple-200">
+          <div className="p-2 bg-white border-t border-pink-100">
             <div className="grid grid-cols-4 gap-1.5 mb-1.5">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Descrição</label>
@@ -348,25 +348,25 @@ export default function LojaPaginaEstoque() {
               <div className="flex gap-1 mt-0.5 flex-wrap">
                 <button
                   onClick={() => alternarOrdenacao('descricao')}
-                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'descricao' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'descricao' ? 'bg-pink-700 text-white border-pink-800' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
                   DESCRIÇÃO <IconeOrdenacao campo="descricao" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('preco_venda')}
-                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'preco_venda' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'preco_venda' ? 'bg-pink-700 text-white border-pink-800' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
                   PREÇO <IconeOrdenacao campo="preco_venda" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('categoria')}
-                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'categoria' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'categoria' ? 'bg-pink-700 text-white border-pink-800' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
                   CATEGORIA <IconeOrdenacao campo="categoria" />
                 </button>
                 <button
                   onClick={() => alternarOrdenacao('quantidade')}
-                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'quantidade' ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-700 border-gray-200'}`}
+                  className={`px-1.5 py-0.5 rounded border ${ordenacaoPor === 'quantidade' ? 'bg-pink-700 text-white border-pink-800' : 'bg-white text-gray-700 border-gray-200'}`}
                 >
                   QUANTIDADE <IconeOrdenacao campo="quantidade" />
                 </button>
@@ -384,7 +384,7 @@ export default function LojaPaginaEstoque() {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
+            className="bg-pink-700 hover:bg-pink-800 text-white px-2 py-0.5 rounded text-xs font-semibold transition-colors shadow-sm"
           >
             + CADASTRAR ITEM
           </button>
@@ -441,7 +441,7 @@ export default function LojaPaginaEstoque() {
 
       {/* Tabela de Estoque */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-        <div className="bg-blue-600 flex justify-between items-center px-2 py-1 text-white">
+        <div className="bg-pink-700 flex justify-between items-center px-2 py-1 text-white">
           <h2 className="text-[11px] font-semibold uppercase tracking-widest">Lista de Produtos ({produtosFiltrados.length})</h2>
         </div>
         {produtosFiltrados.length === 0 ? (
@@ -451,7 +451,7 @@ export default function LojaPaginaEstoque() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-blue-600 text-white border-b border-blue-500">
+              <thead className="bg-pink-700 text-white border-b border-pink-800">
                 <tr>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>
@@ -521,7 +521,7 @@ export default function LojaPaginaEstoque() {
                         <div className="flex gap-0.5 justify-center">
                           <button
                             onClick={() => abrirModalEditar(produto)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
+                            className="bg-pink-700 hover:bg-pink-800 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
                             title="Editar produto"
                           >
                             ✏️

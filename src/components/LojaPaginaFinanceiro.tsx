@@ -444,7 +444,7 @@ export default function LojaPaginaFinanceiro() {
         {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
-            <div className="bg-purple-600 flex justify-between items-center px-2 py-1 text-white">
+            <div className="bg-purple-600 flex justify-between items-center px-2 py-0.5 text-white">
                <div className="flex items-center gap-4">
                 <button
                   onClick={() => setCaixaMinimizado(!caixaMinimizado)}

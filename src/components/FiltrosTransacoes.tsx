@@ -56,18 +56,18 @@ export default function FiltrosTransacoes({
   ]
 
   return (
-    <div className="bg-purple-600 rounded shadow-sm mb-1 border border-purple-700 overflow-hidden">
+    <div className="bg-red-700 rounded shadow-sm mb-1 border border-red-800 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-white uppercase tracking-widest hover:bg-purple-700 transition-colors"
+        className="w-full px-3 py-0.5 flex items-center justify-between text-[11px] font-semibold text-white uppercase tracking-widest hover:bg-red-800 transition-colors"
       >
         <span>🔍 Filtros de Transações</span>
         <span>{aberto ? '▲' : '▼'}</span>
       </button>
 
       {aberto && (
-        <div className="px-3 pb-3 pt-2 bg-white border-t border-purple-200">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="px-2 pb-2 pt-1 bg-white border-t border-red-100">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1.5">
             <div>
               <label className="block text-xs font-bold text-gray-500 uppercase mb-0.5">Início</label>
               <input
@@ -127,7 +127,7 @@ export default function FiltrosTransacoes({
               </select>
             </div>
           </div>
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2 mt-2">
             <button onClick={onLimpar} className="px-3 py-1 bg-gray-500 text-white text-xs font-semibold rounded hover:bg-gray-600 transition-colors">
               🗑️ LIMPAR
             </button>

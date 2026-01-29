@@ -44,7 +44,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
   const [parcelas, setParcelas] = useState<ParcelaDetalhe[]>([])
   const [loading, setLoading] = useState(false)
   const [loadingExcluir, setLoadingExcluir] = useState(false)
-  const [transacaoFull, setTransacaoFull] = useState<Record<string, any> | null>(null)
+  const [transacaoFull, setTransacaoFull] = useState<any>(null)
   const [editAberto, setEditAberto] = useState(false)
 
   const buscarFull = useCallback(async () => {
@@ -79,15 +79,15 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
 
       if (error) throw error
 
-      const itensFormatados = (data || []).map((item: Record<string, any>) => ({
-        id: item.id,
-        produto_id: item.produto_id,
-        descricao: item.descricao || '',
-        quantidade: item.quantidade || 0,
-        preco_venda: item.preco_venda || 0,
-        preco_custo: item.preco_custo || 0,
-        valor_repasse: item.valor_repasse || 0,
-        categoria: item.categoria
+      const itensFormatados = (data || []).map((item: Record<string, unknown>) => ({
+        id: (item.id as string),
+        produto_id: (item.produto_id as string | null),
+        descricao: (item.descricao as string) || '',
+        quantidade: (item.quantidade as number) || 0,
+        preco_venda: (item.preco_venda as number) || 0,
+        preco_custo: (item.preco_custo as number) || 0,
+        valor_repasse: (item.valor_repasse as number) || 0,
+        categoria: (item.categoria as string)
       }))
 
       setItens(itensFormatados)
@@ -237,15 +237,15 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
     // Mapear dados para o formato esperado pelo ModalTransacaoUnificada
     const transacaoInicial = {
       id: transacaoId,
-      tipo: tipoMapeado as any,
-      data: tipo === 'vendas' ? transacaoFull.data_venda : (tipo === 'compras' ? transacaoFull.data_compra : transacaoFull.data_transacao),
-      entidade: tipo === 'vendas' ? transacaoFull.cliente : (tipo === 'compras' ? transacaoFull.fornecedor : transacaoFull.origem),
-      total: transacaoFull.total || 0,
-      status_pagamento: transacaoFull.status_pagamento || transacaoFull.status || 'pendente',
-      quantidade_parcelas: transacaoFull.quantidade_parcelas || 1,
-      prazoparcelas: transacaoFull.prazoparcelas || 'mensal',
-      observacao: transacaoFull.observacao || '',
-      numero_transacao: transacaoFull.numero_transacao,
+      tipo: tipoMapeado as 'venda' | 'compra' | 'pedido_venda' | 'pedido_compra' | 'condicional_cliente' | 'condicional_fornecedor',
+      data: (tipo === 'vendas' ? transacaoFull.data_venda : (tipo === 'compras' ? transacaoFull.data_compra : transacaoFull.data_transacao)) as string,
+      entidade: (tipo === 'vendas' ? transacaoFull.cliente : (tipo === 'compras' ? transacaoFull.fornecedor : transacaoFull.origem)) as string,
+      total: (transacaoFull.total as number) || 0,
+      status_pagamento: (transacaoFull.status_pagamento || transacaoFull.status || 'pendente') as string,
+      quantidade_parcelas: (transacaoFull.quantidade_parcelas as number) || 1,
+      prazoparcelas: (transacaoFull.prazoparcelas as string) || 'mensal',
+      observacao: (transacaoFull.observacao as string) || '',
+      numero_transacao: transacaoFull.numero_transacao as number,
       itens: itens.map(i => ({
         id: i.id,
         produto_id: i.produto_id,
