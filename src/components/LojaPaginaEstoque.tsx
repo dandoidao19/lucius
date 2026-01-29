@@ -280,7 +280,7 @@ export default function LojaPaginaEstoque() {
   return (
     <div className="space-y-1">
       {/* FILTRO MINIMIZADO NO TOPO */}
-      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
+      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
         <button
           onClick={() => setFiltroAberto(!filtroAberto)}
           className="w-full px-2 py-1 flex justify-between items-center hover:bg-purple-50 transition-colors"
@@ -377,7 +377,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded shadow-sm p-1.5 border-t-4 border-purple-500">
+      <div className="bg-purple-50 rounded shadow-sm p-1.5 border border-purple-100">
         <div className="flex justify-between items-start mb-1.5">
           <button
             onClick={() => {
@@ -440,7 +440,7 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Tabela de Estoque */}
-      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
+      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
             <p className="text-xs">Nenhum produto encontrado com os filtros aplicados</p>

@@ -587,7 +587,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso }: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
-      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all border-t-4 border-purple-600 ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
+      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all border border-purple-200 ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
         {/* Cabeçalho */}
         <div className="bg-purple-600 px-4 py-2 flex justify-between items-center text-white">
           <h2 className="font-bold text-sm uppercase tracking-widest">Lançar Nova Transação</h2>

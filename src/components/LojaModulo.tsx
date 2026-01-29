@@ -32,7 +32,7 @@ export default function LojaModulo() {
   return (
     <div className="space-y-1">
       {/* Menu Horizontal */}
-      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
+      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
         <nav className="flex flex-wrap gap-0">
           {abas.map((aba) => (
             <button

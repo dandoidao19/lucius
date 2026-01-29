@@ -131,7 +131,7 @@ export default function Dashboard() {
         </div>
 
         {/* Menu de Navegação com Ícones - COMPACTADO */}
-        <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
+        <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'} rounded-lg shadow-md p-1 mb-2 border`}>
           <div className="flex flex-wrap gap-1">
             {menuItems.map((item) => (
               <button

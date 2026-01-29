@@ -68,7 +68,7 @@ export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaD
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-1 space-y-1" style={{ minWidth: 0 }}>
+    <div className="bg-purple-50 rounded-lg shadow-md p-1 space-y-1 border border-purple-100" style={{ minWidth: 0 }}>
       <h2 className="font-semibold text-gray-800" style={{ fontSize: '12px' }}>{titulo || 'Caixa'}</h2>
 
       <div className={`rounded p-1.5 ${caixaRealLoja < 0 ? 'bg-red-500' : 'bg-blue-50 border border-blue-200'}`} style={{ minWidth: 0 }}>

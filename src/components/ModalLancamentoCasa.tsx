@@ -85,7 +85,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden border-t-4 border-blue-600">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-blue-200">
         <div className="bg-blue-600 px-4 py-2 flex justify-between items-center text-white">
           <h2 className="font-bold text-sm uppercase tracking-wider">Novo Lançamento Casa</h2>
           <button onClick={onClose} className="text-lg">✕</button>

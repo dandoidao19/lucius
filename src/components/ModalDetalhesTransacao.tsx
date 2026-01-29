@@ -118,7 +118,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2">
-      <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border-t-4 border-purple-600">
+      <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border border-purple-200">
         {/* Cabeçalho */}
         <div className="bg-purple-900 text-white px-4 py-2 flex justify-between items-center">
           <div>

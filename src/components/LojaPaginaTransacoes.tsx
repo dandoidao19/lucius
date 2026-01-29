@@ -83,7 +83,7 @@ export default function LojaPaginaTransacoes() {
           quantidade_parcelas: v.quantidade_parcelas || 1,
           quantidade_itens: v.quantidade_itens || 0,
           observacao: v.observacao || '',
-          cor: 'bg-green-100 text-green-800 border-green-200',
+          cor: 'bg-green-600 text-white shadow-sm',
           tabela: 'vendas'
         })
       })
@@ -102,7 +102,7 @@ export default function LojaPaginaTransacoes() {
           quantidade_parcelas: c.quantidade_parcelas || 1,
           quantidade_itens: c.quantidade_itens || 0,
           observacao: c.observacao || '',
-          cor: 'bg-blue-100 text-blue-800 border-blue-200',
+          cor: 'bg-blue-600 text-white shadow-sm',
           tabela: 'compras'
         })
       })
@@ -116,11 +116,11 @@ export default function LojaPaginaTransacoes() {
         if (isPedido) {
           tipoLabel = cn.tipo === 'enviado' ? 'P. VENDA' : 'P. COMPRA'
           tipoSlug = cn.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
-          cor = cn.tipo === 'enviado' ? 'bg-yellow-100 text-yellow-800 border-yellow-200' : 'bg-orange-100 text-orange-800 border-orange-200'
+          cor = cn.tipo === 'enviado' ? 'bg-yellow-500 text-white shadow-sm' : 'bg-orange-500 text-white shadow-sm'
         } else {
           tipoLabel = cn.tipo === 'enviado' ? 'COND. CLI.' : 'COND. FORN.'
           tipoSlug = cn.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor'
-          cor = cn.tipo === 'enviado' ? 'bg-purple-100 text-purple-800 border-purple-200' : 'bg-indigo-100 text-indigo-800 border-indigo-200'
+          cor = cn.tipo === 'enviado' ? 'bg-purple-600 text-white shadow-sm' : 'bg-indigo-600 text-white shadow-sm'
         }
 
         unificadas.push({
@@ -233,7 +233,7 @@ export default function LojaPaginaTransacoes() {
         onGerarPDF={gerarPDF}
       />
 
-      <div className="flex justify-between items-center bg-white p-2 rounded shadow-sm border-t-4 border-purple-500">
+      <div className="flex justify-between items-center bg-purple-50 p-2 rounded shadow-sm border border-purple-100">
         <h2 className="text-sm font-bold text-gray-700 uppercase tracking-wider">Transações Unificadas ({transacoesFiltradas.length})</h2>
         <button
           onClick={() => setModalAberto(true)}
@@ -243,14 +243,14 @@ export default function LojaPaginaTransacoes() {
         </button>
       </div>
 
-      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-purple-500">
+      <div className="bg-purple-50 rounded shadow-sm overflow-hidden border border-purple-100">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead className="bg-purple-50/50 border-b border-purple-100">
               <tr>
                 <th className="px-1 py-0.5 font-bold text-purple-800 uppercase w-[85px]">Data</th>
                 <th className="px-1 py-0.5 font-bold text-purple-800 uppercase text-center w-[85px]">Tipo</th>
-                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[35px]">Nº</th>
+                <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-center w-[45px]">Nº</th>
                 <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[90px]">Cliente/Fornecedor</th>
                 <th className="px-1 py-0.5 font-bold text-purple-800 uppercase min-w-[150px]">Observações</th>
                 <th className="px-0.5 py-0.5 font-bold text-purple-800 uppercase text-right w-[60px]">Total</th>
@@ -274,12 +274,12 @@ export default function LojaPaginaTransacoes() {
                   <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
                     <td className="px-1 py-1 text-center">
-                      <span className={`inline-block px-1 py-0.5 rounded font-bold border ${t.cor}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded font-bold text-[10px] leading-tight uppercase ${t.cor}`}>
                         {t.tipo_exibicao}
                       </span>
                     </td>
                     <td className="px-0.5 py-1 text-gray-500 text-center">#{t.numero}</td>
-                    <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[140px]" title={t.entidade}>{t.entidade}</td>
+                    <td className="px-1 py-1 text-gray-800 truncate max-w-[140px]" title={t.entidade}>{t.entidade}</td>
                     <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={t.observacao}>
                       {t.observacao.replace('[PEDIDO]', '').trim() || '—'}
                     </td>

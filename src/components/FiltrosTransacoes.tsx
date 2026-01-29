@@ -56,7 +56,7 @@ export default function FiltrosTransacoes({
   ]
 
   return (
-    <div className="bg-white rounded shadow-sm mb-2">
+    <div className="bg-purple-50 rounded shadow-sm mb-2 border border-purple-100">
       <button
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1.5 flex items-center justify-between text-xs font-bold text-gray-700 hover:bg-gray-50 transition-colors"

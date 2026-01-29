@@ -62,20 +62,20 @@ export default function CaixaGeral() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-1 space-y-1" style={{ minWidth: 0 }}>
-      <h2 className="font-semibold text-gray-800" style={{ fontSize: '12px' }}>Caixa Geral</h2>
+    <div className="bg-slate-800 rounded-lg shadow-md p-1 space-y-1 border border-slate-700" style={{ minWidth: 0 }}>
+      <h2 className="font-semibold text-white" style={{ fontSize: '12px' }}>Caixa Geral</h2>
 
-      <div className={`rounded p-1.5 ${caixaRealGeral < 0 ? 'bg-red-500' : 'bg-blue-50 border border-blue-200'}`} style={{ minWidth: 0 }}>
+      <div className={`rounded p-1.5 ${caixaRealGeral < 0 ? 'bg-red-900/50 border border-red-700' : 'bg-slate-700 border border-slate-600'}`} style={{ minWidth: 0 }}>
         <div>
-          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-100' : 'text-gray-600'}`}>
+          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-100' : 'text-slate-300'}`}>
             <span>Caixa Real:</span>
             <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
-              <span className={caixaRealLoja >= 0 ? 'text-green-700' : 'text-red-700'}>L: {formatarMoeda(caixaRealLoja)}</span>
-              <span className="mx-2">|</span>
-              <span className={caixaRealCasa >= 0 ? 'text-green-700' : 'text-red-700'}>C: {formatarMoeda(caixaRealCasa)}</span>
+              <span className={caixaRealLoja >= 0 ? 'text-green-400' : 'text-red-400'}>L: {formatarMoeda(caixaRealLoja)}</span>
+              <span className="mx-2 text-slate-500">|</span>
+              <span className={caixaRealCasa >= 0 ? 'text-green-400' : 'text-red-400'}>C: {formatarMoeda(caixaRealCasa)}</span>
             </span>
           </div>
-          <p style={caixaValorStyle} className={`${caixaRealGeral < 0 ? 'text-white' : 'text-blue-600'}`}>{formatarMoeda(caixaRealGeral)}</p>
+          <p style={caixaValorStyle} className={`${caixaRealGeral < 0 ? 'text-white' : 'text-blue-400'}`}>{formatarMoeda(caixaRealGeral)}</p>
           <div style={caixaSubContainerStyle} className="mt-0.5">
             <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
               <span className="text-green-600">↑ {formatarMoedaCompacta(entradasHoje)}</span>
@@ -90,30 +90,30 @@ export default function CaixaGeral() {
           <div style={{ minWidth: 0 }}></div>
           <div style={botoesContainerStyle}>{renderBotoesModo()}</div>
         </div>
-        <div style={periodoLinhaStyle} title={getTituloPrevisao()}>{getTituloPrevisao()}</div>
+        <div style={{...periodoLinhaStyle, color: '#94a3b8'}} title={getTituloPrevisao()}>{getTituloPrevisao()}</div>
         {carregando ? (
-          <p className="text-gray-500 text-center py-2" style={{ fontSize: '12px' }}>Carregando...</p>
+          <p className="text-gray-400 text-center py-2" style={{ fontSize: '12px' }}>Carregando...</p>
         ) : caixaPrevistoGeral.length > 0 ? (
           <div className="overflow-x-auto">
-            <div className="text-[10px] text-gray-500 mb-1">
+            <div className="text-[10px] text-gray-400 mb-1">
               Mostrando {caixaPrevistoGeral.length} dias
             </div>
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b border-gray-300">
-                  <th className="px-1 py-0.5 text-left font-semibold text-gray-700">Data</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Receitas</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Despesas</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Acumulado</th>
+                <tr className="bg-slate-700 border-b border-slate-600">
+                  <th className="px-1 py-0.5 text-left font-bold text-slate-200 uppercase">Data</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-slate-200 uppercase">Receitas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-slate-200 uppercase">Despesas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-slate-200 uppercase">Acumulado</th>
                 </tr>
               </thead>
               <tbody>
                 {caixaPrevistoGeral.map((dia, idx) => (
-                  <tr key={`${dia.data}-${idx}`} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-1 py-0.5 text-gray-700 whitespace-nowrap">{dia.data_formatada}</td>
-                    <td className="px-1 py-0.5 text-right text-green-600 font-medium">{formatarMoedaCompacta(dia.receitas)}</td>
-                    <td className="px-1 py-0.5 text-right text-red-600 font-medium">{formatarMoedaCompacta(dia.despesas)}</td>
-                    <td className={`px-1 py-0.5 text-right font-bold ${dia.saldo_acumulado >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatarMoedaCompacta(dia.saldo_acumulado)}</td>
+                  <tr key={`${dia.data}-${idx}`} className="border-b border-slate-700 hover:bg-slate-700/50 transition-colors">
+                    <td className="px-1 py-0.5 text-slate-300 whitespace-nowrap">{dia.data_formatada}</td>
+                    <td className="px-1 py-0.5 text-right text-green-400 font-bold">{formatarMoedaCompacta(dia.receitas)}</td>
+                    <td className="px-1 py-0.5 text-right text-red-400 font-bold">{formatarMoedaCompacta(dia.despesas)}</td>
+                    <td className={`px-1 py-0.5 text-right font-black ${dia.saldo_acumulado >= 0 ? 'text-blue-400' : 'text-red-400'}`}>{formatarMoedaCompacta(dia.saldo_acumulado)}</td>
                   </tr>
                 ))}
               </tbody>

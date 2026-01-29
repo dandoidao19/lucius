@@ -62,10 +62,10 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
   }
 
   return (
-    <div className="bg-white rounded shadow-md p-1 space-y-1 border-t-4 border-blue-500" style={{ minWidth: 0 }}>
+    <div className="bg-blue-50 rounded shadow-sm p-1 space-y-1 border border-blue-100" style={{ minWidth: 0 }}>
       <h2 className="font-semibold text-gray-800" style={{ fontSize: '12px' }}>{titulo || 'Caixa'}</h2>
 
-      <div className={`rounded p-1.5 ${caixaRealCasa < 0 ? 'bg-red-500' : 'bg-blue-50 border border-blue-200'}`} style={{ minWidth: 0 }}>
+      <div className={`rounded p-1.5 ${caixaRealCasa < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>
         <div>
           <p style={caixaTituloStyle} className={`${caixaRealCasa < 0 ? 'text-red-100' : 'text-gray-600'}`}>Caixa Real:</p>
           <p style={caixaValorStyle} className={`${caixaRealCasa < 0 ? 'text-white' : 'text-blue-600'}`}>{formatarMoeda(caixaRealCasa)}</p>

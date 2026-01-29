@@ -118,7 +118,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3 space-y-2 border border-blue-300">
+    <div className="bg-purple-50 rounded-lg shadow-md p-3 space-y-2 border border-purple-200">
       <h2 className="text-sm font-semibold text-gray-800 mb-2">
         {isEditMode ? 'Editar Lançamento' : 'Novo Lançamento Avulso'}
       </h2>

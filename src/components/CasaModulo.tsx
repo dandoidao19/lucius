@@ -775,10 +775,10 @@ export default function CasaModulo() {
       />
       <ModalExcluir />
 
-      <div className="bg-white rounded shadow-sm overflow-hidden border-t-4 border-blue-500">
+      <div className="bg-blue-50 rounded shadow-sm overflow-hidden border border-blue-100">
         <button
           onClick={() => setFormularioAberto(!formularioAberto)}
-          className="w-full px-2 py-1 flex justify-between items-center hover:bg-blue-50 transition-colors"
+          className="w-full px-2 py-1 flex justify-between items-center hover:bg-blue-100/50 transition-colors"
         >
           <span className="text-xs font-bold text-gray-700 uppercase tracking-tight">
             {editandoLancamento ? '✏️ Editar Lançamento' : '➕ Novo Lançamento'}
@@ -975,7 +975,7 @@ export default function CasaModulo() {
         </div>
 
         <div className="col-span-2">
-          <div className="bg-white rounded shadow-md p-1 border-t-4 border-blue-500">
+          <div className="bg-blue-50 rounded shadow-sm p-1 border border-blue-100">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
             <div className="flex justify-between items-center mb-1 px-1">
               <h2 className="text-xs font-semibold text-gray-800">{tituloTabela}</h2>
@@ -1017,7 +1017,7 @@ export default function CasaModulo() {
                     {lancamentosFiltrados.map((lancamento) => (
                       <tr 
                         key={lancamento.id} 
-                        className="border-b hover:bg-gray-50 transition-colors bg-white"
+                        className="border-b hover:bg-gray-50 transition-colors bg-blue-50/20"
                       >
                         <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
                           {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}

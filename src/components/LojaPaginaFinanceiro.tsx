@@ -443,7 +443,7 @@ export default function LojaPaginaFinanceiro() {
 
         {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
-          <div className="bg-white rounded shadow-md p-3 border-t-4 border-purple-500">
+          <div className="bg-purple-50 rounded shadow-md p-3 border border-purple-100">
             <div className="flex justify-between items-center mb-3">
                <div className="flex items-center gap-4">
                 <button
@@ -483,7 +483,7 @@ export default function LojaPaginaFinanceiro() {
                     <tr className="bg-purple-50/50 border-b border-purple-100">
                       <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase w-[85px]">Venc.</th>
                       <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase w-[85px]">Pagto.</th>
-                      <th className="px-0.5 py-0.5 text-left font-bold text-purple-800 uppercase w-[35px]">Nº</th>
+                      <th className="px-0.5 py-0.5 text-left font-bold text-purple-800 uppercase w-[45px]">Nº</th>
                       <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase min-w-[90px]">Cliente/Fornecedor</th>
                       <th className="px-1 py-0.5 text-left font-bold text-purple-800 uppercase min-w-[150px]">Observações</th>
                       <th className="px-0.5 py-0.5 text-right font-bold text-purple-800 uppercase w-[60px]">Valor</th>
@@ -503,9 +503,9 @@ export default function LojaPaginaFinanceiro() {
                       return (
                         <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
-                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-semibold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-gray-500">#{transacao.numero_transacao || '—'}</td>
-                          <td className="px-1 py-1 text-gray-800 font-semibold truncate max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
+                          <td className="px-1 py-1 text-gray-800 truncate max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
                           <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={transacao.observacao}>{transacao.observacao || '—'}</td>
                           <td className="px-0.5 py-1 text-right whitespace-nowrap">
                             <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>
