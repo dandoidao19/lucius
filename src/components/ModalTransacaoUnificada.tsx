@@ -901,7 +901,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                    <label className="block text-xs font-medium text-gray-700 mb-1">Data</label>
                    <input
                      type="date"
-                     value={data}
+                     value={data || ''}
                      onChange={(e) => setData(e.target.value)}
                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                    />
@@ -965,11 +965,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                key={`seletor-${resetSeletorKey}-${item.id}`}
                                onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
                                placeholder="Buscar produto..."
+                               descricaoPreenchida={item.descricao || ''}
                              />
                            ) : (
                              <input
                                type="text"
-                               value={item.descricao}
+                               value={item.descricao || ''}
                                onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
                                placeholder="Descrição do novo produto"
                                className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
@@ -981,7 +982,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                <label className="block text-xs text-gray-600">Categoria</label>
                                {item.isNovoCadastro ? (
                                  <select
-                                   value={item.categoria}
+                                   value={item.categoria || ''}
                                    onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
                                  >
@@ -989,14 +990,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                    {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
                                  </select>
                                ) : (
-                                 <input type="text" value={item.categoria} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
+                                 <input type="text" value={item.categoria || ''} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
                                )}
                              </div>
                              <div>
                                <label className="block text-xs text-gray-600">Quantidade</label>
                                <input
                                  type="number"
-                                 value={item.quantidade}
+                                 value={item.quantidade ?? 0}
                                  onChange={(e) => atualizarItem(item.id, 'quantidade', parseInt(e.target.value) || 0)}
                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
                                />
@@ -1007,7 +1008,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                 <input
                                   type="number"
                                   step="0.01"
-                                  value={tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? item.preco_custo : item.preco_venda}
+                                  value={(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? item.preco_custo : item.preco_venda) ?? 0}
                                   onChange={(e) => atualizarItem(item.id, tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? 'preco_custo' : 'preco_venda', parseFloat(e.target.value) || 0)}
                                   className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
                                 />
@@ -1036,7 +1037,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                   <input
                                     type="number"
                                     step="0.01"
-                                    value={item.preco_venda}
+                                    value={item.preco_venda ?? 0}
                                     onChange={(e) => atualizarItem(item.id, 'preco_venda', parseFloat(e.target.value) || 0)}
                                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
                                   />
@@ -1072,15 +1073,15 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
                      <label className="block text-xs text-gray-600">Vencimento</label>
-                     <input type="date" value={dataVencimento} onChange={(e) => setDataVencimento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
+                     <input type="date" value={dataVencimento || ''} onChange={(e) => setDataVencimento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Parcelas</label>
-                     <input type="number" min="1" value={quantidadeParcelas} onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
+                     <input type="number" min="1" value={quantidadeParcelas ?? 1} onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Prazo</label>
-                     <select value={prazoParcelas} onChange={(e) => setPrazoParcelas(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
+                     <select value={prazoParcelas || 'mensal'} onChange={(e) => setPrazoParcelas(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
                        <option value="diaria">Diária</option>
                        <option value="semanal">Semanal</option>
                        <option value="mensal">Mensal</option>
@@ -1088,7 +1089,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Status</label>
-                     <select value={statusPagamento} onChange={(e) => setStatusPagamento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
+                     <select value={statusPagamento || 'pendente'} onChange={(e) => setStatusPagamento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
                        <option value="pendente">Pendente</option>
                        <option value="pago">Pago</option>
                        <option value="parcial">Parcial</option>
@@ -1101,7 +1102,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                <div>
                  <label className="block text-xs font-medium text-gray-700 mb-1">Observações</label>
                  <textarea
-                   value={observacao}
+                   value={observacao || ''}
                    onChange={(e) => setObservacao(e.target.value)}
                    placeholder="Notas adicionais sobre esta operação..."
                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"

@@ -222,10 +222,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-2 sm:p-4 overflow-y-auto pt-4 pb-20">
-      <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col h-fit my-auto">
+      <div className="bg-white w-full max-w-6xl rounded-xl shadow-2xl flex flex-col h-fit my-auto overflow-visible min-h-[600px]">
         {/* Header - Mais compacto */}
-        <div className="bg-slate-800 text-white px-4 py-2 flex justify-between items-center rounded-t-xl">
-          <h2 className="text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
+        <div className="bg-slate-800 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
+          <h2 className="text-sm font-black flex items-center gap-2 uppercase tracking-widest">
             <ShoppingBag className="text-pink-400" size={18} />
             Venda Casada
           </h2>
@@ -234,15 +234,15 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </button>
         </div>
 
-        <div className="p-3 space-y-3">
+        <div className="p-2 sm:p-4 space-y-4">
           {/* Dados Gerais - Ultra Compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="flex flex-col">
               <label className="text-[10px] font-black text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <ShoppingBag size={10} /> Cliente
               </label>
               <SeletorEntidade
-                valor={cliente}
+                valor={cliente || ''}
                 onChange={setCliente}
                 tipo="cliente"
                 placeholder="Nome do cliente..."
@@ -253,7 +253,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <Truck size={10} /> Fornecedor
               </label>
               <SeletorEntidade
-                valor={fornecedor}
+                valor={fornecedor || ''}
                 onChange={setFornecedor}
                 tipo="fornecedor"
                 placeholder="Nome do fornecedor..."
@@ -263,76 +263,77 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               <label className="text-[10px] font-black text-slate-500 uppercase mb-0.5 ml-1">Data</label>
               <input
                 type="date"
-                value={data}
+                value={data || ''}
                 onChange={e => setData(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-[30px]"
+                className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-[32px]"
               />
             </div>
           </div>
 
-          {/* Lista Única de Itens - Sem scroll interno, expande modal */}
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
-            <div className="bg-slate-800 px-3 py-1.5 flex justify-between items-center">
-              <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Produtos Vinculados</h3>
-              <button onClick={adicionarItem} className="bg-green-600 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-green-700 transition-colors uppercase">
-                + Item
+          {/* Lista Única de Itens - Expansão Vertical Total */}
+          <div className="border border-slate-200 rounded-lg shadow-sm bg-white overflow-visible">
+            <div className="bg-slate-50 px-3 py-2 flex justify-between items-center border-b border-slate-200">
+              <h3 className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Produtos Vinculados</h3>
+              <button onClick={adicionarItem} className="bg-slate-800 text-white px-3 py-1.5 rounded text-[10px] font-black hover:bg-slate-700 transition-colors uppercase tracking-tight">
+                + ADICIONAR ITEM
               </button>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+            <div className="w-full">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="px-3 py-1.5 text-[10px] font-black text-slate-500 uppercase w-[40%]">Produto</th>
-                    <th className="px-2 py-1.5 text-[10px] font-black text-slate-500 uppercase text-center w-[10%]">Qtd</th>
-                    <th className="px-2 py-1.5 text-[10px] font-black text-pink-600 uppercase text-right w-[20%]">Preço Venda</th>
-                    <th className="px-2 py-1.5 text-[10px] font-black text-blue-600 uppercase text-right w-[20%]">Vlr Repasse</th>
-                    <th className="px-2 py-1.5 text-center w-[10%]"></th>
+                  <tr className="bg-white border-b border-slate-100">
+                    <th className="px-3 py-2 text-[10px] font-black text-slate-500 uppercase w-[45%]">Produto</th>
+                    <th className="px-2 py-2 text-[10px] font-black text-slate-500 uppercase text-center w-[10%]">Qtd</th>
+                    <th className="px-2 py-2 text-[10px] font-black text-pink-600 uppercase text-right w-[18%]">Preço Venda</th>
+                    <th className="px-2 py-2 text-[10px] font-black text-blue-600 uppercase text-right w-[18%]">Vlr Repasse</th>
+                    <th className="px-2 py-2 text-center w-[9%]"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-50">
                   {itens.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-3 py-1.5">
+                    <tr key={item.id} className="hover:bg-slate-50/30 transition-colors align-top">
+                      <td className="px-3 py-3">
                         <SeletorProduto
                           onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
                           placeholder="Buscar produto..."
+                          descricaoPreenchida={item.nome || ''}
                         />
                       </td>
-                      <td className="px-2 py-1.5 text-center">
+                      <td className="px-2 py-3 text-center">
                         <input
                           type="number"
-                          value={item.quantidade}
+                          value={item.quantidade ?? 0}
                           onChange={e => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
-                          className="w-16 border border-slate-300 rounded px-2 py-1 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
+                          className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-3">
                         <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[10px] text-pink-400 font-bold">R$</span>
+                          <span className="absolute left-2 top-2 text-[10px] text-pink-400 font-bold">R$</span>
                           <input
                             type="number"
                             step="0.01"
-                            value={item.preco_unitario}
+                            value={item.preco_unitario ?? 0}
                             onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                            className="w-full border border-pink-200 bg-pink-50/10 rounded pl-7 pr-2 py-1 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
+                            className="w-full border border-pink-200 bg-pink-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
                           />
                         </div>
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td className="px-2 py-3">
                         <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[10px] text-blue-400 font-bold">R$</span>
+                          <span className="absolute left-2 top-2 text-[10px] text-blue-400 font-bold">R$</span>
                           <input
                             type="number"
                             step="0.01"
-                            value={item.valor_repasse}
+                            value={item.valor_repasse ?? 0}
                             onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                            className="w-full border border-blue-200 bg-blue-50/10 rounded pl-7 pr-2 py-1 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
+                            className="w-full border border-blue-200 bg-blue-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
                       </td>
-                      <td className="px-2 py-1.5 text-center">
-                        <button onClick={() => removerItem(item.id)} className="text-red-400 hover:text-red-600 transition-colors p-1">
+                      <td className="px-2 py-3 text-center">
+                        <button onClick={() => removerItem(item.id)} className="text-red-400 hover:text-red-600 transition-colors p-1.5 bg-red-50 rounded">
                           <Trash2 size={16} />
                         </button>
                       </td>
@@ -343,50 +344,52 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           </div>
 
-          {/* Financeiro e Pagamentos - Compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Financeiro e Pagamentos - Lado a Lado Compacto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Pagamento Venda */}
-            <div className="bg-pink-50/20 p-2 rounded-lg border border-pink-100 space-y-2">
-              <div className="flex justify-between items-center border-b border-pink-100 pb-1">
-                <h4 className="text-[10px] font-black text-pink-700 uppercase tracking-widest">💳 Venda</h4>
-                <span className="text-xs font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
+            <div className="bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3">
+              <div className="flex justify-between items-center border-b border-pink-100 pb-1.5">
+                <h4 className="text-[11px] font-black text-pink-700 uppercase tracking-widest flex items-center gap-1">
+                  <ShoppingBag size={12} /> Pagamento Venda
+                </h4>
+                <span className="text-sm font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Status</label>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Status</label>
                   <select
-                    value={pagVenda.status}
+                    value={pagVenda.status || 'pendente'}
                     onChange={e => setPagVenda({...pagVenda, status: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
                   >
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Parcelas</label>
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
                   <input
                     type="number"
-                    value={pagVenda.parcelas}
+                    value={pagVenda.parcelas ?? 1}
                     onChange={e => setPagVenda({...pagVenda, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Vencimento</label>
+                <div className="flex flex-col lg:col-span-1">
+                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
                   <input
                     type="date"
-                    value={pagVenda.vencimento}
+                    value={pagVenda.vencimento || ''}
                     onChange={e => setPagVenda({...pagVenda, vencimento: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500 h-[28px]"
                   />
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Prazo</label>
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
                   <select
-                    value={pagVenda.prazo}
+                    value={pagVenda.prazo || 'mensal'}
                     onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
                   >
                     <option value="mensal">Mensal</option>
                     <option value="semanal">Semanal</option>
@@ -397,47 +400,49 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
 
             {/* Pagamento Compra */}
-            <div className="bg-blue-50/20 p-2 rounded-lg border border-blue-100 space-y-2">
-              <div className="flex justify-between items-center border-b border-blue-100 pb-1">
-                <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest">🚚 Compra</h4>
-                <span className="text-xs font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
+            <div className="bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3">
+              <div className="flex justify-between items-center border-b border-blue-100 pb-1.5">
+                <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-1">
+                  <Truck size={12} /> Pagamento Compra
+                </h4>
+                <span className="text-sm font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
               </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Status</label>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Status</label>
                   <select
-                    value={pagCompra.status}
+                    value={pagCompra.status || 'pendente'}
                     onChange={e => setPagCompra({...pagCompra, status: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                   </select>
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Parcelas</label>
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
                   <input
                     type="number"
-                    value={pagCompra.parcelas}
+                    value={pagCompra.parcelas ?? 1}
                     onChange={e => setPagCompra({...pagCompra, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Vencimento</label>
+                <div className="flex flex-col lg:col-span-1">
+                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
                   <input
                     type="date"
-                    value={pagCompra.vencimento}
+                    value={pagCompra.vencimento || ''}
                     onChange={e => setPagCompra({...pagCompra, vencimento: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 h-[28px]"
                   />
                 </div>
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Prazo</label>
+                <div className="flex flex-col">
+                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
                   <select
-                    value={pagCompra.prazo}
+                    value={pagCompra.prazo || 'mensal'}
                     onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="mensal">Mensal</option>
                     <option value="semanal">Semanal</option>
