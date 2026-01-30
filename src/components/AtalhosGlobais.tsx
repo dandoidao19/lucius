@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Plus, Home, ShoppingBag, Receipt, Handshake } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Home, ShoppingBag, Receipt, Handshake } from 'lucide-react'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalLancamentoCasa from './ModalLancamentoCasa'
 import ModalFinanceiroAvulso from './ModalFinanceiroAvulso'
@@ -14,8 +14,15 @@ export default function AtalhosGlobais() {
   const [modalCasaAberto, setModalCasaAberto] = useState(false)
   const [modalFinanceiroAberto, setModalFinanceiroAberto] = useState(false)
   const [modalVendaCasadaAberto, setModalVendaCasadaAberto] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const { recarregarDados } = useDadosFinanceiros()
   const { hasDraft } = useFormDraft()
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) return null
 
   return (
     <>

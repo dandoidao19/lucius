@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 
 interface FormDraftContextType {
   getDraft: (key: string) => any
@@ -13,22 +13,26 @@ interface FormDraftContextType {
 const FormDraftContext = createContext<FormDraftContextType | undefined>(undefined)
 
 export function FormDraftProvider({ children }: { children: React.ReactNode }) {
-  const [allDrafts, setAllDrafts] = useState<Record<string, any>>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('form_drafts')
-      if (saved) {
-        try {
-          return JSON.parse(saved)
-        } catch (e) {
-          console.error('Erro ao carregar rascunhos:', e)
-        }
+  const [allDrafts, setAllDrafts] = useState<Record<string, any>>({})
+  const isLoadedRef = useRef(false)
+
+  // Carregar do localStorage ao montar no cliente
+  useEffect(() => {
+    const saved = localStorage.getItem('form_drafts')
+    if (saved) {
+      try {
+        setAllDrafts(JSON.parse(saved))
+      } catch (e) {
+        console.error('Erro ao carregar rascunhos:', e)
       }
     }
-    return {}
-  })
+    isLoadedRef.current = true
+  }, [])
 
-  // Salvar no localStorage sempre que mudar
+  // Salvar no localStorage sempre que mudar, mas só depois do load inicial
   useEffect(() => {
+    if (!isLoadedRef.current) return
+
     if (Object.keys(allDrafts).length > 0) {
       localStorage.setItem('form_drafts', JSON.stringify(allDrafts))
     } else {
@@ -40,7 +44,7 @@ export function FormDraftProvider({ children }: { children: React.ReactNode }) {
 
   const setDraft = useCallback((key: string, data: any) => {
     setAllDrafts(prev => {
-      // Evitar atualização se os dados forem idênticos (rasa)
+      // Evitar atualização se os dados forem idênticos
       if (JSON.stringify(prev[key]) === JSON.stringify(data)) return prev
       return { ...prev, [key]: data }
     })
