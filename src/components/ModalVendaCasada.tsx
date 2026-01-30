@@ -58,6 +58,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Pagamento Venda
+  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data })
+  // Pagamento Compra
+  const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1, vencimento: data })
+
   useEffect(() => {
     if (aberto && (cliente || itensVenda[0].id_produto || itensCompra[0].id_produto)) {
       setDraft('venda_casada', { cliente, fornecedor, data, itensVenda, itensCompra })
@@ -77,11 +82,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const totalVenda = itensVenda.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
   const totalCompra = itensCompra.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
   const diferenca = totalVenda - totalCompra
-
-  // Pagamento Venda
-  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data })
-  // Pagamento Compra
-  const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1, vencimento: data })
 
   const criarFinanceiro = async (total: number, entidade: string, vencimento: string, qtd: number, tipo: 'entrada' | 'saida', refNum: number) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -193,7 +193,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         {/* Header */}
         <div className="bg-slate-800 text-white p-4 flex justify-between items-center rounded-t-xl">
           <h2 className="text-lg font-bold flex items-center gap-2">
-            <span>🤝</span> Venda Casada (Troca/Parte de Pagamento)
+            <span>🤝</span> Venda Casada
           </h2>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded transition-colors">
             <X size={24} />
@@ -294,11 +294,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               </div>
             </div>
 
-            {/* Coluna Compra (O que está entrando - Troca) */}
+            {/* Coluna Compra (O que está entrando) */}
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b border-blue-100 pb-2">
                 <h3 className="text-sm font-bold text-blue-700 flex items-center gap-2 uppercase tracking-tighter">
-                  📥 Itens Comprados/Troca (Entrada)
+                  📥 Itens Comprados (Entrada)
                 </h3>
                 <span className="text-xs font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100">
                   Total: R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -401,7 +401,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                     className="w-full bg-white border border-blue-200 rounded-lg px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="pendente">Pendente</option>
-                    <option value="pago">Pago (Troca)</option>
+                    <option value="pago">Pago</option>
                   </select>
                 </div>
                 <div>

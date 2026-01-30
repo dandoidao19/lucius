@@ -81,7 +81,7 @@ export default function AtalhosGlobais() {
             )}
           </button>
           <span className="absolute left-16 bg-gray-900 text-white text-sm font-bold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
-            Venda Casada (Troca)
+            Venda Casada
           </span>
         </div>
       </div>
