@@ -41,8 +41,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   ])
 
   // Pagamentos
-  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1 })
-  const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1 })
+  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
+  const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
 
   // Efeito para carregar rascunho
   useEffect(() => {
@@ -53,8 +53,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         setFornecedor(draft.fornecedor || '')
         setData(draft.data || getDataAtualBrasil())
         setItens(draft.itens || [{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
-        setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1 })
-        setPagCompra(draft.pagCompra || { status: 'pago', parcelas: 1 })
+        setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
+        setPagCompra(draft.pagCompra || { status: 'pago', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,12 +98,20 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
   const diferenca = totalVenda - totalCompra
 
-  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number) => {
+  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const valorParcela = total / qtdParcelas
     const transacoes = []
     for (let i = 1; i <= qtdParcelas; i++) {
+      let dataParcela = vencimento
+      if (i > 1) {
+        const dt = new Date(vencimento + 'T12:00:00')
+        if (prazo === 'diaria') dt.setDate(dt.getDate() + (i - 1))
+        else if (prazo === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
+        else if (prazo === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
+        dataParcela = dt.toISOString().split('T')[0]
+      }
       const numTrans = parseInt(`${Date.now().toString().slice(-6)}${i}${Math.floor(Math.random() * 10)}`)
       transacoes.push({
         user_id: user.id,
@@ -111,7 +119,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         descricao: `${tipo === 'entrada' ? 'Venda' : 'Compra'} Casada - ${entidade} (${i}/${qtdParcelas})`,
         total: valorParcela,
         tipo,
-        data: prepararDataParaInsert(data),
+        data: prepararDataParaInsert(dataParcela),
         status_pagamento: i === 1 && total > 0 ? status : 'pendente',
         observacao: `Ref. #${refNum}`
       })
@@ -196,8 +204,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       }
 
       // 4. Gerar Financeiro
-      await criarFinanceiro(totalVenda, cliente, 'entrada', numVenda, pagVenda.status, pagVenda.parcelas)
-      await criarFinanceiro(totalCompra, fornecedor, 'saida', numCompra, pagCompra.status, pagCompra.parcelas)
+      await criarFinanceiro(totalVenda, cliente, 'entrada', numVenda, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo)
+      await criarFinanceiro(totalCompra, fornecedor, 'saida', numCompra, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo)
 
       alert('✅ Venda Casada gerada com sucesso!')
       clearDraft('venda_casada')
@@ -227,94 +235,111 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         </div>
 
         <div className="p-6 overflow-y-auto space-y-6">
-          {/* Dados Gerais: Cliente e Fornecedor */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[10px] font-black text-pink-600 uppercase mb-2 flex items-center gap-1">
-                <ShoppingBag size={12} /> Cliente (Comprador)
+          {/* Dados Gerais: Cliente e Fornecedor - Estilo v3.0 Compacto */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+              <label className="block text-[9px] font-bold text-pink-600 uppercase mb-1 flex items-center gap-1">
+                <ShoppingBag size={10} /> Cliente (Comprador)
               </label>
               <SeletorEntidade
                 valor={cliente}
                 onChange={setCliente}
                 tipo="cliente"
-                placeholder="Quem está comprando?"
+                placeholder="Nome do cliente..."
               />
             </div>
-            <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[10px] font-black text-blue-600 uppercase mb-2 flex items-center gap-1">
-                <Truck size={12} /> Fornecedor (Vendedor)
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+              <label className="block text-[9px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
+                <Truck size={10} /> Fornecedor (Vendedor)
               </label>
               <SeletorEntidade
                 valor={fornecedor}
                 onChange={setFornecedor}
                 tipo="fornecedor"
-                placeholder="De quem estamos comprando?"
+                placeholder="Nome do fornecedor..."
               />
             </div>
-            <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[10px] font-black text-slate-500 uppercase mb-2">Data da Operação</label>
+            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
+              <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Data da Operação</label>
               <input
                 type="date"
                 value={data}
                 onChange={e => setData(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-slate-400 outline-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-xs focus:ring-1 focus:ring-slate-400 outline-none"
               />
             </div>
           </div>
 
-          {/* Lista Única de Itens */}
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">Produtos Vinculados</h3>
-              <button onClick={adicionarItem} className="bg-slate-800 text-white px-3 py-1 rounded text-[10px] font-bold hover:bg-slate-700 transition-colors uppercase">
-                + Adicionar Item
+          {/* Lista Única de Itens - Refatorada para Tabela para evitar quebras */}
+          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <div className="bg-slate-100 px-3 py-1.5 border-b border-slate-200 flex justify-between items-center">
+              <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Produtos Vinculados</h3>
+              <button onClick={adicionarItem} className="bg-slate-800 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-slate-700 transition-colors uppercase tracking-tighter">
+                + ADICIONAR ITEM
               </button>
             </div>
 
-            <div className="p-4 space-y-3">
-              {itens.map((item, idx) => (
-                <div key={item.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end border-b border-slate-100 pb-3 last:border-0 last:pb-0">
-                  <div className="md:col-span-5">
-                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Produto</label>
-                    <SeletorProduto
-                      onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
-                      placeholder="Buscar produto para compra e venda..."
-                    />
-                  </div>
-                  <div className="md:col-span-1">
-                    <label className="block text-[9px] font-bold text-slate-400 uppercase mb-1">Qtd</label>
-                    <input
-                      type="number"
-                      value={item.quantidade}
-                      onChange={e => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
-                      className="w-full border rounded px-2 py-1 text-xs"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-[9px] font-bold text-pink-500 uppercase mb-1">Preço Venda</label>
-                    <input
-                      type="number"
-                      value={item.preco_unitario}
-                      onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                      className="w-full border border-pink-100 bg-pink-50/30 rounded px-2 py-1 text-xs font-bold text-pink-700"
-                    />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-[9px] font-bold text-blue-500 uppercase mb-1">Vlr Repasse</label>
-                    <input
-                      type="number"
-                      value={item.valor_repasse}
-                      onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                      className="w-full border border-blue-100 bg-blue-50/30 rounded px-2 py-1 text-xs font-bold text-blue-700"
-                    />
-                  </div>
-                  <div className="md:col-span-1 text-right">
-                    <button onClick={() => removerItem(item.id)} className="text-red-400 hover:text-red-600 p-1">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[700px]">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100">
+                    <th className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase w-[45%]">Produto</th>
+                    <th className="px-2 py-2 text-[9px] font-black text-slate-400 uppercase text-center w-[10%]">Qtd</th>
+                    <th className="px-2 py-2 text-[9px] font-black text-pink-500 uppercase text-right w-[18%]">Preço Venda</th>
+                    <th className="px-2 py-2 text-[9px] font-black text-blue-500 uppercase text-right w-[18%]">Vlr Repasse</th>
+                    <th className="px-2 py-2 text-center w-[9%]"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {itens.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="px-3 py-2">
+                        <SeletorProduto
+                          onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
+                          placeholder="Buscar produto..."
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <input
+                          type="number"
+                          value={item.quantidade}
+                          onChange={e => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
+                          className="w-full border border-slate-200 rounded px-2 py-1 text-xs text-center focus:ring-1 focus:ring-slate-400 outline-none"
+                        />
+                      </td>
+                      <td className="px-2 py-2">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1.5 text-[9px] text-pink-300 font-bold">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.preco_unitario}
+                            onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
+                            className="w-full border border-pink-100 bg-pink-50/20 rounded pl-6 pr-2 py-1 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-400 outline-none text-right"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-2 py-2">
+                        <div className="relative">
+                          <span className="absolute left-2 top-1.5 text-[9px] text-blue-300 font-bold">R$</span>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={item.valor_repasse}
+                            onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
+                            className="w-full border border-blue-100 bg-blue-50/20 rounded pl-6 pr-2 py-1 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-400 outline-none text-right"
+                          />
+                        </div>
+                      </td>
+                      <td className="px-2 py-2 text-center">
+                        <button onClick={() => removerItem(item.id)} className="text-red-300 hover:text-red-600 transition-colors p-1">
+                          <Trash2 size={14} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
 
@@ -326,26 +351,47 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <h4 className="text-[10px] font-black text-pink-700 uppercase tracking-widest">💳 Financeiro da Venda</h4>
                 <span className="text-sm font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Status</label>
                   <select
                     value={pagVenda.status}
                     onChange={e => setPagVenda({...pagVenda, status: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
                   >
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Parcelas</label>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Parcelas</label>
                   <input
                     type="number"
                     value={pagVenda.parcelas}
                     onChange={e => setPagVenda({...pagVenda, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-pink-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-pink-500"
+                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Vencimento</label>
+                  <input
+                    type="date"
+                    value={pagVenda.vencimento}
+                    onChange={e => setPagVenda({...pagVenda, vencimento: e.target.value})}
+                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Prazo</label>
+                  <select
+                    value={pagVenda.prazo}
+                    onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})}
+                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500"
+                  >
+                    <option value="mensal">Mensal</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="diaria">Diária</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -356,45 +402,66 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest">🚚 Financeiro da Compra</h4>
                 <span className="text-sm font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Status</label>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Status</label>
                   <select
                     value={pagCompra.status}
                     onChange={e => setPagCompra({...pagCompra, status: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
                   >
                     <option value="pendente">Pendente</option>
                     <option value="pago">Pago</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Parcelas</label>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Parcelas</label>
                   <input
                     type="number"
                     value={pagCompra.parcelas}
                     onChange={e => setPagCompra({...pagCompra, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-blue-200 rounded px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-blue-500"
+                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Vencimento</label>
+                  <input
+                    type="date"
+                    value={pagCompra.vencimento}
+                    onChange={e => setPagCompra({...pagCompra, vencimento: e.target.value})}
+                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Prazo</label>
+                  <select
+                    value={pagCompra.prazo}
+                    onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})}
+                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500"
+                  >
+                    <option value="mensal">Mensal</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="diaria">Diária</option>
+                  </select>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Resumo Final */}
-          <div className="bg-slate-900 p-6 rounded-xl text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-6 border-t-4 border-pink-500">
-            <div className="flex flex-wrap gap-8 justify-center md:justify-start">
-              <div className="text-center md:text-left">
-                <p className="text-[10px] uppercase font-black text-pink-400 tracking-tighter">Total a Receber</p>
-                <p className="text-2xl font-black font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          {/* Resumo Final - Otimizado (Menor) */}
+          <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t-2 border-pink-500">
+            <div className="flex flex-wrap gap-6 justify-center md:justify-start">
+              <div className="text-center md:text-left px-2">
+                <p className="text-[9px] uppercase font-bold text-pink-400 tracking-tight">Total Venda</p>
+                <p className="text-lg font-bold font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
-              <div className="text-center md:text-left border-x border-white/10 px-8">
-                <p className="text-[10px] uppercase font-black text-blue-400 tracking-tighter">Total a Pagar</p>
-                <p className="text-2xl font-black font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="text-center md:text-left border-x border-white/10 px-6">
+                <p className="text-[9px] uppercase font-bold text-blue-400 tracking-tight">Total Compra</p>
+                <p className="text-lg font-bold font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
-              <div className="text-center md:text-left">
-                <p className="text-[10px] uppercase font-black text-green-400 tracking-tighter">Saldo da Operação</p>
-                <p className={`text-2xl font-black font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <div className="text-center md:text-left px-2">
+                <p className="text-[9px] uppercase font-bold text-green-400 tracking-tight">Diferença</p>
+                <p className={`text-lg font-bold font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   R$ {Math.abs(diferenca).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -403,9 +470,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             <button
               onClick={handleSubmit}
               disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-              className="bg-green-500 hover:bg-green-600 disabled:bg-slate-700 text-white px-10 py-4 rounded-xl font-black transition-all shadow-lg active:scale-95 uppercase tracking-widest text-sm border-b-4 border-green-700 disabled:border-slate-800"
+              className="bg-green-500 hover:bg-green-600 disabled:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-lg active:scale-95 uppercase tracking-wider text-xs border-b-2 border-green-700"
             >
-              {loading ? 'Processando...' : 'Finalizar Venda Casada'}
+              {loading ? 'Salvando...' : 'Finalizar Operação'}
             </button>
           </div>
         </div>
