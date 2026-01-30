@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface SeletorEntidadeProps {
@@ -14,16 +14,10 @@ export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: 
   const [sugestoes, setSugestoes] = useState<string[]>([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
 
-  useEffect(() => {
-    if (valor.length > 1) {
-      buscarSugestoes(valor)
-    } else {
-      setSugestoes([])
-      setMostrarSugestoes(false)
-    }
-  }, [valor])
+  const ignorarBuscaRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
 
-  const buscarSugestoes = async (termo: string) => {
+  const buscarSugestoes = useCallback(async (termo: string) => {
     try {
       const results = new Set<string>()
 
@@ -44,20 +38,58 @@ export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: 
       }
 
       setSugestoes(Array.from(results).sort())
-      setMostrarSugestoes(results.size > 0)
+      if (valor.length > 1 && results.size > 0 && !ignorarBuscaRef.current) {
+        setMostrarSugestoes(true)
+      }
     } catch (error) {
       console.error('Erro ao buscar sugestões de nomes:', error)
     }
+  }, [tipo, valor])
+
+  useEffect(() => {
+    if (ignorarBuscaRef.current) {
+      ignorarBuscaRef.current = false
+      setMostrarSugestoes(false)
+      return
+    }
+
+    if (valor.length > 1) {
+      const timer = setTimeout(() => {
+        buscarSugestoes(valor)
+      }, 300)
+      return () => clearTimeout(timer)
+    } else {
+      setSugestoes([])
+      setMostrarSugestoes(false)
+    }
+  }, [valor, buscarSugestoes])
+
+  // Fechar ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setMostrarSugestoes(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+
+  const handleSelecionar = (sug: string) => {
+    ignorarBuscaRef.current = true
+    onChange(sug)
+    setMostrarSugestoes(false)
+    setSugestoes([])
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" ref={containerRef}>
       <input
         type="text"
         value={valor}
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => valor.length > 1 && sugestoes.length > 0 && setMostrarSugestoes(true)}
-        onBlur={() => setTimeout(() => setMostrarSugestoes(false), 200)}
         placeholder={placeholder}
         className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
       />
@@ -67,9 +99,9 @@ export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: 
             <button
               key={idx}
               type="button"
-              onClick={() => {
-                onChange(sug)
-                setMostrarSugestoes(false)
+              onMouseDown={(e) => {
+                e.preventDefault()
+                handleSelecionar(sug)
               }}
               className="w-full text-left px-2 py-1.5 hover:bg-blue-50 text-xs text-gray-700 border-b border-gray-50 last:border-0"
             >

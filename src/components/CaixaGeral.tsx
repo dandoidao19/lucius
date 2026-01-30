@@ -67,7 +67,7 @@ export default function CaixaGeral() {
         <div>
           <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-100' : 'text-gray-600'}`}>
             <span>Caixa Real:</span>
-            <span style={{ fontSize: '12px', fontWeight: 'bold' }}>
+            <span style={{ fontSize: '12px', fontWeight: '600' }}>
               <span className={caixaRealLoja >= 0 ? 'text-green-600' : 'text-red-600'}>L: {formatarMoeda(caixaRealLoja)}</span>
               <span className="mx-1.5 text-gray-300">|</span>
               <span className={caixaRealCasa >= 0 ? 'text-green-600' : 'text-red-600'}>C: {formatarMoeda(caixaRealCasa)}</span>
@@ -111,7 +111,7 @@ export default function CaixaGeral() {
                     <td className="px-1 py-0.5 text-gray-700 whitespace-nowrap">{dia.data_formatada}</td>
                     <td className="px-1 py-0.5 text-right text-green-600 font-medium">{formatarMoedaCompacta(dia.receitas)}</td>
                     <td className="px-1 py-0.5 text-right text-red-600 font-medium">{formatarMoedaCompacta(dia.despesas)}</td>
-                    <td className={`px-1 py-0.5 text-right font-bold ${dia.saldo_acumulado >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatarMoedaCompacta(dia.saldo_acumulado)}</td>
+                    <td className={`px-1 py-0.5 text-right font-semibold ${dia.saldo_acumulado >= 0 ? 'text-blue-600' : 'text-red-600'}`}>{formatarMoedaCompacta(dia.saldo_acumulado)}</td>
                   </tr>
                 ))}
               </tbody>
