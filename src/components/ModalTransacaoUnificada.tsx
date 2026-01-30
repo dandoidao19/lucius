@@ -117,6 +117,33 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     }
   }, [aberto, transacaoInicial, tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, observacao, setDraft])
 
+  const resetForm = useCallback(() => {
+    setTipo('')
+    setData(getDataAtualBrasil())
+    setEntidade('')
+    setItens([
+      {
+        id: Date.now().toString(),
+        produto_id: null,
+        descricao: '',
+        quantidade: 1,
+        categoria: '',
+        preco_custo: 0,
+        valor_repasse: 0,
+        preco_venda: 0,
+        estoque_atual: 0,
+        minimizado: false,
+        isNovoCadastro: false,
+      },
+    ])
+    setQuantidadeParcelas(1)
+    setPrazoParcelas('mensal')
+    setStatusPagamento('pendente')
+    setDataVencimento(getDataAtualBrasil())
+    setObservacao('')
+    setErro('')
+  }, [])
+
   if (!aberto) return null
 
   const carregarCategorias = async () => {
@@ -759,33 +786,6 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       setItens([...novosItens])
     }
   }
-
-  const resetForm = useCallback(() => {
-    setTipo('')
-    setData(getDataAtualBrasil())
-    setEntidade('')
-    setItens([
-      {
-        id: Date.now().toString(),
-        produto_id: null,
-        descricao: '',
-        quantidade: 1,
-        categoria: '',
-        preco_custo: 0,
-        valor_repasse: 0,
-        preco_venda: 0,
-        estoque_atual: 0,
-        minimizado: false,
-        isNovoCadastro: false,
-      },
-    ])
-    setQuantidadeParcelas(1)
-    setPrazoParcelas('mensal')
-    setStatusPagamento('pendente')
-    setDataVencimento(getDataAtualBrasil())
-    setObservacao('')
-    setErro('')
-  }, [])
 
   const handleFechar = () => {
     onClose()

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Plus, Trash2, X, ShoppingBag, Truck } from 'lucide-react'
+import { Trash2, X, ShoppingBag, Truck } from 'lucide-react'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorProduto from './SeletorProduto'
@@ -67,8 +67,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     }
   }, [aberto, cliente, fornecedor, data, itens, pagVenda, pagCompra, setDraft])
 
-  if (!aberto) return null
-
   const adicionarItem = () => {
     setItens([...itens, { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
   }
@@ -97,6 +95,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const totalVenda = itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
   const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
   const diferenca = totalVenda - totalCompra
+
+  if (!aberto) return null
 
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string) => {
     const { data: { user } } = await supabase.auth.getUser()

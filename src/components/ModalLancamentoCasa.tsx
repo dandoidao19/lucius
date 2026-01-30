@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
@@ -41,11 +41,11 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
     }
   }, [aberto, form, setDraft])
 
-  if (!aberto) return null
-
   const centrosCustoFiltrados = dados.centrosCustoCasa.filter(centro => {
     return form.tipo === 'entrada' ? centro.tipo === 'RECEITA' : centro.tipo === 'DESPESA'
   })
+
+  if (!aberto) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

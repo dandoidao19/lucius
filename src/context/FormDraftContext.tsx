@@ -13,19 +13,19 @@ interface FormDraftContextType {
 const FormDraftContext = createContext<FormDraftContextType | undefined>(undefined)
 
 export function FormDraftProvider({ children }: { children: React.ReactNode }) {
-  const [allDrafts, setAllDrafts] = useState<Record<string, any>>({})
-
-  // Carregar do localStorage ao iniciar
-  useEffect(() => {
-    const saved = localStorage.getItem('form_drafts')
-    if (saved) {
-      try {
-        setAllDrafts(JSON.parse(saved))
-      } catch (e) {
-        console.error('Erro ao carregar rascunhos:', e)
+  const [allDrafts, setAllDrafts] = useState<Record<string, any>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('form_drafts')
+      if (saved) {
+        try {
+          return JSON.parse(saved)
+        } catch (e) {
+          console.error('Erro ao carregar rascunhos:', e)
+        }
       }
     }
-  }, [])
+    return {}
+  })
 
   // Salvar no localStorage sempre que mudar
   useEffect(() => {
