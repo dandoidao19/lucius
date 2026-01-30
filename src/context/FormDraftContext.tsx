@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 
 interface FormDraftContextType {
   getDraft: (key: string) => any
@@ -36,21 +36,26 @@ export function FormDraftProvider({ children }: { children: React.ReactNode }) {
     }
   }, [allDrafts])
 
-  const getDraft = (key: string) => allDrafts[key] || null
+  const getDraft = useCallback((key: string) => allDrafts[key] || null, [allDrafts])
 
-  const setDraft = (key: string, data: any) => {
-    setAllDrafts(prev => ({ ...prev, [key]: data }))
-  }
-
-  const clearDraft = (key: string) => {
+  const setDraft = useCallback((key: string, data: any) => {
     setAllDrafts(prev => {
+      // Evitar atualização se os dados forem idênticos (rasa)
+      if (JSON.stringify(prev[key]) === JSON.stringify(data)) return prev
+      return { ...prev, [key]: data }
+    })
+  }, [])
+
+  const clearDraft = useCallback((key: string) => {
+    setAllDrafts(prev => {
+      if (!prev[key]) return prev
       const newDrafts = { ...prev }
       delete newDrafts[key]
       return newDrafts
     })
-  }
+  }, [])
 
-  const hasDraft = (key: string) => !!allDrafts[key]
+  const hasDraft = useCallback((key: string) => !!allDrafts[key], [allDrafts])
 
   return (
     <FormDraftContext.Provider value={{ getDraft, setDraft, clearDraft, hasDraft, allDrafts }}>
