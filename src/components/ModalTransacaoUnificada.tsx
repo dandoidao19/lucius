@@ -861,11 +861,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             <div className="space-y-4">
                <div className="flex justify-between items-center bg-purple-50 p-2 rounded border border-purple-100">
                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-black text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
+                    <span className="text-sm font-semibold text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
                     {(tipo === 'venda' || tipo === 'compra') && pedidosAbertos.length > 0 && (
                       <button
                         onClick={() => setMostrarBuscaPedido(!mostrarBuscaPedido)}
-                        className="bg-yellow-500 text-white px-2 py-0.5 rounded text-[10px] font-bold animate-pulse"
+                        className="bg-yellow-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold animate-pulse"
                       >
                         {pedidosAbertos.length} PEDIDO(S) EM ABERTO 🔍
                       </button>
@@ -1111,8 +1111,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                </div>
 
                <div className="bg-purple-100 p-3 rounded flex justify-between items-center border border-purple-200 shadow-sm">
-                  <span className="font-black text-purple-900 uppercase">TOTAL DA OPERAÇÃO:</span>
-                  <span className="text-xl font-black text-purple-700">R$ {calcularTotal().toFixed(2)}</span>
+                  <span className="font-semibold text-purple-900 uppercase">TOTAL DA OPERAÇÃO:</span>
+                  <span className="text-xl font-semibold text-purple-700">R$ {calcularTotal().toFixed(2)}</span>
                </div>
             </div>
           )}
@@ -1123,7 +1123,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           <div className="p-4 border-t bg-gray-50 flex justify-between items-center gap-3">
             <button
               onClick={handleCancelar}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-bold transition-all flex items-center justify-center"
+              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-semibold transition-all flex items-center justify-center uppercase text-[11px]"
             >
               Cancelar
             </button>
@@ -1131,14 +1131,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               <button
                 onClick={handleGerarPedido}
                 disabled={loading}
-                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm flex items-center justify-center"
+                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-semibold transition-all shadow-sm flex items-center justify-center uppercase text-[11px]"
               >
                 {loading ? 'Processando...' : transacaoInicial ? 'Salvar Pedido' : 'Gerar Pedido'}
               </button>
               <button
                 onClick={handleGerarTransacao}
                 disabled={loading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-bold transition-all shadow-sm flex items-center justify-center"
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-semibold transition-all shadow-sm flex items-center justify-center uppercase text-[11px]"
               >
                 {loading ? 'Processando...' : transacaoInicial ? 'Salvar Transação' : 'Gerar Transação'}
               </button>

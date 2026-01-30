@@ -25,14 +25,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalCasaAberto(true)}
-            className="w-14 h-14 bg-orange-600 text-white rounded-full shadow-xl hover:bg-orange-700 transition-all flex items-center justify-center relative"
+            className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center relative"
           >
             <Home size={28} />
             {hasDraft('casa') && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-bold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Lançamento Casa
           </span>
         </div>
@@ -41,14 +41,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalLojaAberto(true)}
-            className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center relative"
+            className="w-14 h-14 bg-pink-700 text-white rounded-full shadow-xl hover:bg-pink-800 transition-all flex items-center justify-center relative"
           >
             <ShoppingBag size={28} />
             {hasDraft('loja') && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-bold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Transação Loja
           </span>
         </div>
@@ -57,14 +57,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalFinanceiroAberto(true)}
-            className="w-14 h-14 bg-green-600 text-white rounded-full shadow-xl hover:bg-green-700 transition-all flex items-center justify-center relative"
+            className="w-14 h-14 bg-purple-600 text-white rounded-full shadow-xl hover:bg-purple-700 transition-all flex items-center justify-center relative"
           >
             <Receipt size={28} />
             {hasDraft('financeiro') && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-bold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Financeiro Avulso
           </span>
         </div>
@@ -73,14 +73,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalVendaCasadaAberto(true)}
-            className="w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center relative"
+            className="w-14 h-14 bg-slate-900 text-white rounded-full shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center relative"
           >
             <Handshake size={28} />
             {hasDraft('venda_casada') && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-bold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Venda Casada
           </span>
         </div>

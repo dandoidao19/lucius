@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface Produto {
@@ -32,6 +32,18 @@ export default function SeletorProduto({
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
   const [loading, setLoading] = useState(false)
   const [ignorarProximaBusca, setIgnorarProximaBusca] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Fechar ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setMostrarSugestoes(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     setBusca(descricaoPreenchida)
@@ -80,7 +92,7 @@ export default function SeletorProduto({
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="flex gap-1">
         <div className="flex-1 relative">
           <input

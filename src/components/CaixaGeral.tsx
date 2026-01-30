@@ -39,8 +39,8 @@ export default function CaixaGeral() {
     if (filtro === '30dias') {
       return (
         <div style={botoesContainerStyle}>
-          <button onClick={handleMudarParaMes} disabled={carregando} className="px-1.5 py-0.5 bg-blue-600 text-white rounded text-[10px] uppercase font-bold transition-colors hover:bg-blue-700">Ver Mês</button>
-          <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] uppercase font-bold transition-colors hover:bg-green-700">TUDO</button>
+          <button onClick={handleMudarParaMes} disabled={carregando} className="px-1.5 py-0.5 bg-blue-600 text-white rounded text-[10px] uppercase font-semibold transition-colors hover:bg-blue-700">Ver Mês</button>
+          <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] uppercase font-semibold transition-colors hover:bg-green-700">TUDO</button>
         </div>
       )
     }
@@ -48,13 +48,13 @@ export default function CaixaGeral() {
       return (
         <div style={botoesContainerStyle}>
           <input type="month" value={mesFiltro} onChange={handleMesFiltroChange} disabled={carregando} className="px-1.5 py-0.5 text-[10px] border border-gray-300 rounded" />
-          <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-[10px] uppercase font-bold transition-colors hover:bg-gray-600">30 Dias</button>
-          <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] uppercase font-bold transition-colors hover:bg-green-700">TUDO</button>
+          <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-[10px] uppercase font-semibold transition-colors hover:bg-gray-600">30 Dias</button>
+          <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-[10px] uppercase font-semibold transition-colors hover:bg-green-700">TUDO</button>
         </div>
       )
     }
     if (filtro === 'tudo') {
-      return <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-[10px] uppercase font-bold transition-colors hover:bg-gray-600">Voltar</button>
+      return <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-[10px] uppercase font-semibold transition-colors hover:bg-gray-600">Voltar</button>
     }
     return null;
   }
@@ -99,10 +99,10 @@ export default function CaixaGeral() {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-blue-50/50 border-b border-blue-100">
-                  <th className="px-1 py-0.5 text-left font-bold text-blue-800">Data</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Receitas</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Despesas</th>
-                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Acumulado</th>
+                  <th className="px-1 py-0.5 text-left font-semibold text-blue-800">Data</th>
+                  <th className="px-1 py-0.5 text-right font-semibold text-blue-800">Receitas</th>
+                  <th className="px-1 py-0.5 text-right font-semibold text-blue-800">Despesas</th>
+                  <th className="px-1 py-0.5 text-right font-semibold text-blue-800">Acumulado</th>
                 </tr>
               </thead>
               <tbody>

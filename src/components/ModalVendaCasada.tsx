@@ -222,10 +222,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-2 sm:p-4 overflow-y-auto pt-4 pb-20">
-      <div className="bg-white w-full max-w-6xl rounded-xl shadow-2xl flex flex-col h-fit my-auto overflow-visible min-h-[600px]">
+      <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl flex flex-col h-fit my-auto overflow-visible min-h-[600px]">
         {/* Header - Mais compacto */}
-        <div className="bg-slate-800 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
-          <h2 className="text-sm font-black flex items-center gap-2 uppercase tracking-widest">
+        <div className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
+          <h2 className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest">
             <ShoppingBag className="text-pink-400" size={18} />
             Venda Casada
           </h2>
@@ -238,7 +238,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Dados Gerais - Ultra Compacto */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="flex flex-col">
-              <label className="text-[10px] font-black text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
+              <label className="text-[11px] font-semibold text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <ShoppingBag size={10} /> Cliente
               </label>
               <SeletorEntidade
@@ -249,7 +249,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-[10px] font-black text-blue-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
+              <label className="text-[11px] font-semibold text-blue-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <Truck size={10} /> Fornecedor
               </label>
               <SeletorEntidade
@@ -260,7 +260,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-[10px] font-black text-slate-500 uppercase mb-0.5 ml-1">Data</label>
+              <label className="text-[11px] font-semibold text-slate-500 uppercase mb-0.5 ml-1">Data</label>
               <input
                 type="date"
                 value={data || ''}
@@ -272,9 +272,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           {/* Lista Única de Itens - Expansão Vertical Total */}
           <div className="border border-slate-200 rounded-lg shadow-sm bg-white overflow-visible">
-            <div className="bg-slate-50 px-3 py-2 flex justify-between items-center border-b border-slate-200">
-              <h3 className="text-[11px] font-black text-slate-700 uppercase tracking-widest">Produtos Vinculados</h3>
-              <button onClick={adicionarItem} className="bg-slate-800 text-white px-3 py-1.5 rounded text-[10px] font-black hover:bg-slate-700 transition-colors uppercase tracking-tight">
+            <div className="bg-slate-50 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
+              <h3 className="text-[11px] font-semibold text-slate-700 uppercase tracking-widest">Produtos Vinculados</h3>
+              <button onClick={adicionarItem} className="bg-slate-900 text-white px-3 py-1 rounded text-[10px] font-semibold hover:bg-slate-800 transition-colors uppercase tracking-tight">
                 + ADICIONAR ITEM
               </button>
             </div>
@@ -283,10 +283,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white border-b border-slate-100">
-                    <th className="px-3 py-2 text-[10px] font-black text-slate-500 uppercase w-[45%]">Produto</th>
-                    <th className="px-2 py-2 text-[10px] font-black text-slate-500 uppercase text-center w-[10%]">Qtd</th>
-                    <th className="px-2 py-2 text-[10px] font-black text-pink-600 uppercase text-right w-[18%]">Preço Venda</th>
-                    <th className="px-2 py-2 text-[10px] font-black text-blue-600 uppercase text-right w-[18%]">Vlr Repasse</th>
+                    <th className="px-3 py-2 text-[11px] font-semibold text-slate-500 uppercase w-[45%]">Produto</th>
+                    <th className="px-2 py-2 text-[11px] font-semibold text-slate-500 uppercase text-center w-[10%]">Qtd</th>
+                    <th className="px-2 py-2 text-[11px] font-semibold text-pink-600 uppercase text-right w-[18%]">Preço Venda</th>
+                    <th className="px-2 py-2 text-[11px] font-semibold text-blue-600 uppercase text-right w-[18%]">Vlr Repasse</th>
                     <th className="px-2 py-2 text-center w-[9%]"></th>
                   </tr>
                 </thead>
@@ -310,25 +310,25 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       </td>
                       <td className="px-2 py-3">
                         <div className="relative">
-                          <span className="absolute left-2 top-2 text-[10px] text-pink-400 font-bold">R$</span>
+                          <span className="absolute left-2 top-2 text-[10px] text-pink-400 font-semibold">R$</span>
                           <input
                             type="number"
                             step="0.01"
                             value={item.preco_unitario ?? 0}
                             onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                            className="w-full border border-pink-200 bg-pink-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
+                            className="w-full border border-pink-200 bg-pink-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-semibold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
                           />
                         </div>
                       </td>
                       <td className="px-2 py-3">
                         <div className="relative">
-                          <span className="absolute left-2 top-2 text-[10px] text-blue-400 font-bold">R$</span>
+                          <span className="absolute left-2 top-2 text-[10px] text-blue-400 font-semibold">R$</span>
                           <input
                             type="number"
                             step="0.01"
                             value={item.valor_repasse ?? 0}
                             onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                            className="w-full border border-blue-200 bg-blue-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
+                            className="w-full border border-blue-200 bg-blue-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-semibold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
                       </td>
@@ -349,14 +349,14 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             {/* Pagamento Venda */}
             <div className="bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3">
               <div className="flex justify-between items-center border-b border-pink-100 pb-1.5">
-                <h4 className="text-[11px] font-black text-pink-700 uppercase tracking-widest flex items-center gap-1">
+                <h4 className="text-[11px] font-semibold text-pink-700 uppercase tracking-widest flex items-center gap-1">
                   <ShoppingBag size={12} /> Pagamento Venda
                 </h4>
-                <span className="text-sm font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
+                <span className="text-sm font-semibold text-pink-700">R$ {totalVenda.toFixed(2)}</span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Status</label>
+                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Status</label>
                   <select
                     value={pagVenda.status || 'pendente'}
                     onChange={e => setPagVenda({...pagVenda, status: e.target.value})}
@@ -367,7 +367,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   </select>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
+                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
                   <input
                     type="number"
                     value={pagVenda.parcelas ?? 1}
@@ -376,7 +376,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   />
                 </div>
                 <div className="flex flex-col lg:col-span-1">
-                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
+                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
                   <input
                     type="date"
                     value={pagVenda.vencimento || ''}
@@ -385,7 +385,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-pink-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
+                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
                   <select
                     value={pagVenda.prazo || 'mensal'}
                     onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})}
@@ -402,14 +402,14 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             {/* Pagamento Compra */}
             <div className="bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3">
               <div className="flex justify-between items-center border-b border-blue-100 pb-1.5">
-                <h4 className="text-[11px] font-black text-blue-700 uppercase tracking-widest flex items-center gap-1">
+                <h4 className="text-[11px] font-semibold text-blue-700 uppercase tracking-widest flex items-center gap-1">
                   <Truck size={12} /> Pagamento Compra
                 </h4>
-                <span className="text-sm font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
+                <span className="text-sm font-semibold text-blue-700">R$ {totalCompra.toFixed(2)}</span>
               </div>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Status</label>
+                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Status</label>
                   <select
                     value={pagCompra.status || 'pendente'}
                     onChange={e => setPagCompra({...pagCompra, status: e.target.value})}
@@ -420,7 +420,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   </select>
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
+                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
                   <input
                     type="number"
                     value={pagCompra.parcelas ?? 1}
@@ -429,7 +429,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   />
                 </div>
                 <div className="flex flex-col lg:col-span-1">
-                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
+                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
                   <input
                     type="date"
                     value={pagCompra.vencimento || ''}
@@ -438,7 +438,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="text-[9px] font-black text-blue-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
+                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
                   <select
                     value={pagCompra.prazo || 'mensal'}
                     onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})}
@@ -457,18 +457,18 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500">
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-bold text-pink-400">Total Venda</p>
-                <p className="text-sm font-black font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda</p>
+                <p className="text-sm font-semibold font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
               <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
               <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-bold text-blue-400">Total Compra</p>
-                <p className="text-sm font-black font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-[8px] uppercase font-semibold text-blue-400">Total Compra</p>
+                <p className="text-sm font-semibold font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
               <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
               <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-bold text-green-400">Diferença</p>
-                <p className={`text-sm font-black font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <p className="text-[8px] uppercase font-semibold text-green-400">Diferença</p>
+                <p className={`text-sm font-semibold font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   R$ {Math.abs(diferenca).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -477,7 +477,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             <button
               onClick={handleSubmit}
               disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-semibold transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
             >
               {loading ? 'Salvando...' : 'Finalizar Venda Casada'}
             </button>
