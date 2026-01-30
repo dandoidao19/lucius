@@ -221,25 +221,25 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   }
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[50] p-4 overflow-y-auto">
-      <div className="bg-slate-50 w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="bg-slate-800 text-white p-4 flex justify-between items-center rounded-t-xl">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <ShoppingBag className="text-pink-400" size={24} />
-            <span className="text-white">Venda Casada</span>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-2 sm:p-4 overflow-y-auto pt-4 pb-20">
+      <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col h-fit my-auto">
+        {/* Header - Mais compacto */}
+        <div className="bg-slate-800 text-white px-4 py-2 flex justify-between items-center rounded-t-xl">
+          <h2 className="text-sm font-bold flex items-center gap-2 uppercase tracking-widest">
+            <ShoppingBag className="text-pink-400" size={18} />
+            Venda Casada
           </h2>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded transition-colors text-white">
-            <X size={24} />
+            <X size={20} />
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-6">
-          {/* Dados Gerais: Cliente e Fornecedor - Estilo v3.0 Compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-bold text-pink-600 uppercase mb-1 flex items-center gap-1">
-                <ShoppingBag size={10} /> Cliente (Comprador)
+        <div className="p-3 space-y-3">
+          {/* Dados Gerais - Ultra Compacto */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div className="flex flex-col">
+              <label className="text-[10px] font-black text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
+                <ShoppingBag size={10} /> Cliente
               </label>
               <SeletorEntidade
                 valor={cliente}
@@ -248,9 +248,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 placeholder="Nome do cliente..."
               />
             </div>
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1">
-                <Truck size={10} /> Fornecedor (Vendedor)
+            <div className="flex flex-col">
+              <label className="text-[10px] font-black text-blue-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
+                <Truck size={10} /> Fornecedor
               </label>
               <SeletorEntidade
                 valor={fornecedor}
@@ -259,81 +259,81 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 placeholder="Nome do fornecedor..."
               />
             </div>
-            <div className="bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
-              <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1 tracking-tighter">Data da Operação</label>
+            <div className="flex flex-col">
+              <label className="text-[10px] font-black text-slate-500 uppercase mb-0.5 ml-1">Data</label>
               <input
                 type="date"
                 value={data}
                 onChange={e => setData(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded px-2 py-0.5 text-xs focus:ring-1 focus:ring-slate-400 outline-none"
+                className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-[30px]"
               />
             </div>
           </div>
 
-          {/* Lista Única de Itens - Refatorada para Tabela para evitar quebras */}
-          <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
-            <div className="bg-slate-100 px-3 py-1.5 border-b border-slate-200 flex justify-between items-center">
-              <h3 className="text-[11px] font-bold text-slate-700 uppercase tracking-tight">Produtos Vinculados</h3>
-              <button onClick={adicionarItem} className="bg-slate-800 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-slate-700 transition-colors uppercase tracking-tighter">
-                + ADICIONAR ITEM
+          {/* Lista Única de Itens - Sem scroll interno, expande modal */}
+          <div className="border border-slate-200 rounded-lg overflow-hidden">
+            <div className="bg-slate-800 px-3 py-1.5 flex justify-between items-center">
+              <h3 className="text-[10px] font-bold text-white uppercase tracking-widest">Produtos Vinculados</h3>
+              <button onClick={adicionarItem} className="bg-green-600 text-white px-2 py-1 rounded text-[9px] font-black hover:bg-green-700 transition-colors uppercase">
+                + Item
               </button>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[700px]">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100">
-                    <th className="px-3 py-2 text-[9px] font-black text-slate-400 uppercase w-[45%]">Produto</th>
-                    <th className="px-2 py-2 text-[9px] font-black text-slate-400 uppercase text-center w-[10%]">Qtd</th>
-                    <th className="px-2 py-2 text-[9px] font-black text-pink-500 uppercase text-right w-[18%]">Preço Venda</th>
-                    <th className="px-2 py-2 text-[9px] font-black text-blue-500 uppercase text-right w-[18%]">Vlr Repasse</th>
-                    <th className="px-2 py-2 text-center w-[9%]"></th>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="px-3 py-1.5 text-[10px] font-black text-slate-500 uppercase w-[40%]">Produto</th>
+                    <th className="px-2 py-1.5 text-[10px] font-black text-slate-500 uppercase text-center w-[10%]">Qtd</th>
+                    <th className="px-2 py-1.5 text-[10px] font-black text-pink-600 uppercase text-right w-[20%]">Preço Venda</th>
+                    <th className="px-2 py-1.5 text-[10px] font-black text-blue-600 uppercase text-right w-[20%]">Vlr Repasse</th>
+                    <th className="px-2 py-1.5 text-center w-[10%]"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-50">
+                <tbody className="divide-y divide-slate-100">
                   {itens.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-3 py-2">
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-3 py-1.5">
                         <SeletorProduto
                           onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
                           placeholder="Buscar produto..."
                         />
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-1.5 text-center">
                         <input
                           type="number"
                           value={item.quantidade}
                           onChange={e => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
-                          className="w-full border border-slate-200 rounded px-2 py-1 text-xs text-center focus:ring-1 focus:ring-slate-400 outline-none"
+                          className="w-16 border border-slate-300 rounded px-2 py-1 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
                         />
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-1.5">
                         <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[9px] text-pink-300 font-bold">R$</span>
+                          <span className="absolute left-2 top-1.5 text-[10px] text-pink-400 font-bold">R$</span>
                           <input
                             type="number"
                             step="0.01"
                             value={item.preco_unitario}
                             onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                            className="w-full border border-pink-100 bg-pink-50/20 rounded pl-6 pr-2 py-1 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-400 outline-none text-right"
+                            className="w-full border border-pink-200 bg-pink-50/10 rounded pl-7 pr-2 py-1 text-xs font-bold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
                           />
                         </div>
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-2 py-1.5">
                         <div className="relative">
-                          <span className="absolute left-2 top-1.5 text-[9px] text-blue-300 font-bold">R$</span>
+                          <span className="absolute left-2 top-1.5 text-[10px] text-blue-400 font-bold">R$</span>
                           <input
                             type="number"
                             step="0.01"
                             value={item.valor_repasse}
                             onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                            className="w-full border border-blue-100 bg-blue-50/20 rounded pl-6 pr-2 py-1 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-400 outline-none text-right"
+                            className="w-full border border-blue-200 bg-blue-50/10 rounded pl-7 pr-2 py-1 text-xs font-bold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
                           />
                         </div>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <button onClick={() => removerItem(item.id)} className="text-red-300 hover:text-red-600 transition-colors p-1">
-                          <Trash2 size={14} />
+                      <td className="px-2 py-1.5 text-center">
+                        <button onClick={() => removerItem(item.id)} className="text-red-400 hover:text-red-600 transition-colors p-1">
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -343,13 +343,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           </div>
 
-          {/* Financeiro e Pagamentos */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Financeiro e Pagamentos - Compacto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Pagamento Venda */}
-            <div className="bg-pink-50/30 p-4 rounded-xl border border-pink-100 space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-[10px] font-black text-pink-700 uppercase tracking-widest">💳 Financeiro da Venda</h4>
-                <span className="text-sm font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
+            <div className="bg-pink-50/20 p-2 rounded-lg border border-pink-100 space-y-2">
+              <div className="flex justify-between items-center border-b border-pink-100 pb-1">
+                <h4 className="text-[10px] font-black text-pink-700 uppercase tracking-widest">💳 Venda</h4>
+                <span className="text-xs font-black text-pink-700">R$ {totalVenda.toFixed(2)}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
@@ -397,10 +397,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
 
             {/* Pagamento Compra */}
-            <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest">🚚 Financeiro da Compra</h4>
-                <span className="text-sm font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
+            <div className="bg-blue-50/20 p-2 rounded-lg border border-blue-100 space-y-2">
+              <div className="flex justify-between items-center border-b border-blue-100 pb-1">
+                <h4 className="text-[10px] font-black text-blue-700 uppercase tracking-widest">🚚 Compra</h4>
+                <span className="text-xs font-black text-blue-700">R$ {totalCompra.toFixed(2)}</span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                 <div>
@@ -448,20 +448,22 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           </div>
 
-          {/* Resumo Final - Otimizado (Menor) */}
-          <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t-2 border-pink-500">
-            <div className="flex flex-wrap gap-6 justify-center md:justify-start">
-              <div className="text-center md:text-left px-2">
-                <p className="text-[9px] uppercase font-bold text-pink-400 tracking-tight">Total Venda</p>
-                <p className="text-lg font-bold font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          {/* Resumo Final - Ultra Otimizado */}
+          <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500">
+            <div className="flex gap-4 items-center">
+              <div className="text-center md:text-left">
+                <p className="text-[8px] uppercase font-bold text-pink-400">Total Venda</p>
+                <p className="text-sm font-black font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
-              <div className="text-center md:text-left border-x border-white/10 px-6">
-                <p className="text-[9px] uppercase font-bold text-blue-400 tracking-tight">Total Compra</p>
-                <p className="text-lg font-bold font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
+              <div className="text-center md:text-left">
+                <p className="text-[8px] uppercase font-bold text-blue-400">Total Compra</p>
+                <p className="text-sm font-black font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
-              <div className="text-center md:text-left px-2">
-                <p className="text-[9px] uppercase font-bold text-green-400 tracking-tight">Diferença</p>
-                <p className={`text-lg font-bold font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
+              <div className="text-center md:text-left">
+                <p className="text-[8px] uppercase font-bold text-green-400">Diferença</p>
+                <p className={`text-sm font-black font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   R$ {Math.abs(diferenca).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
               </div>
@@ -470,9 +472,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             <button
               onClick={handleSubmit}
               disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-              className="bg-green-500 hover:bg-green-600 disabled:bg-slate-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-lg active:scale-95 uppercase tracking-wider text-xs border-b-2 border-green-700"
+              className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
             >
-              {loading ? 'Salvando...' : 'Finalizar Operação'}
+              {loading ? 'Salvando...' : 'Finalizar Venda Casada'}
             </button>
           </div>
         </div>
