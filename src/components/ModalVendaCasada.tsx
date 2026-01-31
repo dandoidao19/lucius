@@ -120,8 +120,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         total: valorParcela,
         tipo,
         data: prepararDataParaInsert(dataParcela),
-        status_pagamento: i === 1 && total > 0 ? status : 'pendente',
-        observacao: `Ref. #${refNum}`
+        status_pagamento: i === 1 && total > 0 ? status : 'pendente'
+        // observacao: `Ref. #${refNum}`
       })
     }
     await supabase.from('transacoes_loja').insert(transacoes)
@@ -221,6 +221,19 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       alert('Erro: ' + (error?.message || error?.details || 'Erro desconhecido ao gerar venda casada'))
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleCancelar = () => {
+    if (window.confirm('Deseja realmente cancelar o lançamento de Venda Casada? Todos os dados serão perdidos.')) {
+      clearDraft('venda_casada')
+      setCliente('')
+      setFornecedor('')
+      setData(getDataAtualBrasil())
+      setItens([{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
+      setPagVenda({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
+      setPagCompra({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
+      onClose()
     }
   }
 
@@ -478,13 +491,21 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               </div>
             </div>
 
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-              className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-semibold transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
-            >
-              {loading ? 'Salvando...' : 'Finalizar Venda Casada'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleCancelar}
+                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-semibold transition-all uppercase tracking-tighter text-[11px]"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
+                className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-semibold transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
+              >
+                {loading ? 'Salvando...' : 'Finalizar Venda Casada'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

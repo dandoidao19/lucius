@@ -328,8 +328,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         total: valorParcela,
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
-        status_pagamento: statusParcela,
-        observacao: observacao.trim() || null
+        status_pagamento: statusParcela
+        // observacao: observacao.trim() || null
       })
     }
 
@@ -397,6 +397,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
+      console.log('DEBUG: Iniciando geração de transação (Finalizada)', { tipo, entidade, total: calcularTotal() })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -409,7 +410,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       const numTransacao = transacaoInicial?.numero_transacao || nTrans
 
       const total = calcularTotal()
-      const isVenda = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
+      // APENAS venda ou compra finalizada entra aqui. Condicionais e Pedidos devem ir para handleGerarPedido.
+      const isVenda = tipo === 'venda' || tipo === 'pedido_venda'
 
       let transacaoPrincipalId = transacaoInicial?.id
 
@@ -422,8 +424,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
-            prazoparcelas: prazoParcelas,
-            observacao: observacao.trim() || null
+            prazoparcelas: prazoParcelas
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: novaVenda, error: erroVenda } = await supabase
@@ -437,7 +438,6 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas
-              // observacao: observacao.trim() || null // Removido até que a coluna seja criada no Supabase
             })
             .select()
             .single()
@@ -507,8 +507,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
-            prazoparcelas: prazoParcelas,
-            observacao: observacao.trim() || null
+            prazoparcelas: prazoParcelas
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: compra, error: erroCompra } = await supabase
@@ -521,8 +520,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
-              prazoparcelas: prazoParcelas,
-              observacao: observacao.trim() || null
+              prazoparcelas: prazoParcelas
             })
             .select()
             .single()
@@ -618,6 +616,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
+      console.log('DEBUG: Iniciando geração de pedido/condicional', { tipo, entidade })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -692,8 +691,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           categoria: item.categoria,
           preco_custo: item.preco_custo,
           preco_venda: item.preco_venda,
-          status: 'pendente',
-          observacao: item.observacao_item || null
+          status: 'pendente'
         }
 
         const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
@@ -847,31 +845,31 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 </button>
                 <button
                   onClick={() => handleTipoSelect('pedido_venda')}
-                  className="p-3 border rounded-lg hover:bg-yellow-50 hover:border-yellow-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-yellow-50 hover:border-yellow-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-yellow-700">📝 Pedido de Venda</span>
-                  <span className="text-xs text-gray-400">Reserva de itens</span>
+                  <span className="font-bold text-gray-700 group-hover:text-yellow-700">📝 PEDIDO DE VENDA</span>
+                  <span className="text-xs text-gray-400 italic">Reserva de itens</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('pedido_compra')}
-                  className="p-3 border rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-orange-700">📦 Pedido de Compra</span>
-                  <span className="text-xs text-gray-400">Solicitação ao fornecedor</span>
+                  <span className="font-bold text-gray-700 group-hover:text-orange-700">📦 PEDIDO DE COMPRA</span>
+                  <span className="text-xs text-gray-400 italic">Solicitação ao fornecedor</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('condicional_cliente')}
-                  className="p-3 border rounded-lg hover:bg-purple-50 hover:border-purple-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-purple-50 hover:border-purple-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-purple-700">✨ Condicional Cliente</span>
-                  <span className="text-xs text-gray-400">Envio para teste</span>
+                  <span className="font-bold text-gray-700 group-hover:text-purple-700">✨ CONDICIONAL CLIENTE</span>
+                  <span className="text-xs text-gray-400 italic">Envio para teste</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('condicional_fornecedor')}
-                  className="p-3 border rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all flex justify-between items-center group"
                 >
-                  <span className="font-semibold text-gray-700 group-hover:text-indigo-700">🔄 Condicional Fornecedor</span>
-                  <span className="text-xs text-gray-400">Recebimento para teste</span>
+                  <span className="font-bold text-gray-700 group-hover:text-indigo-700">🔄 CONDICIONAL FORNECEDOR</span>
+                  <span className="text-xs text-gray-400 italic">Recebimento para teste</span>
                 </button>
               </div>
             </div>
