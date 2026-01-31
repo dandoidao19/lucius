@@ -78,7 +78,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
   const [observacao, setObservacao] = useState(transacaoInicial?.observacao?.replace('[PEDIDO]', '').trim() || '')
   const [loading, setLoading] = useState(false)
-  const [, setErro] = useState('')
+  const [erro, setErro] = useState('')
   const [pedidosAbertos, setPedidosAbertos] = useState<any[]>([])
   const [mostrarBuscaPedido, setMostrarBuscaPedido] = useState(false)
   const [idPedidoOrigem, setIdPedidoOrigem] = useState<string | null>(null)
@@ -404,7 +404,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         await reverterImpactosOld()
       }
 
-      const numTransacao = transacaoInicial?.numero_transacao || (await supabase.rpc('obter_proximo_numero_transacao')).data
+      const { data: nTrans, error: eTrans } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (eTrans) throw eTrans
+      const numTransacao = transacaoInicial?.numero_transacao || nTrans
+
       const total = calcularTotal()
       const isVenda = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
 
@@ -433,8 +436,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
-              prazoparcelas: prazoParcelas,
-              observacao: observacao.trim() || null
+              prazoparcelas: prazoParcelas
+              // observacao: observacao.trim() || null // Removido até que a coluna seja criada no Supabase
             })
             .select()
             .single()
@@ -479,8 +482,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               preco_custo: item.preco_custo,
-              valor_repasse: item.valor_repasse,
-              observacao: item.observacao_item || null
+              valor_repasse: item.valor_repasse
+              // observacao: item.observacao_item || null // Removido até que a coluna seja criada no Supabase
             }
 
             const { error: erroIt } = await supabase.from('itens_venda').insert(dbItem)
@@ -564,8 +567,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_custo: item.preco_custo,
               valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
-              categoria: item.categoria,
-              observacao: item.observacao_item || null
+              categoria: item.categoria
+              // observacao: item.observacao_item || null // Removido até que a coluna seja criada no Supabase
             }
 
             const { error: erroIt } = await supabase.from('itens_compra').insert(dbItem)
@@ -590,9 +593,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       resetForm()
       onSucesso()
       onClose()
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar transação'
-      console.error(err)
+    } catch (err: any) {
+      console.error('Erro detalhado (Transação):', err)
+      const errorMsg = err?.message || err?.details || (typeof err === 'string' ? err : 'Erro ao gerar transação')
       setErro(errorMsg)
     } finally {
       setLoading(false)
@@ -622,7 +625,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         await reverterImpactosOld()
       }
 
-      const numTransacao = transacaoInicial?.numero_transacao || (await supabase.rpc('obter_proximo_numero_transacao')).data
+      const { data: nTrans, error: eTrans } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (eTrans) throw eTrans
+      const numTransacao = transacaoInicial?.numero_transacao || nTrans
 
       const isVendaPedido = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
       const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
@@ -700,9 +705,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       resetForm()
       onSucesso()
       onClose()
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Erro ao gerar pedido'
-      console.error(err)
+    } catch (err: any) {
+      console.error('Erro detalhado (Pedido):', err)
+      const errorMsg = err?.message || err?.details || (typeof err === 'string' ? err : 'Erro ao gerar pedido')
       setErro(errorMsg)
     } finally {
       setLoading(false)
@@ -809,6 +814,19 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         </div>
 
         <div className="p-3 overflow-y-auto flex-1 text-xs">
+          {erro && (
+            <div className="mb-4 bg-red-50 border-l-4 border-red-500 p-3 rounded shadow-sm">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="font-bold text-red-800 uppercase tracking-tighter text-[10px]">Erro detectado:</p>
+                  <p className="text-red-700 font-medium">{erro}</p>
+                </div>
+                <button onClick={() => setErro('')} className="text-red-500 hover:text-red-700">✕</button>
+              </div>
+              <p className="text-[9px] text-red-400 mt-1 italic">* Verifique se as colunas de &quot;observacao&quot; foram criadas no Supabase.</p>
+            </div>
+          )}
+
           {!tipo ? (
             <div className="space-y-3">
               <p className="text-center text-gray-600 font-medium mb-4">Selecione o tipo de transação:</p>

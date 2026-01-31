@@ -138,28 +138,32 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       if (!user) throw new Error('Usuário não autenticado')
 
       // 1. Gerar Venda
-      const { data: numVenda } = await supabase.rpc('obter_proximo_numero_transacao')
+      const { data: numVenda, error: errNumV } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (errNumV) throw errNumV
+
       const { data: venda, error: errVenda } = await supabase.from('vendas').insert({
         cliente,
         data_venda: prepararDataParaInsert(data),
         total: totalVenda,
         status_pagamento: pagVenda.status,
         user_id: user.id,
-        numero_transacao: numVenda,
-        observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
+        numero_transacao: numVenda
+        // observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
       }).select().single()
       if (errVenda) throw errVenda
 
       // 2. Gerar Compra
-      const { data: numCompra } = await supabase.rpc('obter_proximo_numero_transacao')
+      const { data: numCompra, error: errNumC } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (errNumC) throw errNumC
+
       const { data: compra, error: errCompra } = await supabase.from('compras').insert({
         fornecedor,
         data_compra: prepararDataParaInsert(data),
         total: totalCompra,
         status_pagamento: pagCompra.status,
         user_id: user.id,
-        numero_transacao: numCompra,
-        observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
+        numero_transacao: numCompra
+        // observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
       }).select().single()
       if (errCompra) throw errCompra
 
@@ -213,8 +217,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       onSucesso()
       onClose()
     } catch (error: any) {
-      alert('Erro: ' + error.message)
-      console.error(error)
+      console.error('Erro detalhado (Venda Casada):', error)
+      alert('Erro: ' + (error?.message || error?.details || 'Erro desconhecido ao gerar venda casada'))
     } finally {
       setLoading(false)
     }
