@@ -51,7 +51,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.6 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.7 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -347,7 +347,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204') {
-      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.5 NO SEU SUPABASE (SQL EDITOR).'
+      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.7 NO SEU SUPABASE (SQL EDITOR).'
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -650,8 +650,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
+      const totalPedido = calcularTotal()
       console.log('DEBUG: Payload Pedido principal:', {
-        tipo, data, entidade, observacao, status: 'pendente'
+        tipo, data, entidade, observacao, status: 'pendente', total: totalPedido
       })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
@@ -671,12 +672,20 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       let transacaoId = transacaoInicial?.id || idPedidoAnexar
 
       if (transacaoId) {
+        // Se estivermos anexando (idPedidoAnexar), precisamos somar ao total existente
+        let totalFinal = totalPedido
+        if (idPedidoAnexar) {
+           const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
+           totalFinal = (pOld?.total || 0) + totalPedido
+        }
+
         await supabase.from('transacoes_condicionais').update({
           tipo: isVendaPedido ? 'enviado' : 'recebido',
           origem: entidade,
           data_transacao: prepararDataParaInsert(data),
           observacao: (prefixoPedido + observacao).trim() || null,
           status: 'pendente',
+          total: totalFinal
         }).eq('id', transacaoId)
       } else {
         const { data: transacao, error: erroTransacao } = await supabase
@@ -688,6 +697,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_transacao: prepararDataParaInsert(data),
             observacao: (prefixoPedido + observacao).trim() || null,
             status: 'pendente',
+            total: totalPedido
           })
           .select()
           .single()
@@ -726,6 +736,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           quantidade: item.quantidade,
           categoria: item.categoria,
           preco_custo: item.preco_custo,
+          valor_repasse: item.valor_repasse,
           preco_venda: item.preco_venda,
           status: 'pendente',
           observacao: item.observacao_item || null
@@ -1216,7 +1227,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.6
+              CORE ENGINE v3.7
             </div>
             <button
               onClick={handleCancelar}

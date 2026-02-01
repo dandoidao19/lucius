@@ -132,7 +132,7 @@ export default function LojaPaginaTransacoes() {
           numero: cn.numero_transacao,
           data: cn.data_transacao,
           entidade: cn.origem,
-          total: 0,
+          total: cn.total || 0,
           status: cn.status,
           quantidade_parcelas: 1,
           quantidade_itens: cn.itens_condicionais?.[0]?.count || 0,

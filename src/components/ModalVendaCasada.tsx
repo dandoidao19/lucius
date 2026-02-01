@@ -27,7 +27,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.6 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.7 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -38,6 +38,15 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const [cliente, setCliente] = useState('')
   const [fornecedor, setFornecedor] = useState('')
   const [data, setData] = useState(getDataAtualBrasil())
+  const [tipoSaida, setTipoSaida] = useState<'venda' | 'pedido_venda'>('venda')
+  const [tipoEntrada, setTipoEntrada] = useState<'compra' | 'pedido_compra'>('compra')
+
+  const [pedidosSaidaAbertos, setPedidosSaidaAbertos] = useState<any[]>([])
+  const [pedidosEntradaAbertos, setPedidosEntradaAbertos] = useState<any[]>([])
+  const [mostrarBuscaSaida, setMostrarBuscaSaida] = useState(false)
+  const [mostrarBuscaEntrada, setMostrarBuscaEntrada] = useState(false)
+  const [idSaidaAnexar, setIdSaidaAnexar] = useState<string | null>(null)
+  const [idEntradaAnexar, setIdEntradaAnexar] = useState<string | null>(null)
 
   // Lista Única de Itens
   const [itens, setItens] = useState<ItemVendaCasada[]>([
@@ -197,10 +206,35 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       setCliente(venda.cliente)
       if (compraEncontrada) setFornecedor(compraEncontrada.fornecedor)
       setData(venda.data_venda.split('T')[0])
+      setTipoSaida('venda')
+      setTipoEntrada('compra')
       setMostrarBuscaCasada(false)
     } catch (err) {
       console.error('Erro ao vincular compra casada:', err)
       alert('Erro ao encontrar compra vinculada.')
+    }
+  }
+
+  const buscarPedidos = async (tipoLado: 'enviado' | 'recebido') => {
+    try {
+      const { data: pds, error } = await supabase
+        .from('transacoes_condicionais')
+        .select('*')
+        .eq('tipo', tipoLado)
+        .eq('status', 'pendente')
+        .ilike('observacao', '%[PEDIDO]%')
+        .order('data_transacao', { ascending: false })
+
+      if (error) throw error
+      if (tipoLado === 'enviado') {
+        setPedidosSaidaAbertos(pds || [])
+        setMostrarBuscaSaida(true)
+      } else {
+        setPedidosEntradaAbertos(pds || [])
+        setMostrarBuscaEntrada(true)
+      }
+    } catch (err) {
+      console.error('Erro ao buscar pedidos:', err)
     }
   }
 
@@ -211,86 +245,105 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
     setLoading(true)
     try {
-      console.log('DEBUG: Iniciando processamento de Venda Casada:', { cliente, fornecedor, totalVenda, totalCompra, itensCount: itensValidos.length })
+      console.log('DEBUG: Iniciando processamento de Venda Casada V3.7:', { cliente, fornecedor, totalVenda, totalCompra, tipoSaida, tipoEntrada })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      let venda = vendaAnexar
-      let compra = compraAnexar
-      let numVenda = vendaAnexar?.numero_transacao
-      let numCompra = compraAnexar?.numero_transacao
+      // LADO SAÍDA
+      let idSaida = null
+      let numSaida = 0
 
-      if (!vendaAnexar) {
-        // 1. Gerar Venda
-        const { data: nV, error: errNumV } = await supabase.rpc('obter_proximo_numero_transacao')
-        if (errNumV) throw errNumV
-        numVenda = nV
-
-        const { data: v, error: errVenda } = await supabase.from('vendas').insert({
-          cliente,
-          data_venda: prepararDataParaInsert(data),
-          total: totalVenda,
-          status_pagamento: pagVenda.status,
-          user_id: user.id,
-          numero_transacao: numVenda,
-          observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
-        }).select().single()
-        if (errVenda) throw errVenda
-        venda = v
+      if (tipoSaida === 'venda') {
+        if (vendaAnexar) {
+          idSaida = vendaAnexar.id
+          numSaida = vendaAnexar.numero_transacao
+          await supabase.from('vendas').update({ total: (vendaAnexar.total || 0) + totalVenda }).eq('id', idSaida)
+        } else {
+          const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
+          if (e) throw e
+          numSaida = n
+          const { data: v, error: ev } = await supabase.from('vendas').insert({
+            cliente, data_venda: prepararDataParaInsert(data), total: totalVenda, status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida,
+            observacao: `VENDA CASADA (Saída: VENDA)`
+          }).select().single()
+          if (ev) throw ev
+          idSaida = v.id
+          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo)
+        }
       } else {
-        // Atualizar total da venda existente
-        await supabase.from('vendas').update({
-          total: (venda.total || 0) + totalVenda
-        }).eq('id', venda.id)
+        // Pedido Venda
+        if (idSaidaAnexar) {
+          idSaida = idSaidaAnexar
+          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idSaida).single()
+          await supabase.from('transacoes_condicionais').update({ total: (pOld?.total || 0) + totalVenda }).eq('id', idSaida)
+        } else {
+          const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
+          if (e) throw e
+          numSaida = n
+          const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
+            origem: cliente, data_transacao: prepararDataParaInsert(data), tipo: 'enviado', status: 'pendente', numero_transacao: numSaida, total: totalVenda,
+            observacao: `[PEDIDO] VENDA CASADA (Saída: PEDIDO)`
+          }).select().single()
+          if (ep) throw ep
+          idSaida = p.id
+        }
       }
 
-      if (!compraAnexar) {
-        // 2. Gerar Compra
-        const { data: nC, error: errNumC } = await supabase.rpc('obter_proximo_numero_transacao')
-        if (errNumC) throw errNumC
-        numCompra = nC
+      // LADO ENTRADA
+      let idEntrada = null
+      let numEntrada = 0
 
-        const { data: c, error: errCompra } = await supabase.from('compras').insert({
-          fornecedor,
-          data_compra: prepararDataParaInsert(data),
-          total: totalCompra,
-          status_pagamento: pagCompra.status,
-          user_id: user.id,
-          numero_transacao: numCompra,
-          observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
-        }).select().single()
-        if (errCompra) throw errCompra
-        compra = c
+      if (tipoEntrada === 'compra') {
+        if (compraAnexar) {
+          idEntrada = compraAnexar.id
+          numEntrada = compraAnexar.numero_transacao
+          await supabase.from('compras').update({ total: (compraAnexar.total || 0) + totalCompra }).eq('id', idEntrada)
+        } else {
+          const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
+          if (e) throw e
+          numEntrada = n
+          const { data: c, error: ec } = await supabase.from('compras').insert({
+            fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompra, status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada,
+            observacao: `VENDA CASADA (Entrada: COMPRA)`
+          }).select().single()
+          if (ec) throw ec
+          idEntrada = c.id
+          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo)
+        }
       } else {
-        // Atualizar total da compra existente
-        await supabase.from('compras').update({
-          total: (compra.total || 0) + totalCompra
-        }).eq('id', compra.id)
+        // Pedido Compra
+        if (idEntradaAnexar) {
+          idEntrada = idEntradaAnexar
+          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idEntrada).single()
+          await supabase.from('transacoes_condicionais').update({ total: (pOld?.total || 0) + totalCompra }).eq('id', idEntrada)
+        } else {
+          const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
+          if (e) throw e
+          numEntrada = n
+          const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
+            origem: fornecedor, data_transacao: prepararDataParaInsert(data), tipo: 'recebido', status: 'pendente', numero_transacao: numEntrada, total: totalCompra,
+            observacao: `[PEDIDO] VENDA CASADA (Entrada: PEDIDO)`
+          }).select().single()
+          if (ep) throw ep
+          idEntrada = p.id
+        }
       }
 
       // 3. Processar Itens
       for (const item of itensValidos) {
-        // Registro na Venda (Saída)
-        await supabase.from('itens_venda').insert({
-          venda_id: venda.id,
-          produto_id: item.id_produto,
-          descricao: item.nome,
-          quantidade: item.quantidade,
-          preco_venda: item.preco_unitario,
-          preco_custo: item.preco_custo,
-          valor_repasse: item.valor_repasse
-        })
+        // Gravar no lado da saída
+        if (tipoSaida === 'venda') {
+           await supabase.from('itens_venda').insert({ venda_id: idSaida, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse })
+        } else {
+           await supabase.from('itens_condicionais').insert({ transacao_id: idSaida, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, status: 'pendente' })
+        }
 
-        // Registro na Compra (Entrada)
-        await supabase.from('itens_compra').insert({
-          compra_id: compra.id,
-          produto_id: item.id_produto,
-          descricao: item.nome,
-          quantidade: item.quantidade,
-          preco_custo: item.preco_custo,
-          valor_repasse: item.valor_repasse,
-          preco_venda: item.preco_unitario
-        })
+        // Gravar no lado da entrada
+        if (tipoEntrada === 'compra') {
+           await supabase.from('itens_compra').insert({ compra_id: idEntrada, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario })
+        } else {
+           await supabase.from('itens_condicionais').insert({ transacao_id: idEntrada, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
+        }
 
         // Movimentação de Estoque (Entrada e Saída se anulam se for o mesmo item,
         // mas é importante registrar ambos os fluxos para auditoria e histórico de custos)
@@ -301,19 +354,15 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           produto_id: item.id_produto, tipo: 'entrada', quantidade: item.quantidade, observacao: `Entrada Venda Casada #${numCompra}`
         })
 
-        // Saída (Venda)
-        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
-        await supabase.from('movimentacoes_estoque').insert({
-          produto_id: item.id_produto, tipo: 'saida', quantidade: item.quantidade, observacao: `Saída Venda Casada #${numVenda}`
-        })
-      }
-
-      // 4. Gerar Financeiro (Apenas se não for anexo - para simplificar fluxo financeiro)
-      if (!vendaAnexar) {
-        await criarFinanceiro(totalVenda, cliente, 'entrada', numVenda, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo)
-      }
-      if (!compraAnexar) {
-        await criarFinanceiro(totalCompra, fornecedor, 'saida', numCompra, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo)
+        // Movimentação de Estoque (Apenas se não for Pedido)
+        if (tipoSaida === 'venda') {
+          await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
+          await supabase.from('movimentacoes_estoque').insert({ produto_id: item.id_produto, tipo: 'saida', quantidade: item.quantidade, observacao: `Saída Venda Casada #${numSaida}` })
+        }
+        if (tipoEntrada === 'compra') {
+          await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+          await supabase.from('movimentacoes_estoque').insert({ produto_id: item.id_produto, tipo: 'entrada', quantidade: item.quantidade, observacao: `Entrada Venda Casada #${numEntrada}` })
+        }
       }
 
       alert('✅ Venda Casada gerada com sucesso!')
@@ -363,12 +412,12 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                   {vendaAnexar ? `📍 ANEXANDO À CASADA #${vendaAnexar.numero_transacao}` : 'LANÇAMENTO ÚNICO'}
                 </span>
-                {!vendaAnexar && (
+                {!vendaAnexar && !idSaidaAnexar && !idEntradaAnexar && (
                   <button
                     onClick={buscarCasadas}
-                    className="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-sm hover:bg-yellow-400"
+                    className="bg-purple-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-sm hover:bg-purple-500"
                   >
-                    Continuar Venda Casada Existente ➕
+                    Venda Casada Existente ➕
                   </button>
                 )}
              </div>
@@ -383,20 +432,20 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           {mostrarBuscaCasada && !vendaAnexar && (
-            <div className="bg-yellow-50 border border-yellow-200 p-2 rounded space-y-2">
-               <p className="font-bold text-yellow-800 text-[10px] uppercase">Selecione a Venda Casada para adicionar itens:</p>
+            <div className="bg-purple-50 border border-purple-200 p-2 rounded space-y-2 shadow-inner">
+               <p className="font-bold text-purple-800 text-[10px] uppercase text-center">Selecione o PAR de Venda/Compra para adicionar itens:</p>
                <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
                  {casadasAbertas.map(v => (
                    <button
                      key={v.id}
                      onClick={() => selecionarCasadaParaAnexar(v)}
-                     className="flex justify-between items-center p-2 bg-white border border-yellow-100 hover:bg-yellow-100 text-left rounded shadow-sm"
+                     className="flex justify-between items-center p-2 bg-white border border-purple-100 hover:bg-purple-100 text-left rounded shadow-sm"
                    >
                      <div>
                        <p className="font-bold text-gray-700 text-xs">#{v.numero_transacao} - {v.cliente}</p>
-                       <p className="text-[10px] text-gray-500 truncate">{v.observacao}</p>
+                       <p className="text-[10px] text-gray-500 truncate italic">{v.observacao}</p>
                      </div>
-                     <span className="text-[10px] font-mono bg-yellow-200 px-2 py-0.5 rounded">Selecionar</span>
+                     <span className="text-[10px] font-mono bg-purple-200 px-2 py-0.5 rounded text-purple-700">Escolher</span>
                    </button>
                  ))}
                </div>
@@ -404,8 +453,109 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           )}
 
+          {/* Seleção de Tipos - NOVO V3.7 */}
+          {!vendaAnexar && (
+            <div className="grid grid-cols-2 gap-4 bg-slate-50 p-2 rounded border border-slate-200 shadow-sm">
+               <div className="space-y-2">
+                 <label className="text-[10px] font-bold text-slate-600 uppercase">1. Tipo de Saída</label>
+                 <div className="flex gap-2">
+                    <button
+                      onClick={() => { setTipoSaida('venda'); setIdSaidaAnexar(null); }}
+                      className={`flex-1 py-1 text-[10px] font-bold rounded border transition-all ${tipoSaida === 'venda' ? 'bg-green-600 text-white border-green-700 shadow-md' : 'bg-white text-slate-500 border-slate-300'}`}
+                    >
+                      💰 VENDA
+                    </button>
+                    <button
+                      onClick={() => setTipoSaida('pedido_venda')}
+                      className={`flex-1 py-1 text-[10px] font-bold rounded border transition-all ${tipoSaida === 'pedido_venda' ? 'bg-yellow-500 text-slate-900 border-yellow-600 shadow-md' : 'bg-white text-slate-500 border-slate-300'}`}
+                    >
+                      📝 PEDIDO VENDA
+                    </button>
+                 </div>
+                 {tipoSaida === 'pedido_venda' && (
+                    <div className="flex gap-2 items-center">
+                       <button
+                        onClick={() => buscarPedidos('enviado')}
+                        className={`flex-1 py-1 text-[9px] font-black rounded border-2 dashed ${idSaidaAnexar ? 'bg-orange-50 border-orange-400 text-orange-700' : 'bg-white border-yellow-400 text-yellow-700'} uppercase`}
+                       >
+                         {idSaidaAnexar ? '📍 Pedido Saída Selecionado' : '➕ Anexar a Pedido Venda exist.'}
+                       </button>
+                       {idSaidaAnexar && <button onClick={() => setIdSaidaAnexar(null)} className="text-red-500 text-[10px]">✕</button>}
+                    </div>
+                 )}
+               </div>
+
+               <div className="space-y-2">
+                 <label className="text-[10px] font-bold text-slate-600 uppercase">2. Tipo de Entrada</label>
+                 <div className="flex gap-2">
+                    <button
+                      onClick={() => { setTipoEntrada('compra'); setIdEntradaAnexar(null); }}
+                      className={`flex-1 py-1 text-[10px] font-bold rounded border transition-all ${tipoEntrada === 'compra' ? 'bg-blue-600 text-white border-blue-700 shadow-md' : 'bg-white text-slate-500 border-slate-300'}`}
+                    >
+                      📥 COMPRA
+                    </button>
+                    <button
+                      onClick={() => setTipoEntrada('pedido_compra')}
+                      className={`flex-1 py-1 text-[10px] font-bold rounded border transition-all ${tipoEntrada === 'pedido_compra' ? 'bg-orange-500 text-white border-orange-600 shadow-md' : 'bg-white text-slate-500 border-slate-300'}`}
+                    >
+                      📦 PEDIDO COMPRA
+                    </button>
+                 </div>
+                 {tipoEntrada === 'pedido_compra' && (
+                    <div className="flex gap-2 items-center">
+                       <button
+                        onClick={() => buscarPedidos('recebido')}
+                        className={`flex-1 py-1 text-[9px] font-black rounded border-2 dashed ${idEntradaAnexar ? 'bg-orange-50 border-orange-400 text-orange-700' : 'bg-white border-orange-400 text-orange-700'} uppercase`}
+                       >
+                         {idEntradaAnexar ? '📍 Pedido Entrada Selecionado' : '➕ Anexar a Pedido Compra exist.'}
+                       </button>
+                       {idEntradaAnexar && <button onClick={() => setIdEntradaAnexar(null)} className="text-red-500 text-[10px]">✕</button>}
+                    </div>
+                 )}
+               </div>
+            </div>
+          )}
+
+          {mostrarBuscaSaida && (
+            <div className="bg-yellow-50 border border-yellow-200 p-2 rounded space-y-2 shadow-sm">
+               <p className="font-bold text-yellow-800 text-[10px] uppercase">Selecione o PEDIDO DE VENDA para anexar:</p>
+               <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                  {pedidosSaidaAbertos.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setIdSaidaAnexar(p.id); setCliente(p.origem); setMostrarBuscaSaida(false); }}
+                      className="flex justify-between items-center p-2 bg-white border border-yellow-200 hover:bg-yellow-100 text-left rounded"
+                    >
+                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
+                      <span className="text-[10px] bg-yellow-200 px-1 rounded">Vincular</span>
+                    </button>
+                  ))}
+               </div>
+               <button onClick={() => setMostrarBuscaSaida(false)} className="text-[9px] text-slate-400 w-full text-center">Cancelar busca</button>
+            </div>
+          )}
+
+          {mostrarBuscaEntrada && (
+            <div className="bg-orange-50 border border-orange-200 p-2 rounded space-y-2 shadow-sm">
+               <p className="font-bold text-orange-800 text-[10px] uppercase">Selecione o PEDIDO DE COMPRA para anexar:</p>
+               <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                  {pedidosEntradaAbertos.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => { setIdEntradaAnexar(p.id); setFornecedor(p.origem); setMostrarBuscaEntrada(false); }}
+                      className="flex justify-between items-center p-2 bg-white border border-orange-200 hover:bg-orange-100 text-left rounded"
+                    >
+                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
+                      <span className="text-[10px] bg-orange-200 px-1 rounded text-orange-700">Vincular</span>
+                    </button>
+                  ))}
+               </div>
+               <button onClick={() => setMostrarBuscaEntrada(false)} className="text-[9px] text-slate-400 w-full text-center">Cancelar busca</button>
+            </div>
+          )}
+
           {/* Dados Gerais - Ultra Compacto */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${vendaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${ (vendaAnexar || idSaidaAnexar || idEntradaAnexar) ? 'bg-slate-50 p-1 rounded border border-slate-100' : ''}`}>
             <div className="flex flex-col">
               <label className="text-[11px] font-semibold text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <ShoppingBag size={10} /> Cliente
@@ -513,10 +663,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           </div>
 
-          {/* Financeiro e Pagamentos - Lado a Lado Compacto */}
-          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${vendaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+          {/* Financeiro e Pagamentos - Ocultar se os dois lados forem pedidos ou anexos */}
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${(vendaAnexar || (tipoSaida.startsWith('pedido') && tipoEntrada.startsWith('pedido')) || (idSaidaAnexar && idEntradaAnexar)) ? 'hidden' : ''}`}>
             {/* Pagamento Venda */}
-            <div className="bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3">
+            <div className={`bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3 ${tipoSaida === 'pedido_venda' || idSaidaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
               <div className="flex justify-between items-center border-b border-pink-100 pb-1.5">
                 <h4 className="text-[11px] font-semibold text-pink-700 uppercase tracking-widest flex items-center gap-1">
                   <ShoppingBag size={12} /> Pagamento Venda
@@ -569,7 +719,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
 
             {/* Pagamento Compra */}
-            <div className="bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3">
+            <div className={`bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3 ${tipoEntrada === 'pedido_compra' || idEntradaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
               <div className="flex justify-between items-center border-b border-blue-100 pb-1.5">
                 <h4 className="text-[11px] font-semibold text-blue-700 uppercase tracking-widest flex items-center gap-1">
                   <Truck size={12} /> Pagamento Compra
@@ -625,7 +775,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.6
+              CORE ENGINE v3.7
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
