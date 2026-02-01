@@ -100,6 +100,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (!err) return 'Erro desconhecido'
     if (typeof err === 'string') return err
 
+    if (err.code === 'PGRST204') {
+      return 'ERRO DE SCHEMA: Coluna ausente no banco de dados. POR FAVOR, EXECUTE O SCRIPT SQL V3.4 NO SUPABASE.'
+    }
+
     let mensagem = err.message || 'Erro interno'
     if (err.details) mensagem += ` (Detalhes: ${err.details})`
     if (err.code) mensagem += ` [Código: ${err.code}]`

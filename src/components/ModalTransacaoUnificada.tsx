@@ -50,6 +50,10 @@ interface ModalTransacaoUnificadaProps {
 }
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
+  useEffect(() => {
+    if (aberto) console.log('🚀 LUCIUS V3.4 - MODAL UNIFICADO CARREGADO')
+  }, [aberto])
+
   const { getDraft, setDraft, clearDraft } = useFormDraft()
 
   const [tipo, setTipo] = useState<TipoTransacao | ''>(transacaoInicial?.tipo || '')
@@ -340,6 +344,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const formatarErro = (err: any): string => {
     if (!err) return 'Erro desconhecido'
     if (typeof err === 'string') return err
+
+    if (err.code === 'PGRST204') {
+      return 'ERRO DE SCHEMA: A coluna "descricao" não foi encontrada em "itens_condicionais". POR FAVOR, EXECUTE O SCRIPT SQL V3.4 NO SUPABASE.'
+    }
 
     let mensagem = err.message || 'Erro interno'
     if (err.details) mensagem += ` (Detalhes: ${err.details})`
