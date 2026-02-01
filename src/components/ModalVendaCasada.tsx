@@ -120,8 +120,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         total: valorParcela,
         tipo,
         data: prepararDataParaInsert(dataParcela),
-        status_pagamento: i === 1 && total > 0 ? status : 'pendente'
-        // observacao: `Ref. #${refNum}`
+        status_pagamento: i === 1 && total > 0 ? status : 'pendente',
+        observacao: `Ref. #${refNum}`
       })
     }
     await supabase.from('transacoes_loja').insert(transacoes)
@@ -147,8 +147,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         total: totalVenda,
         status_pagamento: pagVenda.status,
         user_id: user.id,
-        numero_transacao: numVenda
-        // observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
+        numero_transacao: numVenda,
+        observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
       }).select().single()
       if (errVenda) throw errVenda
 
@@ -162,8 +162,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         total: totalCompra,
         status_pagamento: pagCompra.status,
         user_id: user.id,
-        numero_transacao: numCompra
-        // observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
+        numero_transacao: numCompra,
+        observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
       }).select().single()
       if (errCompra) throw errCompra
 

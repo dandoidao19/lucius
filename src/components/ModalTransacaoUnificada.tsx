@@ -328,8 +328,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         total: valorParcela,
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
-        status_pagamento: statusParcela
-        // observacao: observacao.trim() || null
+        status_pagamento: statusParcela,
+        observacao: observacao.trim() || null
       })
     }
 
@@ -437,7 +437,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
-              prazoparcelas: prazoParcelas
+              prazoparcelas: prazoParcelas,
+              observacao: observacao.trim() || null
             })
             .select()
             .single()
@@ -482,8 +483,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_venda: item.preco_venda,
               categoria: item.categoria,
               preco_custo: item.preco_custo,
-              valor_repasse: item.valor_repasse
-              // observacao: item.observacao_item || null // Removido até que a coluna seja criada no Supabase
+              valor_repasse: item.valor_repasse,
+              observacao: item.observacao_item || null
             }
 
             const { error: erroIt } = await supabase.from('itens_venda').insert(dbItem)
@@ -520,7 +521,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
-              prazoparcelas: prazoParcelas
+              prazoparcelas: prazoParcelas,
+              observacao: observacao.trim() || null
             })
             .select()
             .single()
@@ -565,8 +567,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               preco_custo: item.preco_custo,
               valor_repasse: item.valor_repasse,
               preco_venda: item.preco_venda,
-              categoria: item.categoria
-              // observacao: item.observacao_item || null // Removido até que a coluna seja criada no Supabase
+              categoria: item.categoria,
+              observacao: item.observacao_item || null
             }
 
             const { error: erroIt } = await supabase.from('itens_compra').insert(dbItem)
@@ -691,7 +693,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           categoria: item.categoria,
           preco_custo: item.preco_custo,
           preco_venda: item.preco_venda,
-          status: 'pendente'
+          status: 'pendente',
+          observacao: item.observacao_item || null
         }
 
         const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
