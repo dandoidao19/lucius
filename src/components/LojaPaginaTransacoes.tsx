@@ -22,7 +22,7 @@ interface TransacaoUnificada {
   quantidade_itens: number
   observacao: string
   cor: string
-  tabela: 'vendas' | 'compras' | 'condicionais'
+  tabela: 'vendas' | 'compras' | 'transacoes_condicionais'
 }
 
 export default function LojaPaginaTransacoes() {
@@ -138,7 +138,7 @@ export default function LojaPaginaTransacoes() {
           quantidade_itens: cn.itens_condicionais?.[0]?.count || 0,
           observacao: cn.observacao || '',
           cor: cor,
-          tabela: 'condicionais'
+          tabela: 'transacoes_condicionais'
         })
       })
 

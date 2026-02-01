@@ -27,7 +27,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.5 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.6 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -47,6 +47,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   // Pagamentos
   const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
   const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
+
+  const [casadasAbertas, setCasadasAbertas] = useState<any[]>([])
+  const [mostrarBuscaCasada, setMostrarBuscaCasada] = useState(false)
+  const [vendaAnexar, setVendaAnexar] = useState<any>(null)
+  const [compraAnexar, setCompraAnexar] = useState<any>(null)
 
   // Efeito para carregar rascunho
   useEffect(() => {
@@ -155,6 +160,50 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     await supabase.from('transacoes_loja').insert(transacoes)
   }
 
+  const buscarCasadas = async () => {
+    try {
+      const { data: vendas, error } = await supabase
+        .from('vendas')
+        .select('*')
+        .ilike('observacao', '%VENDA CASADA%')
+        .order('data_venda', { ascending: false })
+        .limit(10)
+
+      if (error) throw error
+      setCasadasAbertas(vendas || [])
+      setMostrarBuscaCasada(true)
+    } catch (err) {
+      console.error('Erro ao buscar vendas casadas:', err)
+    }
+  }
+
+  const selecionarCasadaParaAnexar = async (venda: any) => {
+    if (!window.confirm(`Deseja ADICIONAR itens à Venda Casada #${venda.numero_transacao}?`)) return
+
+    try {
+      // Tentar encontrar a compra vinculada via observação
+      // A observação padrão é: "VENDA CASADA (Simultânea com Compra #123)"
+      const match = venda.observacao.match(/Compra #(\d+)/)
+      let compraEncontrada = null
+
+      if (match && match[1]) {
+        const numCompra = parseInt(match[1])
+        const { data: c } = await supabase.from('compras').select('*').eq('numero_transacao', numCompra).single()
+        compraEncontrada = c
+      }
+
+      setVendaAnexar(venda)
+      setCompraAnexar(compraEncontrada)
+      setCliente(venda.cliente)
+      if (compraEncontrada) setFornecedor(compraEncontrada.fornecedor)
+      setData(venda.data_venda.split('T')[0])
+      setMostrarBuscaCasada(false)
+    } catch (err) {
+      console.error('Erro ao vincular compra casada:', err)
+      alert('Erro ao encontrar compra vinculada.')
+    }
+  }
+
   const handleSubmit = async () => {
     if (!cliente || !fornecedor) return alert('Informe Cliente e Fornecedor')
     const itensValidos = itens.filter(i => i.id_produto)
@@ -166,35 +215,58 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      // 1. Gerar Venda
-      const { data: numVenda, error: errNumV } = await supabase.rpc('obter_proximo_numero_transacao')
-      if (errNumV) throw errNumV
+      let venda = vendaAnexar
+      let compra = compraAnexar
+      let numVenda = vendaAnexar?.numero_transacao
+      let numCompra = compraAnexar?.numero_transacao
 
-      const { data: venda, error: errVenda } = await supabase.from('vendas').insert({
-        cliente,
-        data_venda: prepararDataParaInsert(data),
-        total: totalVenda,
-        status_pagamento: pagVenda.status,
-        user_id: user.id,
-        numero_transacao: numVenda,
-        observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
-      }).select().single()
-      if (errVenda) throw errVenda
+      if (!vendaAnexar) {
+        // 1. Gerar Venda
+        const { data: nV, error: errNumV } = await supabase.rpc('obter_proximo_numero_transacao')
+        if (errNumV) throw errNumV
+        numVenda = nV
 
-      // 2. Gerar Compra
-      const { data: numCompra, error: errNumC } = await supabase.rpc('obter_proximo_numero_transacao')
-      if (errNumC) throw errNumC
+        const { data: v, error: errVenda } = await supabase.from('vendas').insert({
+          cliente,
+          data_venda: prepararDataParaInsert(data),
+          total: totalVenda,
+          status_pagamento: pagVenda.status,
+          user_id: user.id,
+          numero_transacao: numVenda,
+          observacao: `VENDA CASADA (Simultânea com Compra #${numVenda + 1})`
+        }).select().single()
+        if (errVenda) throw errVenda
+        venda = v
+      } else {
+        // Atualizar total da venda existente
+        await supabase.from('vendas').update({
+          total: (venda.total || 0) + totalVenda
+        }).eq('id', venda.id)
+      }
 
-      const { data: compra, error: errCompra } = await supabase.from('compras').insert({
-        fornecedor,
-        data_compra: prepararDataParaInsert(data),
-        total: totalCompra,
-        status_pagamento: pagCompra.status,
-        user_id: user.id,
-        numero_transacao: numCompra,
-        observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
-      }).select().single()
-      if (errCompra) throw errCompra
+      if (!compraAnexar) {
+        // 2. Gerar Compra
+        const { data: nC, error: errNumC } = await supabase.rpc('obter_proximo_numero_transacao')
+        if (errNumC) throw errNumC
+        numCompra = nC
+
+        const { data: c, error: errCompra } = await supabase.from('compras').insert({
+          fornecedor,
+          data_compra: prepararDataParaInsert(data),
+          total: totalCompra,
+          status_pagamento: pagCompra.status,
+          user_id: user.id,
+          numero_transacao: numCompra,
+          observacao: `COMPRA CASADA (Simultânea com Venda #${numVenda})`
+        }).select().single()
+        if (errCompra) throw errCompra
+        compra = c
+      } else {
+        // Atualizar total da compra existente
+        await supabase.from('compras').update({
+          total: (compra.total || 0) + totalCompra
+        }).eq('id', compra.id)
+      }
 
       // 3. Processar Itens
       for (const item of itensValidos) {
@@ -236,9 +308,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         })
       }
 
-      // 4. Gerar Financeiro
-      await criarFinanceiro(totalVenda, cliente, 'entrada', numVenda, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo)
-      await criarFinanceiro(totalCompra, fornecedor, 'saida', numCompra, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo)
+      // 4. Gerar Financeiro (Apenas se não for anexo - para simplificar fluxo financeiro)
+      if (!vendaAnexar) {
+        await criarFinanceiro(totalVenda, cliente, 'entrada', numVenda, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo)
+      }
+      if (!compraAnexar) {
+        await criarFinanceiro(totalCompra, fornecedor, 'saida', numCompra, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo)
+      }
 
       alert('✅ Venda Casada gerada com sucesso!')
       clearDraft('venda_casada')
@@ -282,8 +358,54 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         </div>
 
         <div className="p-2 sm:p-4 space-y-4">
+          <div className={`flex justify-between items-center p-2 rounded border ${vendaAnexar ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'}`}>
+             <div className="flex items-center gap-4">
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                  {vendaAnexar ? `📍 ANEXANDO À CASADA #${vendaAnexar.numero_transacao}` : 'LANÇAMENTO ÚNICO'}
+                </span>
+                {!vendaAnexar && (
+                  <button
+                    onClick={buscarCasadas}
+                    className="bg-yellow-500 text-slate-900 px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-sm hover:bg-yellow-400"
+                  >
+                    Continuar Venda Casada Existente ➕
+                  </button>
+                )}
+             </div>
+             {vendaAnexar && (
+               <button
+                 onClick={() => { setVendaAnexar(null); setCompraAnexar(null); }}
+                 className="text-[10px] font-bold text-red-600 hover:underline"
+               >
+                 CANCELAR ANEXO
+               </button>
+             )}
+          </div>
+
+          {mostrarBuscaCasada && !vendaAnexar && (
+            <div className="bg-yellow-50 border border-yellow-200 p-2 rounded space-y-2">
+               <p className="font-bold text-yellow-800 text-[10px] uppercase">Selecione a Venda Casada para adicionar itens:</p>
+               <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
+                 {casadasAbertas.map(v => (
+                   <button
+                     key={v.id}
+                     onClick={() => selecionarCasadaParaAnexar(v)}
+                     className="flex justify-between items-center p-2 bg-white border border-yellow-100 hover:bg-yellow-100 text-left rounded shadow-sm"
+                   >
+                     <div>
+                       <p className="font-bold text-gray-700 text-xs">#{v.numero_transacao} - {v.cliente}</p>
+                       <p className="text-[10px] text-gray-500 truncate">{v.observacao}</p>
+                     </div>
+                     <span className="text-[10px] font-mono bg-yellow-200 px-2 py-0.5 rounded">Selecionar</span>
+                   </button>
+                 ))}
+               </div>
+               <button onClick={() => setMostrarBuscaCasada(false)} className="text-[10px] text-slate-500 hover:underline w-full text-center">Fechar busca</button>
+            </div>
+          )}
+
           {/* Dados Gerais - Ultra Compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${vendaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
             <div className="flex flex-col">
               <label className="text-[11px] font-semibold text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <ShoppingBag size={10} /> Cliente
@@ -392,7 +514,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           {/* Financeiro e Pagamentos - Lado a Lado Compacto */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${vendaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
             {/* Pagamento Venda */}
             <div className="bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3">
               <div className="flex justify-between items-center border-b border-pink-100 pb-1.5">
@@ -503,7 +625,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.5
+              CORE ENGINE v3.6
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">

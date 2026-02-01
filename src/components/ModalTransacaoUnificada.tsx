@@ -51,7 +51,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.5 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.6 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -86,6 +86,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [pedidosAbertos, setPedidosAbertos] = useState<any[]>([])
   const [mostrarBuscaPedido, setMostrarBuscaPedido] = useState(false)
   const [idPedidoOrigem, setIdPedidoOrigem] = useState<string | null>(null)
+  const [idPedidoAnexar, setIdPedidoAnexar] = useState<string | null>(null)
 
   useEffect(() => {
     if (aberto) {
@@ -667,16 +668,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
       const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
 
-      let transacaoId = transacaoInicial?.id
+      let transacaoId = transacaoInicial?.id || idPedidoAnexar
 
-      if (transacaoInicial) {
+      if (transacaoId) {
         await supabase.from('transacoes_condicionais').update({
           tipo: isVendaPedido ? 'enviado' : 'recebido',
           origem: entidade,
           data_transacao: prepararDataParaInsert(data),
           observacao: (prefixoPedido + observacao).trim() || null,
           status: 'pendente',
-        }).eq('id', transacaoInicial.id)
+        }).eq('id', transacaoId)
       } else {
         const { data: transacao, error: erroTransacao } = await supabase
           .from('transacoes_condicionais')
@@ -769,14 +770,21 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const handleTipoSelect = (novoTipo: TipoTransacao) => {
     setTipo(novoTipo)
     setErro('')
-    if (novoTipo === 'venda' || novoTipo === 'compra') {
+    setIdPedidoAnexar(null)
+    setIdPedidoOrigem(null)
+    if (novoTipo === 'venda' || novoTipo === 'compra' || novoTipo === 'pedido_venda' || novoTipo === 'pedido_compra') {
       buscarPedidosAbertos(novoTipo)
     }
   }
 
   const buscarPedidosAbertos = async (tipoAtual: string) => {
     try {
-      const tipoCond = (tipoAtual === 'venda') ? 'enviado' : 'recebido'
+      let tipoCond = ''
+      if (tipoAtual === 'venda') tipoCond = 'enviado'
+      else if (tipoAtual === 'compra') tipoCond = 'recebido'
+      else if (tipoAtual === 'pedido_venda') tipoCond = 'enviado'
+      else if (tipoAtual === 'pedido_compra') tipoCond = 'recebido'
+
       const { data, error } = await supabase
         .from('transacoes_condicionais')
         .select('*, itens_condicionais(*)')
@@ -792,6 +800,17 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   }
 
   const importarPedido = (pedido: any) => {
+    const isModoAnexar = tipo === 'pedido_venda' || tipo === 'pedido_compra'
+
+    if (isModoAnexar) {
+       if (!window.confirm(`Deseja ADICIONAR os novos itens ao Pedido #${pedido.numero_transacao} existente?`)) return
+       setIdPedidoAnexar(pedido.id)
+       setEntidade(pedido.origem)
+       setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+       setMostrarBuscaPedido(false)
+       return
+    }
+
     if (!window.confirm(`Deseja importar os itens do Pedido #${pedido.numero_transacao}?`)) return
 
     setEntidade(pedido.origem)
@@ -923,24 +942,33 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             </div>
           ) : (
             <div className="space-y-4">
-               <div className="flex justify-between items-center bg-purple-50 p-2 rounded border border-purple-100">
+               <div className={`flex justify-between items-center p-2 rounded border ${idPedidoAnexar ? 'bg-orange-50 border-orange-200' : 'bg-purple-50 border-purple-100'}`}>
                  <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold text-purple-800 uppercase tracking-tighter">Tipo: {tipo.replace('_', ' ').toUpperCase()}</span>
-                    {(tipo === 'venda' || tipo === 'compra') && pedidosAbertos.length > 0 && (
+                    <span className="text-sm font-semibold text-purple-800 uppercase tracking-tighter">
+                      {idPedidoAnexar ? '📍 ANEXANDO AO PEDIDO EXISTENTE' : `Tipo: ${tipo.replace('_', ' ').toUpperCase()}`}
+                    </span>
+                    {(tipo === 'venda' || tipo === 'compra' || tipo === 'pedido_venda' || tipo === 'pedido_compra') && pedidosAbertos.length > 0 && (
                       <button
                         onClick={() => setMostrarBuscaPedido(!mostrarBuscaPedido)}
-                        className="bg-yellow-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold animate-pulse"
+                        className="bg-yellow-500 text-white px-2 py-0.5 rounded text-[10px] font-semibold animate-pulse shadow-sm"
                       >
-                        {pedidosAbertos.length} PEDIDO(S) EM ABERTO 🔍
+                        {tipo.startsWith('pedido') ? 'CONTINUAR PEDIDO EXISTENTE ➕' : `${pedidosAbertos.length} PEDIDO(S) EM ABERTO 🔍`}
                       </button>
                     )}
                  </div>
-                 <button onClick={() => setTipo('')} className="text-xs font-bold text-purple-600 hover:underline">ALTERAR TIPO</button>
+                 <button
+                   onClick={() => { setTipo(''); setIdPedidoAnexar(null); }}
+                   className="text-xs font-bold text-purple-600 hover:underline"
+                 >
+                   {idPedidoAnexar ? 'CANCELAR ANEXO' : 'ALTERAR TIPO'}
+                 </button>
                </div>
 
                {mostrarBuscaPedido && (
                  <div className="bg-yellow-50 border border-yellow-200 p-2 rounded space-y-2">
-                    <p className="font-bold text-yellow-800 text-[10px] uppercase">Selecione um pedido para importar:</p>
+                    <p className="font-bold text-yellow-800 text-[10px] uppercase">
+                      {tipo.startsWith('pedido') ? 'Selecione o pedido para adicionar novos itens:' : 'Selecione um pedido para importar:'}
+                    </p>
                     <div className="grid grid-cols-1 gap-1 max-h-32 overflow-y-auto">
                       {pedidosAbertos.map(p => (
                         <button
@@ -1131,9 +1159,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                  </div>
                </div>
 
-               {/* Informações de Pagamento (Apenas para Transações) */}
-               <div className="border-t pt-2 border-gray-100">
-                 <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">Pagamento / Condições</h3>
+               {/* Informações de Pagamento (Apenas para Transações e se não for anexo) */}
+               <div className={`border-t pt-2 border-gray-100 ${idPedidoAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+                 <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
+                   Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
+                 </h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
                      <label className="block text-xs text-gray-600">Vencimento</label>
@@ -1186,7 +1216,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.5
+              CORE ENGINE v3.6
             </div>
             <button
               onClick={handleCancelar}

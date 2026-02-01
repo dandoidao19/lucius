@@ -30,7 +30,7 @@ interface ModalDetalhesTransacaoProps {
   onClose: () => void
   onSucesso?: () => void
   transacaoId: string
-  tipo: 'vendas' | 'compras' | 'condicionais'
+  tipo: 'vendas' | 'compras' | 'transacoes_condicionais'
   dadosResumo: {
     numero: number
     data: string
@@ -157,7 +157,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       // Infelizmente não temos o ID da transação vinculado diretamente em cada parcela de forma fácil sem uma coluna extra.
       // Mas podemos usar a lógica de busca que já usamos no buscarParcelas.
       const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
-      if (tipo !== 'condicionais') {
+      if (tipo !== 'transacoes_condicionais') {
         const { data: parcelasLoja } = await supabase
           .from('transacoes_loja')
           .select('id')
@@ -176,7 +176,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       } else if (tipo === 'compras') {
         await supabase.from('itens_compra').delete().eq('compra_id', transacaoId)
         await supabase.from('compras').delete().eq('id', transacaoId)
-      } else {
+      } else if (tipo === 'transacoes_condicionais') {
         await supabase.from('itens_condicionais').delete().eq('transacao_id', transacaoId)
         await supabase.from('transacoes_condicionais').delete().eq('id', transacaoId)
       }
@@ -194,7 +194,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   }
 
   const buscarParcelas = useCallback(async () => {
-    if (tipo === 'condicionais') {
+    if (tipo === 'transacoes_condicionais') {
       setParcelas([])
       return
     }
@@ -388,7 +388,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           </div>
 
           {/* Financeiro (Abaixo) */}
-          {tipo !== 'condicionais' && (
+          {tipo !== 'transacoes_condicionais' && (
             <div className="space-y-1 pt-2 border-t">
               <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1">
                 💳 Financeiro / Parcelas ({parcelas.length})
