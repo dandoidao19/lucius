@@ -51,7 +51,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.7 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.8 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -87,6 +87,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [mostrarBuscaPedido, setMostrarBuscaPedido] = useState(false)
   const [idPedidoOrigem, setIdPedidoOrigem] = useState<string | null>(null)
   const [idPedidoAnexar, setIdPedidoAnexar] = useState<string | null>(null)
+  const [totalPedidoAnterior, setTotalPedidoAnterior] = useState(0)
 
   useEffect(() => {
     if (aberto) {
@@ -147,6 +148,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setDataVencimento(getDataAtualBrasil())
     setObservacao('')
     setErro('')
+    setIdPedidoAnexar(null)
+    setTotalPedidoAnterior(0)
   }, [])
 
   if (!aberto) return null
@@ -347,7 +350,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204') {
-      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.7 NO SEU SUPABASE (SQL EDITOR).'
+      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.8 NO SEU SUPABASE (SQL EDITOR).'
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -650,10 +653,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
-      const totalPedido = calcularTotal()
-      console.log('DEBUG: Payload Pedido principal:', {
-        tipo, data, entidade, observacao, status: 'pendente', total: totalPedido
-      })
+      const totalNovosItens = calcularTotal()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -670,13 +670,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
 
       let transacaoId = transacaoInicial?.id || idPedidoAnexar
+      let totalFinal = totalNovosItens
 
       if (transacaoId) {
-        // Se estivermos anexando (idPedidoAnexar), precisamos somar ao total existente
-        let totalFinal = totalPedido
         if (idPedidoAnexar) {
            const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
-           totalFinal = (pOld?.total || 0) + totalPedido
+           totalFinal = (pOld?.total || 0) + totalNovosItens
         }
 
         await supabase.from('transacoes_condicionais').update({
@@ -697,13 +696,25 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_transacao: prepararDataParaInsert(data),
             observacao: (prefixoPedido + observacao).trim() || null,
             status: 'pendente',
-            total: totalPedido
+            total: totalFinal
           })
           .select()
           .single()
 
         if (erroTransacao) throw erroTransacao
         transacaoId = transacao.id
+      }
+
+      // 1. Gerar Financeiro para o valor incremental (novos itens)
+      if (isPedidoTipo) {
+        await criarTransacoesParceladas(
+          totalNovosItens,
+          entidade,
+          dataVencimento,
+          quantidadeParcelas,
+          prazoParcelas,
+          isVendaPedido ? 'entrada' : 'saida'
+        )
       }
 
       for (const item of itensValidos) {
@@ -744,6 +755,22 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
         if (erroIt) throw erroIt
+
+        // 2. Impacto no Estoque
+        if (prodId) {
+          const multiplicadorEstoque = isVendaPedido ? -1 : 1
+          await supabase.rpc('atualizar_estoque', {
+            produto_id_param: prodId,
+            quantidade_param: item.quantidade * multiplicadorEstoque
+          })
+
+          await supabase.from('movimentacoes_estoque').insert({
+            produto_id: prodId,
+            tipo: isVendaPedido ? 'saida' : 'entrada',
+            quantidade: item.quantidade,
+            observacao: `${isPedidoTipo ? 'Pedido' : 'Condicional'} #${numTransacao}`
+          })
+        }
       }
 
       alert('✅ Pedido/Condicional gerado com sucesso!')
@@ -816,7 +843,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (isModoAnexar) {
        if (!window.confirm(`Deseja ADICIONAR os novos itens ao Pedido #${pedido.numero_transacao} existente?`)) return
        setIdPedidoAnexar(pedido.id)
+       setTotalPedidoAnterior(pedido.total || 0)
        setEntidade(pedido.origem)
+       setData(pedido.data_transacao.split('T')[0])
        setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
        setMostrarBuscaPedido(false)
        return
@@ -999,8 +1028,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                )}
 
                {/* Data e Entidade */}
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                 <div>
+               <div className={`grid grid-cols-1 md:grid-cols-2 gap-3`}>
+                 <div className={idPedidoAnexar ? 'opacity-60 pointer-events-none' : ''}>
                    <label className="block text-xs font-medium text-gray-700 mb-1">Data</label>
                    <input
                      type="date"
@@ -1009,7 +1038,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
                    />
                  </div>
-                 <div>
+                 <div className={idPedidoAnexar ? 'opacity-60 pointer-events-none' : ''}>
                    <label className="block text-xs font-medium text-gray-700 mb-1">
                      {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'Fornecedor' : 'Cliente'} *
                    </label>
@@ -1215,9 +1244,22 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                  />
                </div>
 
-               <div className="bg-purple-100 p-3 rounded flex justify-between items-center border border-purple-200 shadow-sm">
-                  <span className="font-semibold text-purple-900 uppercase">TOTAL DA OPERAÇÃO:</span>
-                  <span className="text-xl font-semibold text-purple-700">R$ {calcularTotal().toFixed(2)}</span>
+               <div className="bg-purple-100 p-3 rounded flex flex-col gap-1 border border-purple-200 shadow-sm">
+                  {idPedidoAnexar && (
+                    <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
+                      <span>Total Anterior:</span>
+                      <span>R$ {totalPedidoAnterior.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
+                      <span>Novos Itens:</span>
+                      <span>R$ {calcularTotal().toFixed(2)}</span>
+                  </div>
+                  <div className="h-[1px] bg-purple-300 my-0.5"></div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-purple-900 uppercase text-xs">TOTAL FINAL:</span>
+                    <span className="text-xl font-black text-purple-700">R$ {(totalPedidoAnterior + calcularTotal()).toFixed(2)}</span>
+                  </div>
                </div>
             </div>
           )}
@@ -1227,7 +1269,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.7
+              CORE ENGINE v3.8
             </div>
             <button
               onClick={handleCancelar}

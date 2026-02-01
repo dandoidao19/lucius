@@ -47,6 +47,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const [mostrarBuscaEntrada, setMostrarBuscaEntrada] = useState(false)
   const [idSaidaAnexar, setIdSaidaAnexar] = useState<string | null>(null)
   const [idEntradaAnexar, setIdEntradaAnexar] = useState<string | null>(null)
+  const [totalSaidaAnterior, setTotalSaidaAnterior] = useState(0)
+  const [totalEntradaAnterior, setTotalEntradaAnterior] = useState(0)
 
   // Lista Única de Itens
   const [itens, setItens] = useState<ItemVendaCasada[]>([
@@ -190,6 +192,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (!window.confirm(`Deseja ADICIONAR itens à Venda Casada #${venda.numero_transacao}?`)) return
 
     try {
+      setTotalSaidaAnterior(venda.total || 0)
       // Tentar encontrar a compra vinculada via observação
       // A observação padrão é: "VENDA CASADA (Simultânea com Compra #123)"
       const match = venda.observacao.match(/Compra #(\d+)/)
@@ -203,6 +206,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
       setVendaAnexar(venda)
       setCompraAnexar(compraEncontrada)
+      if (compraEncontrada) setTotalEntradaAnterior(compraEncontrada.total || 0)
       setCliente(venda.cliente)
       if (compraEncontrada) setFornecedor(compraEncontrada.fornecedor)
       setData(venda.data_venda.split('T')[0])
@@ -235,6 +239,24 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       }
     } catch (err) {
       console.error('Erro ao buscar pedidos:', err)
+    }
+  }
+
+  const selecionarPedidoLado = (pedido: any, lado: 'saida' | 'entrada') => {
+    if (!window.confirm(`Deseja anexar ao Pedido #${pedido.numero_transacao}?`)) return
+
+    if (lado === 'saida') {
+      setIdSaidaAnexar(pedido.id)
+      setTotalSaidaAnterior(pedido.total || 0)
+      setCliente(pedido.origem)
+      setData(pedido.data_transacao.split('T')[0])
+      setMostrarBuscaSaida(false)
+    } else {
+      setIdEntradaAnexar(pedido.id)
+      setTotalEntradaAnterior(pedido.total || 0)
+      setFornecedor(pedido.origem)
+      setData(pedido.data_transacao.split('T')[0])
+      setMostrarBuscaEntrada(false)
     }
   }
 
@@ -274,7 +296,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         // Pedido Venda
         if (idSaidaAnexar) {
           idSaida = idSaidaAnexar
-          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idSaida).single()
+          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total, numero_transacao').eq('id', idSaida).single()
+          numSaida = pOld?.numero_transacao || 0
           await supabase.from('transacoes_condicionais').update({ total: (pOld?.total || 0) + totalVenda }).eq('id', idSaida)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -287,6 +310,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           if (ep) throw ep
           idSaida = p.id
         }
+        // IMPACTO FINANCEIRO DO PEDIDO (Novo V3.8)
+        await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', 1, data, 'mensal')
       }
 
       // LADO ENTRADA
@@ -314,7 +339,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         // Pedido Compra
         if (idEntradaAnexar) {
           idEntrada = idEntradaAnexar
-          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idEntrada).single()
+          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total, numero_transacao').eq('id', idEntrada).single()
+          numEntrada = pOld?.numero_transacao || 0
           await supabase.from('transacoes_condicionais').update({ total: (pOld?.total || 0) + totalCompra }).eq('id', idEntrada)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -327,6 +353,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           if (ep) throw ep
           idEntrada = p.id
         }
+        // IMPACTO FINANCEIRO DO PEDIDO (Novo V3.8)
+        await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', 1, data, 'mensal')
       }
 
       // 3. Processar Itens
@@ -388,6 +416,12 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       setItens([{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
       setPagVenda({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
       setPagCompra({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
+      setVendaAnexar(null)
+      setCompraAnexar(null)
+      setIdSaidaAnexar(null)
+      setIdEntradaAnexar(null)
+      setTotalSaidaAnterior(0)
+      setTotalEntradaAnterior(0)
       onClose()
     }
   }
@@ -523,7 +557,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   {pedidosSaidaAbertos.map(p => (
                     <button
                       key={p.id}
-                      onClick={() => { setIdSaidaAnexar(p.id); setCliente(p.origem); setMostrarBuscaSaida(false); }}
+                      onClick={() => selecionarPedidoLado(p, 'saida')}
                       className="flex justify-between items-center p-2 bg-white border border-yellow-200 hover:bg-yellow-100 text-left rounded"
                     >
                       <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
@@ -542,7 +576,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                   {pedidosEntradaAbertos.map(p => (
                     <button
                       key={p.id}
-                      onClick={() => { setIdEntradaAnexar(p.id); setFornecedor(p.origem); setMostrarBuscaEntrada(false); }}
+                      onClick={() => selecionarPedidoLado(p, 'entrada')}
                       className="flex justify-between items-center p-2 bg-white border border-orange-200 hover:bg-orange-100 text-left rounded"
                     >
                       <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
@@ -779,13 +813,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda</p>
-                <p className="text-sm font-semibold font-mono">R$ {totalVenda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda (Final)</p>
+                <p className="text-sm font-semibold font-mono">R$ {(totalSaidaAnterior + totalVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
               <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
               <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-semibold text-blue-400">Total Compra</p>
-                <p className="text-sm font-semibold font-mono">R$ {totalCompra.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-[8px] uppercase font-semibold text-blue-400">Total Compra (Final)</p>
+                <p className="text-sm font-semibold font-mono">R$ {(totalEntradaAnterior + totalCompra).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
               <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
               <div className="text-center md:text-left">
