@@ -49,19 +49,18 @@ export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: 
   useEffect(() => {
     if (ignorarBuscaRef.current) {
       ignorarBuscaRef.current = false
-      setMostrarSugestoes(false)
       return
     }
 
-    if (valor.length > 1) {
-      const timer = setTimeout(() => {
+    const timer = setTimeout(() => {
+      if (valor.length > 1) {
         buscarSugestoes(valor)
-      }, 300)
-      return () => clearTimeout(timer)
-    } else {
-      setSugestoes([])
-      setMostrarSugestoes(false)
-    }
+      } else {
+        setSugestoes([])
+        setMostrarSugestoes(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
   }, [valor, buscarSugestoes])
 
   // Fechar ao clicar fora

@@ -234,8 +234,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       onSucesso()
       onClose()
     } catch (error: any) {
-      console.error('Erro detalhado (Venda Casada):', error)
-      alert('Erro: ' + formatarErro(error))
+      const msgErro = formatarErro(error)
+      console.error('Erro detalhado (Venda Casada):', error, msgErro)
+      alert('Erro: ' + msgErro)
     } finally {
       setLoading(false)
     }

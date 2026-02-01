@@ -613,8 +613,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       onSucesso()
       onClose()
     } catch (err: any) {
-      console.error('Erro detalhado (Transação):', err)
-      setErro(formatarErro(err))
+      const msgErro = formatarErro(err)
+      console.error('Erro detalhado (Transação):', err, msgErro)
+      setErro(msgErro)
     } finally {
       setLoading(false)
     }
@@ -727,8 +728,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       onSucesso()
       onClose()
     } catch (err: any) {
-      console.error('Erro detalhado (Pedido):', err)
-      setErro(formatarErro(err))
+      const msgErro = formatarErro(err)
+      console.error('Erro detalhado (Pedido):', err, msgErro)
+      setErro(msgErro)
     } finally {
       setLoading(false)
     }
