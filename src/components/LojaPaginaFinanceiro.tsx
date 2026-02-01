@@ -30,6 +30,9 @@ interface Transacao {
   transacao_principal_id?: string
   origem_id?: string
   observacao?: string
+  id_venda?: string
+  id_compra?: string
+  id_condicional?: string
 }
 
 // Definição explícita para o tipo de dado bruto vindo do Supabase
@@ -47,6 +50,9 @@ interface SupabaseTransacaoLoja {
   status_pagamento?: string;
   quantidade_parcelas?: number;
   observacao?: string;
+  id_venda?: string;
+  id_compra?: string;
+  id_condicional?: string;
 }
 
 
@@ -121,6 +127,9 @@ export default function LojaPaginaFinanceiro() {
         cliente_fornecedor: descricaoLimpa,
         origem_id: trans.id,
         observacao: trans.observacao,
+        id_venda: trans.id_venda,
+        id_compra: trans.id_compra,
+        id_condicional: trans.id_condicional,
       }
     })
   }, [])

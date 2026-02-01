@@ -301,7 +301,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     vencimento: string,
     qtdParcelas: number,
     prazo: string,
-    tipoFinanceiro: 'entrada' | 'saida'
+    tipoFinanceiro: 'entrada' | 'saida',
+    parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string },
+    numeroTransacaoBase: number
   ) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
@@ -324,25 +326,27 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       if (statusPagamento === 'pago') statusParcela = 'pago'
       else if (statusPagamento === 'parcial' && i === 1) statusParcela = 'pago'
 
-      const timestamp = Date.now()
-      const numeroTransacao = parseInt(`${timestamp.toString().slice(-6)}${i}`.padStart(6, '0'))
       const prefixo = tipoFinanceiro === 'entrada' ? 'Venda' : 'Compra'
       const descricao = `${prefixo} ${entidadeNome} (${i}/${qtdParcelas})`
 
       transacoes.push({
         user_id: user.id,
-        numero_transacao: numeroTransacao,
+        numero_transacao: numeroTransacaoBase,
         descricao: descricao,
         total: valorParcela,
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: statusParcela,
-        observacao: observacao.trim() || null
+        observacao: observacao.trim() || null,
+        ...parentIds
       })
     }
 
     const { error } = await supabase.from('transacoes_loja').insert(transacoes)
-    if (error) throw error
+    if (error) {
+      console.error('Erro ao criar parcelas:', error)
+      throw error
+    }
   }
 
   const formatarErro = (err: any): string => {
@@ -482,7 +486,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = novaVenda.id
         }
 
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada')
+        // Deletar financeiro anterior se for edição
+        if (transacaoInicial) {
+          await supabase.from('transacoes_loja').delete().eq('id_venda', transacaoPrincipalId)
+        }
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId }, numTransacao)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -566,7 +574,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = compra.id
         }
 
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida')
+        // Deletar financeiro anterior se for edição
+        if (transacaoInicial) {
+          await supabase.from('transacoes_loja').delete().eq('id_compra', transacaoPrincipalId)
+        }
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId }, numTransacao)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -705,15 +717,20 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         transacaoId = transacao.id
       }
 
-      // 1. Gerar Financeiro para o valor incremental (novos itens)
+      // 1. Gerar/Atualizar Financeiro
       if (isPedidoTipo) {
+        // Deletar financeiro anterior (se houver) para recalcular o total
+        await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
+
         await criarTransacoesParceladas(
-          totalNovosItens,
+          totalFinal,
           entidade,
           dataVencimento,
           quantidadeParcelas,
           prazoParcelas,
-          isVendaPedido ? 'entrada' : 'saida'
+          isVendaPedido ? 'entrada' : 'saida',
+          { id_condicional: transacaoId },
+          numTransacao
         )
       }
 

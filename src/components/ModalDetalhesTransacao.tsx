@@ -156,16 +156,27 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       // Buscamos pelo prefixo e numero na descricao ou algo mais seguro
       // Infelizmente não temos o ID da transação vinculado diretamente em cada parcela de forma fácil sem uma coluna extra.
       // Mas podemos usar a lógica de busca que já usamos no buscarParcelas.
-      const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
-      if (tipo !== 'transacoes_condicionais') {
-        const { data: parcelasLoja } = await supabase
-          .from('transacoes_loja')
-          .select('id')
-          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+      // 2. Deletar Financeiro (transacoes_loja)
+      let queryDel = supabase.from('transacoes_loja').delete()
+      if (tipo === 'vendas') queryDel = queryDel.eq('id_venda', transacaoId)
+      else if (tipo === 'compras') queryDel = queryDel.eq('id_compra', transacaoId)
+      else queryDel = queryDel.eq('id_condicional', transacaoId)
 
-        if (parcelasLoja && parcelasLoja.length > 0) {
-          const ids = parcelasLoja.map(p => p.id)
-          await supabase.from('transacoes_loja').delete().in('id', ids)
+      const { error: errorDel } = await queryDel
+
+      // Fallback para registros antigos (sem a coluna de ID)
+      if (!errorDel) {
+        const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
+        if (tipo !== 'transacoes_condicionais') {
+          const { data: parcelasLoja } = await supabase
+            .from('transacoes_loja')
+            .select('id')
+            .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+            .eq('numero_transacao', dadosResumo.numero)
+
+          if (parcelasLoja && parcelasLoja.length > 0) {
+            await supabase.from('transacoes_loja').delete().in('id', parcelasLoja.map(p => p.id))
+          }
         }
       }
 
@@ -194,22 +205,28 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   }
 
   const buscarParcelas = useCallback(async () => {
-    if (tipo === 'transacoes_condicionais') {
-      setParcelas([])
-      return
-    }
-
     try {
-      const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
+      let query = supabase.from('transacoes_loja').select('*')
 
-      // Busca parcelas que contenham o nome da entidade na descrição
-      const { data, error } = await supabase
-        .from('transacoes_loja')
-        .select('*')
-        .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
-        .order('data', { ascending: true })
+      if (tipo === 'vendas') query = query.eq('id_venda', transacaoId)
+      else if (tipo === 'compras') query = query.eq('id_compra', transacaoId)
+      else query = query.eq('id_condicional', transacaoId)
+
+      let { data, error } = await query.order('data', { ascending: true })
 
       if (error) throw error
+
+      // Fallback para registros antigos ou sem vínculo direto
+      if (!data || data.length === 0) {
+        const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
+        const { data: fallbackData } = await supabase
+          .from('transacoes_loja')
+          .select('*')
+          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+          .eq('numero_transacao', dadosResumo.numero)
+          .order('data', { ascending: true })
+        data = fallbackData
+      }
 
       const parcelasFormatadas = (data || []).map((p: { id: string; data: string; total: number; status_pagamento: string; descricao: string }) => ({
         id: p.id,
@@ -223,7 +240,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
     } catch (err) {
       console.error('Erro ao buscar parcelas:', err)
     }
-  }, [tipo, dadosResumo.entidade])
+  }, [tipo, transacaoId, dadosResumo.entidade, dadosResumo.numero])
 
   useEffect(() => {
     if (aberto && transacaoId) {
@@ -388,7 +405,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           </div>
 
           {/* Financeiro (Abaixo) */}
-          {tipo !== 'transacoes_condicionais' && (
+          {(tipo !== 'transacoes_condicionais' || (dadosResumo.observacao?.includes('[PEDIDO]'))) && (
             <div className="space-y-1 pt-2 border-t">
               <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1">
                 💳 Financeiro / Parcelas ({parcelas.length})

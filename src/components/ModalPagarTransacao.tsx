@@ -19,6 +19,9 @@ interface ModalPagarTransacaoProps {
     data?: string
     valor_pago?: number
     juros_descontos?: number
+    id_venda?: string
+    id_compra?: string
+    id_condicional?: string
   } | null
   onClose: () => void
   onPagamentoRealizado: () => void
@@ -151,7 +154,10 @@ export default function ModalPagarTransacao({
             total: valorRestante,
             tipo: transacao.tipo,
             data: prepararDataParaInsert(novaDataVencimento),
-            status_pagamento: 'pendente'
+            status_pagamento: 'pendente',
+            id_venda: transacao.id_venda,
+            id_compra: transacao.id_compra,
+            id_condicional: transacao.id_condicional
           }
 
           const { error: errorInsert } = await supabase
