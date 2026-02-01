@@ -26,6 +26,10 @@ interface ModalVendaCasadaProps {
 }
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
+  useEffect(() => {
+    if (aberto) console.log('🚀 LUCIUS V3.5 - MODAL VENDA CASADA CARREGADO')
+  }, [aberto])
+
   const { recarregarDados } = useDadosFinanceiros()
   const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [loading, setLoading] = useState(false)
@@ -101,7 +105,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204') {
-      return 'ERRO DE SCHEMA: Coluna ausente no banco de dados. POR FAVOR, EXECUTE O SCRIPT SQL V3.4 NO SUPABASE.'
+      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.5 NO SEU SUPABASE (SQL EDITOR).'
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -497,7 +501,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           {/* Resumo Final - Ultra Otimizado */}
-          <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500">
+          <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
+            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
+              CORE ENGINE v3.5
+            </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
                 <p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda</p>

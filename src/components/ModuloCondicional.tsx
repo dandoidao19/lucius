@@ -305,6 +305,7 @@ export default function ModuloCondicional() {
             preco_custo: item.preco_custo,
             preco_venda: item.preco_venda,
             status: 'pendente',
+            observacao: null // Garantindo consistência com o schema novo
           })
 
         if (erroItem) throw erroItem
