@@ -324,6 +324,7 @@ export default function LojaPaginaTransacoes() {
         <ModalDetalhesTransacao
           aberto={modalDetalhes.aberto}
           onClose={() => setModalDetalhes({ aberto: false, transacao: null })}
+          onSucesso={carregarTransacoes}
           transacaoId={modalDetalhes.transacao.id}
           tipo={modalDetalhes.transacao.tabela}
           dadosResumo={{

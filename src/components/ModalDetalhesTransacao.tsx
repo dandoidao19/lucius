@@ -28,6 +28,7 @@ interface ParcelaDetalhe {
 interface ModalDetalhesTransacaoProps {
   aberto: boolean
   onClose: () => void
+  onSucesso?: () => void
   transacaoId: string
   tipo: 'vendas' | 'compras' | 'condicionais'
   dadosResumo: {
@@ -40,7 +41,7 @@ interface ModalDetalhesTransacaoProps {
   }
 }
 
-export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, tipo, dadosResumo }: ModalDetalhesTransacaoProps) {
+export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, transacaoId, tipo, dadosResumo }: ModalDetalhesTransacaoProps) {
   const [itens, setItens] = useState<ItemDetalhe[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDetalhe[]>([])
   const [loading, setLoading] = useState(false)
@@ -99,6 +100,22 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
       setLoading(false)
     }
   }, [transacaoId, tipo])
+
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+    if (err.message) return err.message
+    if (err.details) return `${err.message || 'Erro'}: ${err.details}`
+    if (typeof err === 'object') {
+      try {
+        const msg = JSON.stringify(err)
+        return msg === '{}' ? 'Erro detalhado oculto (Objeto vazio)' : msg
+      } catch {
+        return 'Erro ao processar objeto de erro'
+      }
+    }
+    return String(err)
+  }
 
   const handleExcluir = async () => {
     if (!window.confirm(`⚠️ TEM CERTEZA? Esta ação irá EXCLUIR permanentemente esta transação e REVERTER todos os impactos no ESTOQUE e FINANCEIRO.`)) {
@@ -161,11 +178,12 @@ export default function ModalDetalhesTransacao({ aberto, onClose, transacaoId, t
       }
 
       alert('✅ Transação excluída com sucesso!')
+      if (onSucesso) onSucesso()
       onClose()
-      window.location.reload() // Recarrega para atualizar as listas
     } catch (err) {
-      console.error('Erro ao excluir transação:', err)
-      alert('❌ Erro ao excluir transação')
+      const msg = formatarErro(err)
+      console.error('Erro ao excluir transação:', err, msg)
+      alert('❌ Erro ao excluir transação: ' + msg)
     } finally {
       setLoadingExcluir(false)
     }
