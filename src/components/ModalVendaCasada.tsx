@@ -96,6 +96,22 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
   const diferenca = totalVenda - totalCompra
 
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+    if (err.message) return err.message
+    if (err.details) return `${err.message || 'Erro'}: ${err.details}`
+    if (typeof err === 'object') {
+      try {
+        const msg = JSON.stringify(err)
+        return msg === '{}' ? 'Erro detalhado oculto (Objeto vazio)' : msg
+      } catch {
+        return 'Erro ao processar objeto de erro'
+      }
+    }
+    return String(err)
+  }
+
   if (!aberto) return null
 
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string) => {
@@ -134,6 +150,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
     setLoading(true)
     try {
+      console.log('DEBUG: Iniciando processamento de Venda Casada:', { cliente, fornecedor, totalVenda, totalCompra, itensCount: itensValidos.length })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -218,7 +235,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       onClose()
     } catch (error: any) {
       console.error('Erro detalhado (Venda Casada):', error)
-      alert('Erro: ' + (error?.message || error?.details || 'Erro desconhecido ao gerar venda casada'))
+      alert('Erro: ' + formatarErro(error))
     } finally {
       setLoading(false)
     }
@@ -491,19 +508,19 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               </div>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleCancelar}
-                className="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg font-semibold transition-all uppercase tracking-tighter text-[11px]"
+                className="bg-slate-700 hover:bg-red-700 text-white px-8 py-2.5 rounded-lg font-bold transition-all uppercase tracking-tight text-[11px] shadow-lg active:scale-95 border border-slate-600"
               >
-                Cancelar
+                Cancelar Lançamento
               </button>
               <button
                 onClick={handleSubmit}
                 disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-                className="bg-green-600 hover:bg-green-700 disabled:bg-slate-700 text-white px-8 py-2 rounded-lg font-semibold transition-all shadow-lg active:scale-95 uppercase tracking-tighter text-[11px]"
+                className="bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-10 py-2.5 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase tracking-tight text-[11px]"
               >
-                {loading ? 'Salvando...' : 'Finalizar Venda Casada'}
+                {loading ? 'Processando...' : '💰 Finalizar Venda Casada'}
               </button>
             </div>
           </div>

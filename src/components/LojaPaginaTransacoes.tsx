@@ -108,7 +108,8 @@ export default function LojaPaginaTransacoes() {
       })
 
       condicionais?.forEach(cn => {
-        const isPedido = cn.observacao?.includes('[PEDIDO]')
+        const obs = cn.observacao || ''
+        const isPedido = obs.includes('[PEDIDO]')
         let tipoLabel = ''
         let tipoSlug = ''
         let cor = ''
@@ -116,7 +117,7 @@ export default function LojaPaginaTransacoes() {
         if (isPedido) {
           tipoLabel = cn.tipo === 'enviado' ? 'P. VENDA' : 'P. COMPRA'
           tipoSlug = cn.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
-          cor = cn.tipo === 'enviado' ? 'bg-yellow-500 text-white shadow-sm' : 'bg-orange-500 text-white shadow-sm'
+          cor = cn.tipo === 'enviado' ? 'bg-yellow-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black'
         } else {
           tipoLabel = cn.tipo === 'enviado' ? 'COND. CLI.' : 'COND. FORN.'
           tipoSlug = cn.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor'

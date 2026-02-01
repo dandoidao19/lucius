@@ -18,10 +18,12 @@ export function FormDraftProvider({ children }: { children: React.ReactNode }) {
 
   // Carregar do localStorage ao montar no cliente
   useEffect(() => {
-    const saved = localStorage.getItem('form_drafts')
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('form_drafts') : null
     if (saved) {
       try {
-        setAllDrafts(JSON.parse(saved))
+        const parsed = JSON.parse(saved)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAllDrafts(parsed)
       } catch (e) {
         console.error('Erro ao carregar rascunhos:', e)
       }

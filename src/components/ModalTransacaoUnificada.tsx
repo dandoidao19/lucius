@@ -337,6 +337,22 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (error) throw error
   }
 
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+    if (err.message) return err.message
+    if (err.details) return `${err.message || 'Erro'}: ${err.details}`
+    if (typeof err === 'object') {
+      try {
+        const msg = JSON.stringify(err)
+        return msg === '{}' ? 'Erro desconhecido (Objeto vazio)' : msg
+      } catch {
+        return 'Erro ao processar objeto de erro'
+      }
+    }
+    return String(err)
+  }
+
   const reverterImpactosOld = async () => {
     if (!transacaoInicial) return;
 
@@ -397,7 +413,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
-      console.log('DEBUG: Iniciando geração de transação (Finalizada)', { tipo, entidade, total: calcularTotal() })
+      const totalFinal = calcularTotal()
+      console.log('DEBUG: Payload Transação principal:', {
+        tipo, data, entidade, total: totalFinal, statusPagamento, quantidadeParcelas, prazoParcelas, observacao
+      })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -595,8 +614,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       onClose()
     } catch (err: any) {
       console.error('Erro detalhado (Transação):', err)
-      const errorMsg = err?.message || err?.details || (typeof err === 'string' ? err : 'Erro ao gerar transação')
-      setErro(errorMsg)
+      setErro(formatarErro(err))
     } finally {
       setLoading(false)
     }
@@ -618,7 +636,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
-      console.log('DEBUG: Iniciando geração de pedido/condicional', { tipo, entidade })
+      console.log('DEBUG: Payload Pedido principal:', {
+        tipo, data, entidade, observacao, status: 'pendente'
+      })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -708,8 +728,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       onClose()
     } catch (err: any) {
       console.error('Erro detalhado (Pedido):', err)
-      const errorMsg = err?.message || err?.details || (typeof err === 'string' ? err : 'Erro ao gerar pedido')
-      setErro(errorMsg)
+      setErro(formatarErro(err))
     } finally {
       setLoading(false)
     }
@@ -848,17 +867,17 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 </button>
                 <button
                   onClick={() => handleTipoSelect('pedido_venda')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-yellow-50 hover:border-yellow-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-yellow-200 bg-yellow-50/30 rounded-lg hover:bg-yellow-100 hover:border-yellow-500 transition-all flex justify-between items-center group shadow-sm"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-yellow-700">📝 PEDIDO DE VENDA</span>
-                  <span className="text-xs text-gray-400 italic">Reserva de itens</span>
+                  <span className="font-black text-yellow-800 text-sm">📝 PEDIDO DE VENDA (RESERVA)</span>
+                  <span className="text-[10px] text-yellow-600 italic font-bold">Reserva p/ Cliente</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('pedido_compra')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-orange-50 hover:border-orange-500 transition-all flex justify-between items-center group"
+                  className="p-3 border-2 border-orange-200 bg-orange-50/30 rounded-lg hover:bg-orange-100 hover:border-orange-500 transition-all flex justify-between items-center group shadow-sm"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-orange-700">📦 PEDIDO DE COMPRA</span>
-                  <span className="text-xs text-gray-400 italic">Solicitação ao fornecedor</span>
+                  <span className="font-black text-orange-800 text-sm">📦 PEDIDO DE COMPRA (SOLICITAÇÃO)</span>
+                  <span className="text-[10px] text-orange-600 italic font-bold">Solicitação ao Fornecedor</span>
                 </button>
                 <button
                   onClick={() => handleTipoSelect('condicional_cliente')}
@@ -1139,27 +1158,27 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         {/* Rodapé fixo quando tipo selecionado */}
         {tipo && (
-          <div className="p-4 border-t bg-gray-50 flex justify-between items-center gap-3">
+          <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)]">
             <button
               onClick={handleCancelar}
-              className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded font-semibold transition-all flex items-center justify-center uppercase text-[11px]"
+              className="px-6 py-2.5 bg-slate-700 hover:bg-red-700 text-white rounded-lg font-bold transition-all flex items-center justify-center uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600"
             >
-              Cancelar
+              Cancelar Lançamento
             </button>
-            <div className="flex gap-2 items-center">
+            <div className="flex gap-3 items-center">
               <button
                 onClick={handleGerarPedido}
                 disabled={loading}
-                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white rounded font-semibold transition-all shadow-sm flex items-center justify-center uppercase text-[11px]"
+                className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
               >
-                {loading ? 'Processando...' : transacaoInicial ? 'Salvar Pedido' : 'Gerar Pedido'}
+                {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Pedido' : '📝 Gerar Pedido'}
               </button>
               <button
                 onClick={handleGerarTransacao}
                 disabled={loading}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded font-semibold transition-all shadow-sm flex items-center justify-center uppercase text-[11px]"
+                className="px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
               >
-                {loading ? 'Processando...' : transacaoInicial ? 'Salvar Transação' : 'Gerar Transação'}
+                {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Transação' : '💰 Gerar Transação'}
               </button>
             </div>
           </div>
