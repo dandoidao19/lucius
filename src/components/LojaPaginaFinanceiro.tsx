@@ -354,7 +354,7 @@ export default function LojaPaginaFinanceiro() {
 
   const getTipoColor = useCallback((transacao: Transacao) => {
     const isPedido = !!transacao.id_condicional || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
-    if (transacao.tipo === 'entrada') return isPedido ? 'bg-yellow-600' : 'bg-green-600'
+    if (transacao.tipo === 'entrada') return isPedido ? 'bg-blue-600' : 'bg-green-600'
     return isPedido ? 'bg-orange-600' : 'bg-red-600'
   }, [])
 

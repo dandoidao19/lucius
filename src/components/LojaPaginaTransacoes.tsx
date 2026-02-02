@@ -102,14 +102,14 @@ export default function LojaPaginaTransacoes() {
           quantidade_parcelas: c.quantidade_parcelas || 1,
           quantidade_itens: c.quantidade_itens || 0,
           observacao: c.observacao || '',
-          cor: 'bg-blue-600 text-white shadow-sm',
+          cor: 'bg-red-600 text-white shadow-sm',
           tabela: 'compras'
         })
       })
 
       condicionais?.forEach(cn => {
         const obs = cn.observacao || ''
-        const isPedido = obs.includes('[PEDIDO]')
+        const isPedido = obs.toUpperCase().includes('[PEDIDO]')
         let tipoLabel = ''
         let tipoSlug = ''
         let cor = ''
@@ -117,7 +117,7 @@ export default function LojaPaginaTransacoes() {
         if (isPedido) {
           tipoLabel = cn.tipo === 'enviado' ? 'P. VENDA' : 'P. COMPRA'
           tipoSlug = cn.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
-          cor = cn.tipo === 'enviado' ? 'bg-yellow-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black'
+          cor = cn.tipo === 'enviado' ? 'bg-blue-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black'
         } else {
           tipoLabel = cn.tipo === 'enviado' ? 'COND. CLI.' : 'COND. FORN.'
           tipoSlug = cn.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor'

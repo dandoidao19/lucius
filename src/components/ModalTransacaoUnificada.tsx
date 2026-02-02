@@ -1402,13 +1402,15 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               >
                 {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Pedido' : '📝 Gerar Pedido'}
               </button>
-              <button
-                onClick={handleGerarTransacao}
-                disabled={loading}
-                className="px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
-              >
-                {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Transação' : '💰 Gerar Transação'}
-              </button>
+              {!(tipo === 'pedido_venda' || tipo === 'pedido_compra') && (
+                <button
+                  onClick={handleGerarTransacao}
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
+                >
+                  {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Transação' : '💰 Gerar Transação'}
+                </button>
+              )}
             </div>
           </div>
         )}
