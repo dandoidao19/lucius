@@ -531,8 +531,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           if (prodId) {
             console.log(`📦 DEBUG ESTOQUE: Atualizando (Saída) Produto ${prodId}, Qtd: -${item.quantidade}`)
-            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
-            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Venda):', errorRPC)
+            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -Math.round(item.quantidade) })
+            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Venda):', formatarErro(errorRPC))
 
             const dbItem = {
               venda_id: transacaoPrincipalId,
@@ -625,8 +625,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           if (prodId) {
             console.log(`📦 DEBUG ESTOQUE: Atualizando (Entrada) Produto ${prodId}, Qtd: ${item.quantidade}`)
-            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
-            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Compra):', errorRPC)
+            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade) })
+            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Compra):', formatarErro(errorRPC))
 
             const dbItem = {
               compra_id: transacaoPrincipalId,
@@ -842,9 +842,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           console.log(`📦 DEBUG ESTOQUE: Atualizando (Pedido) Produto ${prodId}, Qtd: ${item.quantidade * multiplicadorEstoque}`)
           const { error: errorRPC } = await supabase.rpc('atualizar_estoque', {
             produto_id_param: prodId,
-            quantidade_param: item.quantidade * multiplicadorEstoque
+            quantidade_param: Math.round(item.quantidade * multiplicadorEstoque)
           })
-          if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Pedido):', errorRPC)
+          if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Pedido):', formatarErro(errorRPC))
 
           await supabase.from('movimentacoes_estoque').insert({
             produto_id: prodId,
@@ -1122,13 +1122,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
                {/* Data e Entidade */}
                <div className={`grid grid-cols-1 md:grid-cols-2 gap-3`}>
-                 <div className={idPedidoAnexar ? 'opacity-60 pointer-events-none' : ''}>
+                 <div className={(idPedidoAnexar || transacaoInicial) ? 'opacity-60 pointer-events-none' : ''}>
                    <label className="block text-xs font-medium text-gray-700 mb-1">Data</label>
                    <input
                      type="date"
                      value={data || ''}
-                     onChange={(e) => setData(e.target.value)}
+                     onChange={(e) => !idPedidoAnexar && !transacaoInicial && setData(e.target.value)}
                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                     readOnly={!!idPedidoAnexar || !!transacaoInicial}
                    />
                  </div>
                  <div className={idPedidoAnexar ? 'opacity-60 pointer-events-none' : ''}>
@@ -1293,22 +1294,40 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                </div>
 
                {/* Informações de Pagamento (Apenas para Transações e se não for anexo) */}
-               <div className={`border-t pt-2 border-gray-100 ${idPedidoAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+               <div className={`border-t pt-2 border-gray-100 ${(idPedidoAnexar || transacaoInicial) ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                  <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
-                   Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
+                   Pagamento / Condições {(idPedidoAnexar || transacaoInicial) && '(Já definido no pedido original)'}
                  </h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
                      <label className="block text-xs text-gray-600">Vencimento</label>
-                     <input type="date" value={dataVencimento || ''} onChange={(e) => setDataVencimento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
+                     <input
+                       type="date"
+                       value={dataVencimento || ''}
+                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setDataVencimento(e.target.value)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                       readOnly={!!idPedidoAnexar || !!transacaoInicial}
+                     />
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Parcelas</label>
-                     <input type="number" min="1" value={quantidadeParcelas ?? 1} onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded" />
+                     <input
+                       type="number"
+                       min="1"
+                       value={quantidadeParcelas ?? 1}
+                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setQuantidadeParcelas(parseInt(e.target.value) || 1)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                       readOnly={!!idPedidoAnexar || !!transacaoInicial}
+                     />
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Prazo</label>
-                     <select value={prazoParcelas || 'mensal'} onChange={(e) => setPrazoParcelas(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
+                     <select
+                       value={prazoParcelas || 'mensal'}
+                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setPrazoParcelas(e.target.value)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                       disabled={!!idPedidoAnexar || !!transacaoInicial}
+                     >
                        <option value="diaria">Diária</option>
                        <option value="semanal">Semanal</option>
                        <option value="mensal">Mensal</option>
@@ -1316,7 +1335,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Status</label>
-                     <select value={statusPagamento || 'pendente'} onChange={(e) => setStatusPagamento(e.target.value)} className="w-full px-2 py-1 text-xs border border-gray-300 rounded">
+                     <select
+                       value={statusPagamento || 'pendente'}
+                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setStatusPagamento(e.target.value)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                       disabled={!!idPedidoAnexar || !!transacaoInicial}
+                     >
                        <option value="pendente">Pendente</option>
                        <option value="pago">Pago</option>
                        <option value="parcial">Parcial</option>
