@@ -353,13 +353,13 @@ export default function LojaPaginaFinanceiro() {
   }, [])
 
   const getTipoColor = useCallback((transacao: Transacao) => {
-    const isPedido = transacao.observacao?.includes('[PEDIDO]')
+    const isPedido = transacao.observacao?.toUpperCase().includes('[PEDIDO]') || !!transacao.id_condicional
     if (transacao.tipo === 'entrada') return isPedido ? 'bg-yellow-600' : 'bg-green-600'
     return isPedido ? 'bg-orange-600' : 'bg-red-600'
   }, [])
 
   const getTipoLabel = useCallback((transacao: Transacao) => {
-    const isPedido = transacao.observacao?.includes('[PEDIDO]')
+    const isPedido = transacao.observacao?.toUpperCase().includes('[PEDIDO]') || !!transacao.id_condicional
     if (transacao.tipo === 'entrada') return isPedido ? 'P. VENDA' : 'VENDA'
     return isPedido ? 'P. COMPRA' : 'COMPRA'
   }, [])

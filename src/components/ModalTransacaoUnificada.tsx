@@ -451,7 +451,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       const { data: nTrans, error: eTrans } = await supabase.rpc('obter_proximo_numero_transacao')
       if (eTrans) throw eTrans
-      const numTransacao = transacaoInicial?.numero_transacao || nTrans
+      let numTransacao = transacaoInicial?.numero_transacao || nTrans
+
+      if (idPedidoAnexar) {
+        const { data: pedOrig } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        if (pedOrig) numTransacao = pedOrig.numero_transacao
+      }
 
       const total = calcularTotal()
       // APENAS venda ou compra finalizada entra aqui. Condicionais e Pedidos devem ir para handleGerarPedido.
@@ -525,7 +530,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           }
 
           if (prodId) {
-            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
+            console.log(`📦 DEBUG ESTOQUE: Atualizando (Saída) Produto ${prodId}, Qtd: -${item.quantidade}`)
+            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
+            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Venda):', errorRPC)
 
             const dbItem = {
               venda_id: transacaoPrincipalId,
@@ -617,7 +624,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           }
 
           if (prodId) {
-            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
+            console.log(`📦 DEBUG ESTOQUE: Atualizando (Entrada) Produto ${prodId}, Qtd: ${item.quantidade}`)
+            const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
+            if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Compra):', errorRPC)
 
             const dbItem = {
               compra_id: transacaoPrincipalId,
@@ -709,7 +718,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       const { data: nTrans, error: eTrans } = await supabase.rpc('obter_proximo_numero_transacao')
       if (eTrans) throw eTrans
-      const numTransacao = transacaoInicial?.numero_transacao || nTrans
+      let numTransacao = transacaoInicial?.numero_transacao || nTrans
+
+      if (idPedidoAnexar) {
+        const { data: pedOrig } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        if (pedOrig) numTransacao = pedOrig.numero_transacao
+      }
 
       const isVendaPedido = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
       const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
@@ -825,10 +839,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         // 2. Impacto no Estoque
         if (prodId) {
           const multiplicadorEstoque = isVendaPedido ? -1 : 1
-          await supabase.rpc('atualizar_estoque', {
+          console.log(`📦 DEBUG ESTOQUE: Atualizando (Pedido) Produto ${prodId}, Qtd: ${item.quantidade * multiplicadorEstoque}`)
+          const { error: errorRPC } = await supabase.rpc('atualizar_estoque', {
             produto_id_param: prodId,
             quantidade_param: item.quantidade * multiplicadorEstoque
           })
+          if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Pedido):', errorRPC)
 
           await supabase.from('movimentacoes_estoque').insert({
             produto_id: prodId,
@@ -913,6 +929,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
        setEntidade(pedido.origem)
        setData(pedido.data_transacao.split('T')[0])
        setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+
+       // Restaurar estrutura financeira (v3.11/v3.12)
+       if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
+       if (pedido.prazoparcelas) setPrazoParcelas(pedido.prazoparcelas)
+       if (pedido.data_vencimento) setDataVencimento(pedido.data_vencimento.split('T')[0])
+
        setMostrarBuscaPedido(false)
        return
     }

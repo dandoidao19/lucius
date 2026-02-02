@@ -437,7 +437,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
 
         // Saída (Venda ou Pedido)
-        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
+        console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${item.id_produto}, Qtd: -${item.quantidade}`)
+        const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
+        if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
+
         await supabase.from('movimentacoes_estoque').insert({
             produto_id: item.id_produto,
             tipo: 'saida',
@@ -446,7 +449,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         })
 
         // Entrada (Compra ou Pedido)
-        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+        console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${item.id_produto}, Qtd: ${item.quantidade}`)
+        const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+        if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
+
         await supabase.from('movimentacoes_estoque').insert({
             produto_id: item.id_produto,
             tipo: 'entrada',
