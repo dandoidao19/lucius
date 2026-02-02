@@ -489,6 +489,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         // Deletar financeiro anterior se for edição
         if (transacaoInicial) {
           await supabase.from('transacoes_loja').delete().eq('id_venda', transacaoPrincipalId)
+          // Fallback para legado (v3.8 ou anterior)
+          await supabase.from('transacoes_loja').delete()
+            .eq('numero_transacao', transacaoInicial.numero_transacao)
+            .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId }, numTransacao)
 
@@ -577,6 +581,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         // Deletar financeiro anterior se for edição
         if (transacaoInicial) {
           await supabase.from('transacoes_loja').delete().eq('id_compra', transacaoPrincipalId)
+          // Fallback para legado (v3.8 ou anterior)
+          await supabase.from('transacoes_loja').delete()
+            .eq('numero_transacao', transacaoInicial.numero_transacao)
+            .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
         await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId }, numTransacao)
 
@@ -722,6 +730,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         // Deletar financeiro anterior (se houver) para recalcular o total
         await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
 
+        // Fallback para legado
+        const numOriginal = transacaoInicial?.numero_transacao || (pedidosAbertos.find(p => p.id === idPedidoAnexar)?.numero_transacao)
+        if (numOriginal) {
+          await supabase.from('transacoes_loja').delete()
+            .eq('numero_transacao', numOriginal)
+            .ilike('descricao', `%${entidade}%`)
+        }
+
         await criarTransacoesParceladas(
           totalFinal,
           entidade,
@@ -729,7 +745,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           quantidadeParcelas,
           prazoParcelas,
           isVendaPedido ? 'entrada' : 'saida',
-          { id_condicional: transacaoId },
+          { id_condicional: transacaoId || undefined },
           numTransacao
         )
       }

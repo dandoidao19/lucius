@@ -352,8 +352,17 @@ export default function LojaPaginaFinanceiro() {
     return status.charAt(0).toUpperCase() + status.slice(1)
   }, [])
 
-  const getTipoColor = useCallback((tipo: string) => tipo === 'entrada' ? 'bg-green-500' : 'bg-orange-500', [])
-  const getTipoLabel = useCallback((tipo: string) => tipo === 'entrada' ? 'VENDA' : 'COMPRA', [])
+  const getTipoColor = useCallback((transacao: Transacao) => {
+    const isPedido = transacao.observacao?.includes('[PEDIDO]')
+    if (transacao.tipo === 'entrada') return isPedido ? 'bg-yellow-600' : 'bg-green-600'
+    return isPedido ? 'bg-orange-600' : 'bg-red-600'
+  }, [])
+
+  const getTipoLabel = useCallback((transacao: Transacao) => {
+    const isPedido = transacao.observacao?.includes('[PEDIDO]')
+    if (transacao.tipo === 'entrada') return isPedido ? 'P. VENDA' : 'VENDA'
+    return isPedido ? 'P. COMPRA' : 'COMPRA'
+  }, [])
   const getValorExibicao = useCallback((transacao: Transacao) => transacao.valor_pago ?? transacao.valor, [])
   const getDiferenca = useCallback((transacao: Transacao) => {
     if (transacao.valor_pago === undefined || transacao.valor_pago === null) return 0
@@ -526,7 +535,7 @@ export default function LojaPaginaFinanceiro() {
                           </td>
                           <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-center text-gray-500"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">

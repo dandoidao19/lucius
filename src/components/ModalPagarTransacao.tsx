@@ -145,11 +145,10 @@ export default function ModalPagarTransacao({
         
         // 2. CRIAR NOVA PARCELA SE SOLICITADO
         if (criarNovaParcela && valorRestante > 0.01) {
-          const { data: proximoNumero } = await supabase.rpc('obter_proximo_numero_transacao')
-          
+          // Mantemos o MESMO número de transação da parcela original para agrupamento lógico
           const novaParcela = {
             user_id: user.id,
-            numero_transacao: proximoNumero,
+            numero_transacao: transacao.numero_transacao,
             descricao: transacao.descricao,
             total: valorRestante,
             tipo: transacao.tipo,

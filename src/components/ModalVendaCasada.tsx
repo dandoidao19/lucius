@@ -284,6 +284,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
           await criarFinanceiro(novoTotalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -308,6 +309,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           // Recalcular Financeiro Pedido
           await supabase.from('transacoes_loja').delete().eq('id_condicional', idSaida)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
           await criarFinanceiro(novoTotalSaida, cliente, 'entrada', numSaida, 'pendente', 1, data, 'mensal', { id_condicional: idSaida })
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -336,6 +338,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
           await criarFinanceiro(novoTotalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -360,6 +363,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           // Recalcular Financeiro Pedido
           await supabase.from('transacoes_loja').delete().eq('id_condicional', idEntrada)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
           await criarFinanceiro(novoTotalEntrada, fornecedor, 'saida', numEntrada, 'pendente', 1, data, 'mensal', { id_condicional: idEntrada })
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
@@ -391,24 +395,25 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
            await supabase.from('itens_condicionais').insert({ transacao_id: idEntrada, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
         }
 
-        // Movimentação de Estoque (Entrada e Saída se anulam se for o mesmo item,
-        // mas é importante registrar ambos os fluxos para auditoria e histórico de custos)
+        // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
 
-        // Entrada (Compra)
-        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+        // Saída (Venda ou Pedido)
+        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
         await supabase.from('movimentacoes_estoque').insert({
-          produto_id: item.id_produto, tipo: 'entrada', quantidade: item.quantidade, observacao: `Entrada Venda Casada #${numCompra}`
+            produto_id: item.id_produto,
+            tipo: 'saida',
+            quantidade: item.quantidade,
+            observacao: `Venda Casada #${numSaida}`
         })
 
-        // Movimentação de Estoque (Apenas se não for Pedido)
-        if (tipoSaida === 'venda') {
-          await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
-          await supabase.from('movimentacoes_estoque').insert({ produto_id: item.id_produto, tipo: 'saida', quantidade: item.quantidade, observacao: `Saída Venda Casada #${numSaida}` })
-        }
-        if (tipoEntrada === 'compra') {
-          await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
-          await supabase.from('movimentacoes_estoque').insert({ produto_id: item.id_produto, tipo: 'entrada', quantidade: item.quantidade, observacao: `Entrada Venda Casada #${numEntrada}` })
-        }
+        // Entrada (Compra ou Pedido)
+        await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+        await supabase.from('movimentacoes_estoque').insert({
+            produto_id: item.id_produto,
+            tipo: 'entrada',
+            quantidade: item.quantidade,
+            observacao: `Compra Casada #${numEntrada}`
+        })
       }
 
       alert('✅ Venda Casada gerada com sucesso!')
