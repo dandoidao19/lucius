@@ -303,13 +303,18 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     prazo: string,
     tipoFinanceiro: 'entrada' | 'saida',
     parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string },
-    numeroTransacaoBase: number
+    numeroTransacaoBase: number,
+    isPedidoFinanceiro: boolean = false
   ) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
     const valorParcela = total / qtdParcelas
     const transacoes = []
+
+    const obsFinal = isPedidoFinanceiro
+      ? `[PEDIDO] ${observacao.replace('[PEDIDO]', '').trim()}`.trim()
+      : observacao.trim()
 
     for (let i = 1; i <= qtdParcelas; i++) {
       let dataParcela = vencimento
@@ -337,7 +342,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: statusParcela,
-        observacao: observacao.trim() || null,
+        observacao: obsFinal || null,
         ...parentIds
       })
     }
@@ -494,7 +499,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId }, numTransacao)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -586,7 +591,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId }, numTransacao)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -640,6 +645,27 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       }
 
       if (idPedidoOrigem) {
+        // Reverter impacto de estoque do pedido antes de aplicar o da venda/compra final
+        const { data: itensPed } = await supabase.from('itens_condicionais').select('*').eq('transacao_id', idPedidoOrigem)
+        const { data: pedInfo } = await supabase.from('transacoes_condicionais').select('tipo').eq('id', idPedidoOrigem).single()
+
+        if (itensPed && pedInfo) {
+          const multReversao = pedInfo.tipo === 'enviado' ? 1 : -1
+          for (const itP of itensPed) {
+            if (itP.produto_id) {
+              await supabase.rpc('atualizar_estoque', {
+                produto_id_param: itP.produto_id,
+                quantidade_param: itP.quantidade * multReversao
+              })
+              await supabase.from('movimentacoes_estoque').insert({
+                produto_id: itP.produto_id,
+                tipo: multReversao === 1 ? 'entrada' : 'saida',
+                quantidade: itP.quantidade,
+                observacao: `CONVERSÃO PEDIDO -> FINAL: #${numTransacao}`
+              })
+            }
+          }
+        }
         await supabase.from('transacoes_condicionais').update({ status: 'realizado' }).eq('id', idPedidoOrigem)
       }
 
@@ -704,7 +730,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           data_transacao: prepararDataParaInsert(data),
           observacao: (prefixoPedido + observacao).trim() || null,
           status: 'pendente',
-          total: totalFinal
+          total: totalFinal,
+          quantidade_parcelas: quantidadeParcelas,
+          prazoparcelas: prazoParcelas,
+          data_vencimento: prepararDataParaInsert(dataVencimento)
         }).eq('id', transacaoId)
       } else {
         const { data: transacao, error: erroTransacao } = await supabase
@@ -716,7 +745,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_transacao: prepararDataParaInsert(data),
             observacao: (prefixoPedido + observacao).trim() || null,
             status: 'pendente',
-            total: totalFinal
+            total: totalFinal,
+            quantidade_parcelas: quantidadeParcelas,
+            prazoparcelas: prazoParcelas,
+            data_vencimento: prepararDataParaInsert(dataVencimento)
           })
           .select()
           .single()
@@ -746,7 +778,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           prazoParcelas,
           isVendaPedido ? 'entrada' : 'saida',
           { id_condicional: transacaoId || undefined },
-          numTransacao
+          numTransacao,
+          true
         )
       }
 
@@ -888,6 +921,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
     setEntidade(pedido.origem)
     setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+
+    // Restaurar estrutura financeira do pedido
+    if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
+    if (pedido.prazoparcelas) setPrazoParcelas(pedido.prazoparcelas)
+    if (pedido.data_vencimento) setDataVencimento(pedido.data_vencimento.split('T')[0])
 
     const novosItens: ItemTransacao[] = pedido.itens_condicionais.map((it: any) => ({
       id: Date.now().toString() + Math.random(),

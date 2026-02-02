@@ -142,7 +142,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   if (!aberto) return null
 
-  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string }) => {
+  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string }, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const valorParcela = total / qtdParcelas
@@ -164,7 +164,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         tipo,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: i === 1 && total > 0 ? status : 'pendente',
-        observacao: `Ref. #${refNum}`,
+        observacao: isPedido ? `[PEDIDO] Ref. #${refNum}` : `Ref. #${refNum}`,
         ...parentIds
       })
     }
@@ -210,6 +210,15 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       setCliente(venda.cliente)
       if (compraEncontrada) setFornecedor(compraEncontrada.fornecedor)
       setData(venda.data_venda.split('T')[0])
+
+      if (venda.quantidade_parcelas) setPagVenda(prev => ({ ...prev, parcelas: venda.quantidade_parcelas }))
+      if (venda.prazoparcelas) setPagVenda(prev => ({ ...prev, prazo: venda.prazoparcelas }))
+
+      if (compraEncontrada) {
+        if (compraEncontrada.quantidade_parcelas) setPagCompra(prev => ({ ...prev, parcelas: compraEncontrada.quantidade_parcelas }))
+        if (compraEncontrada.prazoparcelas) setPagCompra(prev => ({ ...prev, prazo: compraEncontrada.prazoparcelas }))
+      }
+
       setTipoSaida('venda')
       setTipoEntrada('compra')
       setMostrarBuscaCasada(false)
@@ -250,12 +259,18 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       setTotalSaidaAnterior(pedido.total || 0)
       setCliente(pedido.origem)
       setData(pedido.data_transacao.split('T')[0])
+      if (pedido.quantidade_parcelas) setPagVenda(prev => ({ ...prev, parcelas: pedido.quantidade_parcelas }))
+      if (pedido.prazoparcelas) setPagVenda(prev => ({ ...prev, prazo: pedido.prazoparcelas }))
+      if (pedido.data_vencimento) setPagVenda(prev => ({ ...prev, vencimento: pedido.data_vencimento.split('T')[0] }))
       setMostrarBuscaSaida(false)
     } else {
       setIdEntradaAnexar(pedido.id)
       setTotalEntradaAnterior(pedido.total || 0)
       setFornecedor(pedido.origem)
       setData(pedido.data_transacao.split('T')[0])
+      if (pedido.quantidade_parcelas) setPagCompra(prev => ({ ...prev, parcelas: pedido.quantidade_parcelas }))
+      if (pedido.prazoparcelas) setPagCompra(prev => ({ ...prev, prazo: pedido.prazoparcelas }))
+      if (pedido.data_vencimento) setPagCompra(prev => ({ ...prev, vencimento: pedido.data_vencimento.split('T')[0] }))
       setMostrarBuscaEntrada(false)
     }
   }
@@ -285,18 +300,20 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
           await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
-          await criarFinanceiro(novoTotalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
+          await criarFinanceiro(novoTotalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida }, false)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
           if (e) throw e
           numSaida = n
           const { data: v, error: ev } = await supabase.from('vendas').insert({
             cliente, data_venda: prepararDataParaInsert(data), total: totalVenda, status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida,
-            observacao: `VENDA CASADA (Saída: VENDA)`
+            observacao: `VENDA CASADA (Saída: VENDA)`,
+            quantidade_parcelas: pagVenda.parcelas,
+            prazoparcelas: pagVenda.prazo
           }).select().single()
           if (ev) throw ev
           idSaida = v.id
-          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
+          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida }, false)
         }
       } else {
         // Pedido Venda
@@ -310,18 +327,28 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           // Recalcular Financeiro Pedido
           await supabase.from('transacoes_loja').delete().eq('id_condicional', idSaida)
           await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
-          await criarFinanceiro(novoTotalSaida, cliente, 'entrada', numSaida, 'pendente', 1, data, 'mensal', { id_condicional: idSaida })
+          await criarFinanceiro(novoTotalSaida, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_condicional: idSaida }, true)
+
+          await supabase.from('transacoes_condicionais').update({
+            total: novoTotalSaida,
+            quantidade_parcelas: pagVenda.parcelas,
+            prazoparcelas: pagVenda.prazo,
+            data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
+          }).eq('id', idSaida)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
           if (e) throw e
           numSaida = n
           const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
             origem: cliente, data_transacao: prepararDataParaInsert(data), tipo: 'enviado', status: 'pendente', numero_transacao: numSaida, total: totalVenda,
-            observacao: `[PEDIDO] VENDA CASADA (Saída: PEDIDO)`
+            observacao: `[PEDIDO] VENDA CASADA (Saída: PEDIDO)`,
+            quantidade_parcelas: pagVenda.parcelas,
+            prazoparcelas: pagVenda.prazo,
+            data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
           }).select().single()
           if (ep) throw ep
           idSaida = p.id
-          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', 1, data, 'mensal', { id_condicional: idSaida })
+          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_condicional: idSaida }, true)
         }
       }
 
@@ -339,18 +366,20 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
-          await criarFinanceiro(novoTotalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
+          await criarFinanceiro(novoTotalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada }, false)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
           if (e) throw e
           numEntrada = n
           const { data: c, error: ec } = await supabase.from('compras').insert({
             fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompra, status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada,
-            observacao: `VENDA CASADA (Entrada: COMPRA)`
+            observacao: `VENDA CASADA (Entrada: COMPRA)`,
+            quantidade_parcelas: pagCompra.parcelas,
+            prazoparcelas: pagCompra.prazo
           }).select().single()
           if (ec) throw ec
           idEntrada = c.id
-          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
+          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada }, false)
         }
       } else {
         // Pedido Compra
@@ -364,18 +393,28 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           // Recalcular Financeiro Pedido
           await supabase.from('transacoes_loja').delete().eq('id_condicional', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
-          await criarFinanceiro(novoTotalEntrada, fornecedor, 'saida', numEntrada, 'pendente', 1, data, 'mensal', { id_condicional: idEntrada })
+          await criarFinanceiro(novoTotalEntrada, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_condicional: idEntrada }, true)
+
+          await supabase.from('transacoes_condicionais').update({
+            total: novoTotalEntrada,
+            quantidade_parcelas: pagCompra.parcelas,
+            prazoparcelas: pagCompra.prazo,
+            data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
+          }).eq('id', idEntrada)
         } else {
           const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
           if (e) throw e
           numEntrada = n
           const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
             origem: fornecedor, data_transacao: prepararDataParaInsert(data), tipo: 'recebido', status: 'pendente', numero_transacao: numEntrada, total: totalCompra,
-            observacao: `[PEDIDO] VENDA CASADA (Entrada: PEDIDO)`
+            observacao: `[PEDIDO] VENDA CASADA (Entrada: PEDIDO)`,
+            quantidade_parcelas: pagCompra.parcelas,
+            prazoparcelas: pagCompra.prazo,
+            data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
           }).select().single()
           if (ep) throw ep
           idEntrada = p.id
-          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', 1, data, 'mensal', { id_condicional: idEntrada })
+          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_condicional: idEntrada }, true)
         }
       }
 
