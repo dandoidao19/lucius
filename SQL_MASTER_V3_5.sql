@@ -28,29 +28,53 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='observacao') THEN
         ALTER TABLE vendas ADD COLUMN observacao TEXT;
     END IF;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='quantidade_parcelas') THEN
         ALTER TABLE vendas ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    ELSE
+        ALTER TABLE vendas ALTER COLUMN quantidade_parcelas SET DEFAULT 1;
     END IF;
+    UPDATE vendas SET quantidade_parcelas = 1 WHERE quantidade_parcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='prazoparcelas') THEN
         ALTER TABLE vendas ADD COLUMN prazoparcelas TEXT DEFAULT 'mensal';
+    ELSE
+        ALTER TABLE vendas ALTER COLUMN prazoparcelas SET DEFAULT 'mensal';
     END IF;
+    UPDATE vendas SET prazoparcelas = 'mensal' WHERE prazoparcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='quantidade_itens') THEN
         ALTER TABLE vendas ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
+    ELSE
+        ALTER TABLE vendas ALTER COLUMN quantidade_itens SET DEFAULT 0;
     END IF;
+    UPDATE vendas SET quantidade_itens = 0 WHERE quantidade_itens IS NULL;
 
     -- Compras
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='observacao') THEN
         ALTER TABLE compras ADD COLUMN observacao TEXT;
     END IF;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='quantidade_parcelas') THEN
         ALTER TABLE compras ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    ELSE
+        ALTER TABLE compras ALTER COLUMN quantidade_parcelas SET DEFAULT 1;
     END IF;
+    UPDATE compras SET quantidade_parcelas = 1 WHERE quantidade_parcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='prazoparcelas') THEN
         ALTER TABLE compras ADD COLUMN prazoparcelas TEXT DEFAULT 'mensal';
+    ELSE
+        ALTER TABLE compras ALTER COLUMN prazoparcelas SET DEFAULT 'mensal';
     END IF;
+    UPDATE compras SET prazoparcelas = 'mensal' WHERE prazoparcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='quantidade_itens') THEN
         ALTER TABLE compras ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
+    ELSE
+        ALTER TABLE compras ALTER COLUMN quantidade_itens SET DEFAULT 0;
     END IF;
+    UPDATE compras SET quantidade_itens = 0 WHERE quantidade_itens IS NULL;
 
     -- Condicionais / Pedidos
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='observacao') THEN
@@ -58,10 +82,18 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='quantidade_parcelas') THEN
         ALTER TABLE transacoes_condicionais ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    ELSE
+        ALTER TABLE transacoes_condicionais ALTER COLUMN quantidade_parcelas SET DEFAULT 1;
     END IF;
+    UPDATE transacoes_condicionais SET quantidade_parcelas = 1 WHERE quantidade_parcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='prazoparcelas') THEN
         ALTER TABLE transacoes_condicionais ADD COLUMN prazoparcelas TEXT DEFAULT 'mensal';
+    ELSE
+        ALTER TABLE transacoes_condicionais ALTER COLUMN prazoparcelas SET DEFAULT 'mensal';
     END IF;
+    UPDATE transacoes_condicionais SET prazoparcelas = 'mensal' WHERE prazoparcelas IS NULL;
+
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='data_vencimento') THEN
         ALTER TABLE transacoes_condicionais ADD COLUMN data_vencimento DATE;
     END IF;
@@ -128,7 +160,10 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='itens_condicionais' AND column_name='status') THEN
         ALTER TABLE itens_condicionais ADD COLUMN status TEXT DEFAULT 'pendente';
+    ELSE
+        ALTER TABLE itens_condicionais ALTER COLUMN status SET DEFAULT 'pendente';
     END IF;
+    UPDATE itens_condicionais SET status = 'pendente' WHERE status IS NULL;
 
     -- 4. TABELA TRANSACOES_LOJA (VINCULOS DE UUID)
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='id_venda') THEN

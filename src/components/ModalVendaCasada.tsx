@@ -295,7 +295,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           idSaida = vendaAnexar.id
           numSaida = vendaAnexar.numero_transacao
           const novoTotalVenda = (vendaAnexar.total || 0) + totalVenda
-          await supabase.from('vendas').update({ total: novoTotalVenda }).eq('id', idSaida)
+          const novaQtdVenda = (vendaAnexar.quantidade_itens || 0) + itensValidos.length
+          await supabase.from('vendas').update({
+            total: novoTotalVenda,
+            quantidade_itens: novaQtdVenda
+          }).eq('id', idSaida)
 
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
@@ -306,10 +310,16 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           if (e) throw e
           numSaida = n
           const { data: v, error: ev } = await supabase.from('vendas').insert({
-            cliente, data_venda: prepararDataParaInsert(data), total: totalVenda, status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida,
+            cliente,
+            data_venda: prepararDataParaInsert(data),
+            total: totalVenda,
+            status_pagamento: pagVenda.status,
+            user_id: user.id,
+            numero_transacao: numSaida,
             observacao: `VENDA CASADA (Saída: VENDA)`,
             quantidade_parcelas: pagVenda.parcelas,
-            prazoparcelas: pagVenda.prazo
+            prazoparcelas: pagVenda.prazo,
+            quantidade_itens: itensValidos.length
           }).select().single()
           if (ev) throw ev
           idSaida = v.id
@@ -361,7 +371,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           idEntrada = compraAnexar.id
           numEntrada = compraAnexar.numero_transacao
           const novoTotalCompra = (compraAnexar.total || 0) + totalCompra
-          await supabase.from('compras').update({ total: novoTotalCompra }).eq('id', idEntrada)
+          const novaQtdCompra = (compraAnexar.quantidade_itens || 0) + itensValidos.length
+          await supabase.from('compras').update({
+            total: novoTotalCompra,
+            quantidade_itens: novaQtdCompra
+          }).eq('id', idEntrada)
 
           // Recalcular Financeiro
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
@@ -372,10 +386,16 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           if (e) throw e
           numEntrada = n
           const { data: c, error: ec } = await supabase.from('compras').insert({
-            fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompra, status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada,
+            fornecedor,
+            data_compra: prepararDataParaInsert(data),
+            total: totalCompra,
+            status_pagamento: pagCompra.status,
+            user_id: user.id,
+            numero_transacao: numEntrada,
             observacao: `VENDA CASADA (Entrada: COMPRA)`,
             quantidade_parcelas: pagCompra.parcelas,
-            prazoparcelas: pagCompra.prazo
+            prazoparcelas: pagCompra.prazo,
+            quantidade_itens: itensValidos.length
           }).select().single()
           if (ec) throw ec
           idEntrada = c.id
