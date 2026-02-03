@@ -16,6 +16,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='prazoparcelas') THEN
         ALTER TABLE vendas ADD COLUMN prazoparcelas TEXT DEFAULT 'mensal';
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='quantidade_itens') THEN
+        ALTER TABLE vendas ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
+    END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='observacao') THEN
         ALTER TABLE compras ADD COLUMN observacao TEXT;
@@ -25,6 +28,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='prazoparcelas') THEN
         ALTER TABLE compras ADD COLUMN prazoparcelas TEXT DEFAULT 'mensal';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='quantidade_itens') THEN
+        ALTER TABLE compras ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
     END IF;
 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='observacao') THEN
@@ -71,7 +77,7 @@ BEGIN
         ALTER TABLE itens_compra ADD COLUMN preco_venda NUMERIC(10,2) DEFAULT 0;
     END IF;
 
-    -- 4. TABELA ITENS_CONDICIONAIS (A CAUSADORA DO ERRO ATUAL)
+    -- 4. TABELA ITENS_CONDICIONAIS
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='itens_condicionais' AND column_name='descricao') THEN
         ALTER TABLE itens_condicionais ADD COLUMN descricao TEXT;
     END IF;
@@ -89,6 +95,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='itens_condicionais' AND column_name='valor_repasse') THEN
         ALTER TABLE itens_condicionais ADD COLUMN valor_repasse NUMERIC(10,2) DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='itens_condicionais' AND column_name='status') THEN
+        ALTER TABLE itens_condicionais ADD COLUMN status TEXT DEFAULT 'pendente';
     END IF;
 
     -- 5. TABELA TRANSACOES_LOJA (VINCULOS)

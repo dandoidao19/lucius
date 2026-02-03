@@ -359,7 +359,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204') {
-      return 'ERRO CRÍTICO DE BANCO DE DADOS: Colunas necessárias não encontradas. POR FAVOR, EXECUTE O SCRIPT SQL V3.5 NO SEU SUPABASE (SQL EDITOR).'
+      return `ERRO CRÍTICO DE SCHEMA: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V3.5 NO SEU SUPABASE (SQL EDITOR).`
     }
 
     let mensagem = err.message || 'Erro interno'
