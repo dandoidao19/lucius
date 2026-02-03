@@ -22,6 +22,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='user_id') THEN
         ALTER TABLE transacoes_loja ADD COLUMN user_id UUID;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='observacao') THEN
+        ALTER TABLE transacoes_loja ADD COLUMN observacao TEXT;
+    END IF;
 
     -- 2. TABELAS PRINCIPAIS (VENDAS / COMPRAS / CONDICIONAIS)
     -- Vendas
