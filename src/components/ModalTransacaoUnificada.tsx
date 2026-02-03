@@ -1026,50 +1026,59 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           )}
 
           {!tipo ? (
-            <div className="space-y-3">
-              <p className="text-center text-gray-600 font-medium mb-4">Selecione o tipo de transação:</p>
-              <div className="grid grid-cols-1 gap-2">
+            <div className="space-y-4">
+              <p className="text-center text-gray-500 font-bold uppercase tracking-widest text-[10px] mb-2">Selecione o tipo de transação</p>
+              <div className="grid grid-cols-1 gap-2.5">
                 <button
                   onClick={() => handleTipoSelect('venda')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-green-50 hover:border-green-500 transition-all flex justify-between items-center group"
+                  className="group relative overflow-hidden p-3 bg-green-600 hover:bg-green-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-green-700 flex justify-between items-center"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-green-700">💰 VENDA</span>
-                  <span className="text-xs text-gray-400 italic">Direto ao estoque e financeiro</span>
+                  <span className="font-black text-xs uppercase tracking-wider">💰 VENDA</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Direto ao estoque e financeiro</span>
                 </button>
+
                 <button
                   onClick={() => handleTipoSelect('compra')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-purple-50 hover:border-purple-500 transition-all flex justify-between items-center group"
+                  className="group relative overflow-hidden p-3 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-red-700 flex justify-between items-center"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-purple-700">📥 COMPRA</span>
-                  <span className="text-xs text-gray-400 italic">Entrada de mercadoria</span>
+                  <span className="font-black text-xs uppercase tracking-wider">📥 COMPRA</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Entrada de mercadoria</span>
                 </button>
+
+                <div className="h-px bg-gray-200 my-1"></div>
+
                 <button
                   onClick={() => handleTipoSelect('pedido_venda')}
-                  className="p-3 border-2 border-yellow-200 bg-yellow-50/30 rounded-lg hover:bg-yellow-100 hover:border-yellow-500 transition-all flex justify-between items-center group shadow-sm"
+                  className="group relative overflow-hidden p-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-blue-700 flex justify-between items-center"
                 >
-                  <span className="font-black text-yellow-800 text-sm">📝 PEDIDO DE VENDA (RESERVA)</span>
-                  <span className="text-[10px] text-yellow-600 italic font-bold">Reserva p/ Cliente</span>
+                  <span className="font-black text-xs uppercase tracking-wider">📝 P. VENDA (RESERVA)</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Reserva p/ Cliente</span>
                 </button>
+
                 <button
                   onClick={() => handleTipoSelect('pedido_compra')}
-                  className="p-3 border-2 border-orange-200 bg-orange-50/30 rounded-lg hover:bg-orange-100 hover:border-orange-500 transition-all flex justify-between items-center group shadow-sm"
+                  className="group relative overflow-hidden p-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-orange-700 flex justify-between items-center"
                 >
-                  <span className="font-black text-orange-800 text-sm">📦 PEDIDO DE COMPRA (SOLICITAÇÃO)</span>
-                  <span className="text-[10px] text-orange-600 italic font-bold">Solicitação ao Fornecedor</span>
+                  <span className="font-black text-xs uppercase tracking-wider">📦 P. COMPRA (PEDIDO)</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Solicitação Fornecedor</span>
                 </button>
+
+                <div className="h-px bg-gray-200 my-1"></div>
+
                 <button
                   onClick={() => handleTipoSelect('condicional_cliente')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-purple-50 hover:border-purple-500 transition-all flex justify-between items-center group"
+                  className="group relative overflow-hidden p-3 bg-purple-600 hover:bg-purple-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-purple-700 flex justify-between items-center"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-purple-700">✨ CONDICIONAL CLIENTE</span>
-                  <span className="text-xs text-gray-400 italic">Envio para teste</span>
+                  <span className="font-black text-xs uppercase tracking-wider">✨ COND. CLIENTE</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Envio para teste</span>
                 </button>
+
                 <button
                   onClick={() => handleTipoSelect('condicional_fornecedor')}
-                  className="p-3 border-2 border-gray-100 rounded-lg hover:bg-indigo-50 hover:border-indigo-500 transition-all flex justify-between items-center group"
+                  className="group relative overflow-hidden p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-all shadow-md active:scale-[0.98] border border-indigo-700 flex justify-between items-center"
                 >
-                  <span className="font-bold text-gray-700 group-hover:text-indigo-700">🔄 CONDICIONAL FORNECEDOR</span>
-                  <span className="text-xs text-gray-400 italic">Recebimento para teste</span>
+                  <span className="font-black text-xs uppercase tracking-wider">🔄 COND. FORNECEDOR</span>
+                  <span className="text-[9px] opacity-80 font-semibold uppercase italic">Recebimento p/ teste</span>
                 </button>
               </div>
             </div>
@@ -1395,14 +1404,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               Cancelar Lançamento
             </button>
             <div className="flex gap-3 items-center">
-              <button
-                onClick={handleGerarPedido}
-                disabled={loading}
-                className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
-              >
-                {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Pedido' : '📝 Gerar Pedido'}
-              </button>
-              {!(tipo === 'pedido_venda' || tipo === 'pedido_compra') && (
+              {(tipo === 'pedido_venda' || tipo === 'pedido_compra' || tipo === 'condicional_cliente' || tipo === 'condicional_fornecedor') && (
+                <button
+                  onClick={handleGerarPedido}
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
+                >
+                  {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Pedido' : '📝 Gerar Pedido'}
+                </button>
+              )}
+              {(tipo === 'venda' || tipo === 'compra') && (
                 <button
                   onClick={handleGerarTransacao}
                   disabled={loading}

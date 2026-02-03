@@ -159,7 +159,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       transacoes.push({
         user_id: user.id,
         numero_transacao: refNum,
-        descricao: `${tipo === 'entrada' ? 'Venda' : 'Compra'} Casada - ${entidade} (${i}/${qtdParcelas})`,
+        descricao: `${tipo === 'entrada' ? 'Venda' : 'Compra'} ${entidade} (${i}/${qtdParcelas})`,
         total: valorParcela,
         tipo,
         data: prepararDataParaInsert(dataParcela),
