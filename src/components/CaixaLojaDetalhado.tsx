@@ -8,7 +8,7 @@ interface CaixaLojaDetalhadoProps {
 }
 
 export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaDetalhadoProps) {
-  // 1. Consumir o hook centralizado e otimizado
+  // 1. Consumir o hook centralizado e otimizado (específico para Loja)
   const {
     caixaRealLoja,
     entradasHoje,
@@ -20,7 +20,7 @@ export default function CaixaLojaDetalhado({ titulo, onMostrarTudo }: CaixaLojaD
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao,
-  } = useCaixaUniversal()
+  } = useCaixaUniversal('loja')
 
   // 2. Toda a lógica de busca de dados, cálculo, useEffects e useStates foi removida.
 

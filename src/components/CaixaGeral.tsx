@@ -16,7 +16,7 @@ export default function CaixaGeral() {
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao
-  } = useCaixaUniversal()
+  } = useCaixaUniversal('geral')
 
   const handleMudarParaMes = () => setFiltro('mes')
   const handleVoltar30Dias = () => setFiltro('30dias')

@@ -1,18 +1,19 @@
-// hooks/useCaixaUniversal.ts - VERSÃO FINAL OTIMIZADA
+// hooks/useCaixaUniversal.ts - VERSÃO MULTI-MÓDULO
 import { useState, useMemo, useCallback } from 'react'
 import { useCaixaPrevisto } from './useCaixaPrevisto'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 
 type Filtro = '30dias' | 'mes' | 'tudo'
+type Modulo = 'loja' | 'casa' | 'geral'
 
-export function useCaixaUniversal() {
+export function useCaixaUniversal(modulo: Modulo = 'geral') {
   const [filtro, setFiltro] = useState<Filtro>('30dias')
   const [mesFiltro, setMesFiltro] = useState(() => {
     const hoje = new Date()
     return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}`
   })
 
-  // 1. Consumir os dados JÁ CALCULADOS E CACHEADOS do novo hook.
+  // 1. Consumir os dados segmentados do hook de previsão.
   const { data: dadosCalculados, isLoading: carregando } = useCaixaPrevisto()
 
   const calcularDataNDias = useCallback((dataBase: string, dias: number) => {
@@ -21,9 +22,17 @@ export function useCaixaUniversal() {
     return data.toISOString().split('T')[0]
   }, [])
 
-  // 2. A lógica de filtragem foi refinada para lidar com a série de dados completa.
-  const caixaPrevistoGeral = useMemo(() => {
-    const series = dadosCalculados?.series
+  // 2. Selecionar os dados específicos do módulo solicitado
+  const dadosModulo = useMemo(() => {
+    if (!dadosCalculados) return null
+    if (modulo === 'loja') return dadosCalculados.loja
+    if (modulo === 'casa') return dadosCalculados.casa
+    return dadosCalculados.geral
+  }, [dadosCalculados, modulo])
+
+  // 3. Aplicar filtros sobre a série de dados do módulo
+  const caixaPrevistoFiltrado = useMemo(() => {
+    const series = dadosModulo?.series
     if (!series) {
       return []
     }
@@ -33,35 +42,34 @@ export function useCaixaUniversal() {
     switch (filtro) {
       case '30dias':
         const dataLimite = calcularDataNDias(hoje, 29)
-        // Filtra a partir de hoje e limita a 30 dias
         return series.filter(dia => dia.data >= hoje && dia.data <= dataLimite)
 
       case 'mes':
         if (mesFiltro) {
-          // Mostra o mês inteiro, incluindo dias passados
           return series.filter(dia => dia.data.startsWith(mesFiltro))
         }
         return []
 
       case 'tudo':
-        // Mostra tudo a partir de hoje
         return series.filter(dia => dia.data >= hoje)
 
       default:
         return []
     }
-  }, [dadosCalculados, filtro, mesFiltro, calcularDataNDias])
+  }, [dadosModulo, filtro, mesFiltro, calcularDataNDias])
 
   return {
-    // Retorna os dados diretamente do cache do useCaixaPrevisto
+    // Totais Reais (Independente do módulo selecionado para a série prevista)
     caixaRealGeral: dadosCalculados?.caixaRealGeral ?? 0,
     caixaRealLoja: dadosCalculados?.caixaRealLoja ?? 0,
     caixaRealCasa: dadosCalculados?.caixaRealCasa ?? 0,
-    entradasHoje: dadosCalculados?.entradasHoje ?? 0,
-    saidasHoje: dadosCalculados?.saidasHoje ?? 0,
-    // Retorna a série já filtrada
-    caixaPrevistoGeral,
-    // Mantém o estado de carregamento e os controles de filtro
+
+    // Dados específicos do módulo para a previsão
+    entradasHoje: dadosModulo?.entradasHoje ?? 0,
+    saidasHoje: dadosModulo?.saidasHoje ?? 0,
+    caixaPrevistoGeral: caixaPrevistoFiltrado, // Mantido o nome para compatibilidade com componentes existentes
+
+    // Controles e estado
     carregando,
     filtro,
     setFiltro,

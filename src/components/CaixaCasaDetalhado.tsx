@@ -3,7 +3,7 @@
 import { useCaixaUniversal } from '@/hooks/useCaixaUniversal'
 
 export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
-  // 1. Consumir o hook centralizado e otimizado
+  // 1. Consumir o hook centralizado e otimizado (específico para Casa)
   const {
     caixaRealCasa,
     entradasHoje,
@@ -15,7 +15,7 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao,
-  } = useCaixaUniversal()
+  } = useCaixaUniversal('casa')
 
   // 2. Toda a lógica de busca de dados, cálculo, useEffects e useStates foi removida.
   // O componente agora é muito mais simples e apenas exibe os dados recebidos.
