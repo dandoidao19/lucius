@@ -51,7 +51,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.3 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.5 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -359,7 +359,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.3 NO SEU SUPABASE (SQL EDITOR).`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.5 NO SEU SUPABASE (SQL EDITOR).`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -1018,13 +1018,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 </div>
                 <button onClick={() => setErro('')} className="text-red-500 hover:text-red-700 p-1">✕</button>
               </div>
-              {erro.includes('V4.3') && (
+              {erro.includes('V4.5') && (
                 <div className="mt-3 bg-white/50 p-2 rounded border border-orange-200">
                    <p className="text-[10px] text-orange-900 font-bold">Como resolver:</p>
                    <ol className="list-decimal ml-4 text-[9px] text-orange-800 mt-1 space-y-1">
                       <li>Abra o seu Dashboard do Supabase.</li>
                       <li>Vá em <b>SQL Editor</b> (menu lateral esquerdo).</li>
-                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_3.sql</b> (disponível na raiz do projeto).</li>
+                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_5.sql</b> (disponível na raiz do projeto).</li>
                       <li>Cole no editor e clique em <b>RUN</b>.</li>
                    </ol>
                 </div>
@@ -1219,72 +1219,122 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                              />
                            )}
 
-                           <div className="grid grid-cols-3 gap-2">
-                             <div>
-                               <label className="block text-xs text-gray-600">Categoria</label>
-                               {item.isNovoCadastro ? (
-                                 <select
-                                   value={item.categoria || ''}
-                                   onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
-                                   className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                                 >
-                                   <option value="">Selecione...</option>
-                                   {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                                 </select>
-                               ) : (
-                                 <input type="text" value={item.categoria || ''} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
-                               )}
-                             </div>
-                             <div>
-                               <label className="block text-xs text-gray-600">Quantidade</label>
-                               <input
-                                 type="number"
-                                 value={item.quantidade ?? 0}
-                                 onChange={(e) => atualizarItem(item.id, 'quantidade', parseInt(e.target.value) || 0)}
-                                 className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                               />
-                             </div>
-                             <div>
-                               <label className="block text-xs text-gray-600">Preço</label>
-                              <div className="flex gap-1">
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? item.preco_custo : item.preco_venda) ?? 0}
-                                  onChange={(e) => atualizarItem(item.id, tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? 'preco_custo' : 'preco_venda', parseFloat(e.target.value) || 0)}
-                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                                />
-                                {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') && !item.isNovoCadastro && (
-                                  <button
-                                    type="button"
-                                    onClick={() => buscarUltimoPrecoCusto(item.descricao, item.id)}
-                                    className="bg-blue-500 text-white px-1 rounded text-[8px]"
-                                    title="Buscar último custo"
-                                  >
-                                    🔍
-                                  </button>
-                                )}
-                              </div>
-                             </div>
-                           </div>
+                           {item.isNovoCadastro ? (
+                             <>
+                               <div className="grid grid-cols-2 gap-2">
+                                 <div>
+                                   <label className="block text-xs text-gray-600 font-bold">Categoria *</label>
+                                   <select
+                                     value={item.categoria || ''}
+                                     onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
+                                     className="w-full px-2 py-1 text-xs border border-purple-300 bg-white rounded"
+                                   >
+                                     <option value="">Selecione...</option>
+                                     {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                                   </select>
+                                 </div>
+                                 <div>
+                                   <label className="block text-xs text-gray-600 font-bold">Quantidade *</label>
+                                   <input
+                                     type="number"
+                                     value={item.quantidade ?? 0}
+                                     onChange={(e) => atualizarItem(item.id, 'quantidade', parseInt(e.target.value) || 0)}
+                                     className="w-full px-2 py-1 text-xs border border-purple-300 bg-white rounded"
+                                   />
+                                 </div>
+                               </div>
+                               <div className="grid grid-cols-3 gap-2">
+                                 <div>
+                                   <label className="block text-xs text-gray-600 font-bold text-red-600">Preço Custo *</label>
+                                   <input
+                                     type="number"
+                                     step="0.01"
+                                     value={item.preco_custo ?? 0}
+                                     onChange={(e) => atualizarItem(item.id, 'preco_custo', parseFloat(e.target.value) || 0)}
+                                     className="w-full px-2 py-1 text-xs border border-red-200 bg-white rounded"
+                                   />
+                                 </div>
+                                 <div>
+                                   <label className="block text-xs text-gray-600 font-bold text-orange-600">Valor Repasse</label>
+                                   <input
+                                     type="number"
+                                     step="0.01"
+                                     value={item.valor_repasse ?? 0}
+                                     onChange={(e) => atualizarItem(item.id, 'valor_repasse', parseFloat(e.target.value) || 0)}
+                                     className="w-full px-2 py-1 text-xs border border-orange-200 bg-orange-50 rounded"
+                                   />
+                                 </div>
+                                 <div>
+                                   <label className="block text-xs text-gray-600 font-bold text-green-600">Preço Venda *</label>
+                                   <input
+                                     type="number"
+                                     step="0.01"
+                                     value={item.preco_venda ?? 0}
+                                     onChange={(e) => atualizarItem(item.id, 'preco_venda', parseFloat(e.target.value) || 0)}
+                                     className="w-full px-2 py-1 text-xs border border-green-200 bg-white rounded"
+                                   />
+                                 </div>
+                               </div>
+                             </>
+                           ) : (
+                             <>
+                               <div className="grid grid-cols-3 gap-2">
+                                 <div>
+                                   <label className="block text-xs text-gray-600">Categoria</label>
+                                   <input type="text" value={item.categoria || ''} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
+                                 </div>
+                                 <div>
+                                   <label className="block text-xs text-gray-600">Quantidade</label>
+                                   <input
+                                     type="number"
+                                     value={item.quantidade ?? 0}
+                                     onChange={(e) => atualizarItem(item.id, 'quantidade', parseInt(e.target.value) || 0)}
+                                     className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                   />
+                                 </div>
+                                 <div>
+                                   <label className="block text-xs text-gray-600">Preço</label>
+                                  <div className="flex gap-1">
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      value={(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? item.preco_custo : item.preco_venda) ?? 0}
+                                      onChange={(e) => atualizarItem(item.id, tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor' ? 'preco_custo' : 'preco_venda', parseFloat(e.target.value) || 0)}
+                                      className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                    />
+                                    {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') && (
+                                      <button
+                                        type="button"
+                                        onClick={() => buscarUltimoPrecoCusto(item.descricao, item.id)}
+                                        className="bg-blue-500 text-white px-1 rounded text-[8px]"
+                                        title="Buscar último custo"
+                                      >
+                                        🔍
+                                      </button>
+                                    )}
+                                  </div>
+                                 </div>
+                               </div>
 
-                           {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') && (
-                             <div className="grid grid-cols-2 gap-2">
-                                <div>
-                                  <label className="block text-xs text-gray-600">Valor Repasse (Calc.)</label>
-                                  <input type="text" value={`R$ ${(item.valor_repasse || 0).toFixed(2)}`} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
-                                </div>
-                                <div>
-                                  <label className="block text-xs text-gray-600">Preço Venda Sugerido</label>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    value={item.preco_venda ?? 0}
-                                    onChange={(e) => atualizarItem(item.id, 'preco_venda', parseFloat(e.target.value) || 0)}
-                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                                  />
-                                </div>
-                             </div>
+                               {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') && (
+                                 <div className="grid grid-cols-2 gap-2 mt-1">
+                                    <div>
+                                      <label className="block text-xs text-gray-600">Valor Repasse (Calc.)</label>
+                                      <input type="text" value={`R$ ${(item.valor_repasse || 0).toFixed(2)}`} disabled className="w-full px-2 py-1 text-xs bg-gray-100 border rounded" />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-gray-600">Preço Venda Sugerido</label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={item.preco_venda ?? 0}
+                                        onChange={(e) => atualizarItem(item.id, 'preco_venda', parseFloat(e.target.value) || 0)}
+                                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                      />
+                                    </div>
+                                 </div>
+                               )}
+                             </>
                            )}
 
                            <div>
@@ -1402,7 +1452,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.3
+              CORE ENGINE v4.5
             </div>
             <button
               onClick={handleCancelar}

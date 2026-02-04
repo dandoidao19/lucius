@@ -17,6 +17,9 @@ interface ItemVendaCasada {
   preco_unitario: number // Preço de Venda
   valor_repasse: number   // Preço de Custo/Repasse (Compra)
   preco_custo: number     // Custo original do produto
+  categoria?: string
+  isNovoCadastro?: boolean
+  minimizado?: boolean
 }
 
 interface ModalVendaCasadaProps {
@@ -27,12 +30,14 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.3 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.5 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
   const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [loading, setLoading] = useState(false)
+  const [categorias, setCategorias] = useState<{ id: string; nome: string; percentual_repasse?: number }[]>([])
+  const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
 
   // Cabeçalho
   const [cliente, setCliente] = useState('')
@@ -52,7 +57,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   // Lista Única de Itens
   const [itens, setItens] = useState<ItemVendaCasada[]>([
-    { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }
+    { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }
   ])
 
   // Pagamentos
@@ -64,9 +69,15 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const [vendaAnexar, setVendaAnexar] = useState<any>(null)
   const [compraAnexar, setCompraAnexar] = useState<any>(null)
 
-  // Efeito para carregar rascunho
+  // Efeito para carregar categorias e rascunho
   useEffect(() => {
     if (aberto) {
+      const fetchCategorias = async () => {
+        const { data } = await supabase.from('categorias_estoque').select('*').order('nome')
+        setCategorias(data || [])
+      }
+      fetchCategorias()
+
       const draft = getDraft('venda_casada')
       if (draft) {
         setCliente(draft.cliente || '')
@@ -88,7 +99,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   }, [aberto, cliente, fornecedor, data, itens, pagVenda, pagCompra, setDraft])
 
   const adicionarItem = () => {
-    setItens([...itens, { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
+    setItens(prev => {
+      const novos = prev.map(i => ({ ...i, minimizado: true }))
+      return [...novos, { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }]
+    })
   }
 
   const removerItem = (id: string) => {
@@ -98,7 +112,39 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   }
 
   const atualizarItem = (id: string, campo: keyof ItemVendaCasada, valor: any) => {
-    setItens(prev => prev.map(i => i.id === id ? { ...i, [campo]: valor } : i))
+    setItens(prev => prev.map(i => {
+      if (i.id === id) {
+        const itemAtualizado = { ...i, [campo]: valor }
+
+        if (campo === 'preco_custo' || campo === 'categoria') {
+          const categoriaNome = campo === 'categoria' ? String(valor) : itemAtualizado.categoria
+          const precoCusto = campo === 'preco_custo' ? Number(valor) : itemAtualizado.preco_custo
+
+          const cat = categorias.find(c => c.nome === categoriaNome)
+          if (cat && precoCusto > 0) {
+            itemAtualizado.valor_repasse = precoCusto * (1 + (cat.percentual_repasse || 0) / 100)
+          } else {
+            itemAtualizado.valor_repasse = precoCusto
+          }
+        }
+        return itemAtualizado
+      }
+      return i
+    }))
+  }
+
+  const toggleNovoCadastro = (id: string) => {
+    setItens(prev => prev.map(i => i.id === id ? {
+      ...i,
+      isNovoCadastro: !i.isNovoCadastro,
+      id_produto: '',
+      nome: '',
+      categoria: !i.isNovoCadastro ? categorias[0]?.nome || '' : '',
+      preco_custo: 0,
+      valor_repasse: 0,
+      preco_unitario: 0
+    } : i))
+    setResetSeletorKey(Date.now())
   }
 
   const selecionarProduto = (produto: any, id: string) => {
@@ -121,7 +167,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.3 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.5 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -293,7 +339,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   const handleSubmit = async () => {
     if (!cliente || !fornecedor) return alert('Informe Cliente e Fornecedor')
-    const itensValidos = itens.filter(i => i.id_produto)
+    const itensValidos = itens.filter(i => i.id_produto || (i.isNovoCadastro && i.nome))
     if (itensValidos.length === 0) return alert('Adicione pelo menos um item válido')
 
     setLoading(true)
@@ -477,48 +523,72 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
       // 3. Processar Itens
       for (const item of itensValidos) {
+        let prodId = item.id_produto
+
+        // Se for novo cadastro, cria o produto primeiro
+        if (item.isNovoCadastro && !prodId) {
+          const { data: novoProd, error: erroNovoProd } = await supabase
+            .from('produtos')
+            .insert({
+              descricao: item.nome.toUpperCase(),
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse,
+              preco_venda: item.preco_unitario,
+              quantidade: 0,
+              user_id: user.id
+            })
+            .select()
+            .single()
+
+          if (erroNovoProd) throw erroNovoProd
+          prodId = novoProd.id
+        }
+
         // Gravar no lado da saída
         if (tipoSaida === 'venda') {
-           await supabase.from('itens_venda').insert({ venda_id: idSaida, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse })
+           await supabase.from('itens_venda').insert({ venda_id: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse })
         } else {
-           await supabase.from('itens_condicionais').insert({ transacao_id: idSaida, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, status: 'pendente' })
+           await supabase.from('itens_condicionais').insert({ transacao_id: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, status: 'pendente' })
         }
 
         // Gravar no lado da entrada
         if (tipoEntrada === 'compra') {
-           await supabase.from('itens_compra').insert({ compra_id: idEntrada, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario })
+           await supabase.from('itens_compra').insert({ compra_id: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario })
         } else {
-           await supabase.from('itens_condicionais').insert({ transacao_id: idEntrada, produto_id: item.id_produto, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
+           await supabase.from('itens_condicionais').insert({ transacao_id: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
         }
 
         // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
 
-        // Saída (Apenas se NÃO for Pedido)
-        if (tipoSaida !== 'pedido_venda') {
-          console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${item.id_produto}, Qtd: -${item.quantidade}`)
-          const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
-          if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
+        if (prodId) {
+          // Saída (Apenas se NÃO for Pedido)
+          if (tipoSaida !== 'pedido_venda') {
+            console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${prodId}, Qtd: -${item.quantidade}`)
+            const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
+            if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
 
-          await supabase.from('movimentacoes_estoque').insert({
-              produto_id: item.id_produto,
-              tipo: 'saida',
-              quantidade: item.quantidade,
-              observacao: `Venda Casada #${numSaida}`
-          })
-        }
+            await supabase.from('movimentacoes_estoque').insert({
+                produto_id: prodId,
+                tipo: 'saida',
+                quantidade: item.quantidade,
+                observacao: `Venda Casada #${numSaida}`
+            })
+          }
 
-        // Entrada (Apenas se NÃO for Pedido)
-        if (tipoEntrada !== 'pedido_compra') {
-          console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${item.id_produto}, Qtd: ${item.quantidade}`)
-          const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
-          if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
+          // Entrada (Apenas se NÃO for Pedido)
+          if (tipoEntrada !== 'pedido_compra') {
+            console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${prodId}, Qtd: ${item.quantidade}`)
+            const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
+            if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
 
-          await supabase.from('movimentacoes_estoque').insert({
-              produto_id: item.id_produto,
-              tipo: 'entrada',
-              quantidade: item.quantidade,
-              observacao: `Compra Casada #${numEntrada}`
-          })
+            await supabase.from('movimentacoes_estoque').insert({
+                produto_id: prodId,
+                tipo: 'entrada',
+                quantidade: item.quantidade,
+                observacao: `Compra Casada #${numEntrada}`
+            })
+          }
         }
       }
 
@@ -751,68 +821,125 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               </button>
             </div>
 
-            <div className="w-full">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-white border-b border-slate-100">
-                    <th className="px-3 py-2 text-[11px] font-semibold text-slate-500 uppercase w-[45%]">Produto</th>
-                    <th className="px-2 py-2 text-[11px] font-semibold text-slate-500 uppercase text-center w-[10%]">Qtd</th>
-                    <th className="px-2 py-2 text-[11px] font-semibold text-pink-600 uppercase text-right w-[18%]">Preço Venda</th>
-                    <th className="px-2 py-2 text-[11px] font-semibold text-blue-600 uppercase text-right w-[18%]">Vlr Repasse</th>
-                    <th className="px-2 py-2 text-center w-[9%]"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {itens.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/30 transition-colors align-top">
-                      <td className="px-3 py-3">
-                        <SeletorProduto
-                          onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
-                          placeholder="Buscar produto..."
-                          descricaoPreenchida={item.nome || ''}
-                        />
-                      </td>
-                      <td className="px-2 py-3 text-center">
-                        <input
-                          type="number"
-                          value={item.quantidade ?? 0}
-                          onChange={e => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
-                          className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs text-center focus:ring-1 focus:ring-blue-500 outline-none"
-                        />
-                      </td>
-                      <td className="px-2 py-3">
-                        <div className="relative">
-                          <span className="absolute left-2 top-2 text-[10px] text-pink-400 font-semibold">R$</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.preco_unitario ?? 0}
-                            onChange={e => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                            className="w-full border border-pink-200 bg-pink-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-semibold text-pink-700 focus:ring-1 focus:ring-pink-500 outline-none text-right"
-                          />
-                        </div>
-                      </td>
-                      <td className="px-2 py-3">
-                        <div className="relative">
-                          <span className="absolute left-2 top-2 text-[10px] text-blue-400 font-semibold">R$</span>
-                          <input
-                            type="number"
-                            step="0.01"
-                            value={item.valor_repasse ?? 0}
-                            onChange={e => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                            className="w-full border border-blue-200 bg-blue-50/5 rounded pl-7 pr-2 py-1.5 text-xs font-semibold text-blue-700 focus:ring-1 focus:ring-blue-500 outline-none text-right"
-                          />
-                        </div>
-                      </td>
-                      <td className="px-2 py-3 text-center">
-                        <button onClick={() => removerItem(item.id)} className="text-red-400 hover:text-red-600 transition-colors p-1.5 bg-red-50 rounded">
-                          <Trash2 size={16} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="w-full p-2 space-y-2">
+              {itens.map((item, idx) => (
+                <div key={item.id} className={`border rounded p-2 transition-colors ${item.minimizado ? 'bg-slate-50 border-slate-200' : 'bg-pink-50/10 border-pink-200 shadow-inner'}`}>
+                  {item.minimizado ? (
+                    <div className="flex justify-between items-center cursor-pointer" onClick={() => atualizarItem(item.id, 'minimizado', false)}>
+                       <span className="text-[11px] font-semibold text-slate-700 uppercase">
+                         {idx + 1}. {item.nome || '(Busque um produto)'} - {item.quantidade}x (V: R${item.preco_unitario.toFixed(2)} | C: R${item.valor_repasse.toFixed(2)})
+                       </span>
+                       <div className="flex gap-2">
+                          <button onClick={(e) => { e.stopPropagation(); atualizarItem(item.id, 'minimizado', false); }} className="text-blue-600 text-[10px] font-bold">EDITAR</button>
+                          <button onClick={(e) => { e.stopPropagation(); removerItem(item.id); }} className="text-red-600 text-[10px] font-bold">REMOVER</button>
+                       </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                       <div className="flex justify-between items-center">
+                          <span className="text-[11px] font-black text-pink-700 uppercase">Item {idx + 1}</span>
+                          <label className="flex items-center gap-1.5 cursor-pointer bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
+                            <input
+                              type="checkbox"
+                              checked={item.isNovoCadastro || false}
+                              onChange={() => toggleNovoCadastro(item.id)}
+                              className="w-3.5 h-3.5 accent-pink-600"
+                            />
+                            <span className="text-[10px] font-bold text-slate-600 uppercase">Novo Cadastro</span>
+                          </label>
+                       </div>
+
+                       {!item.isNovoCadastro ? (
+                         <SeletorProduto
+                           key={`sel-casada-${resetSeletorKey}-${item.id}`}
+                           onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
+                           placeholder="Buscar produto..."
+                           descricaoPreenchida={item.nome || ''}
+                         />
+                       ) : (
+                         <div className="space-y-2">
+                            <input
+                              type="text"
+                              value={item.nome || ''}
+                              onChange={(e) => atualizarItem(item.id, 'nome', e.target.value)}
+                              placeholder="Descrição do novo produto..."
+                              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500"
+                            />
+                            <div className="grid grid-cols-2 gap-2">
+                               <div>
+                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria *</label>
+                                 <select
+                                   value={item.categoria || ''}
+                                   onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
+                                   className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
+                                 >
+                                   <option value="">Escolha...</option>
+                                   {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+                                 </select>
+                               </div>
+                               <div>
+                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Qtd *</label>
+                                 <input
+                                   type="number"
+                                   value={item.quantidade}
+                                   onChange={(e) => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
+                                   className="w-full px-2 py-1 text-xs border border-slate-300 rounded"
+                                 />
+                               </div>
+                            </div>
+                         </div>
+                       )}
+
+                       <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[10px] font-bold text-red-600 uppercase mb-1">Preço Custo *</label>
+                            <div className="relative">
+                              <span className="absolute left-1.5 top-1 text-[9px] text-red-400 font-bold">R$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.preco_custo}
+                                onChange={(e) => atualizarItem(item.id, 'preco_custo', Number(e.target.value))}
+                                className="w-full pl-6 pr-1 py-1 text-xs border border-red-200 rounded font-semibold text-red-700 bg-white"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-orange-600 uppercase mb-1">Valor Repasse</label>
+                            <div className="relative">
+                              <span className="absolute left-1.5 top-1 text-[9px] text-orange-400 font-bold">R$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.valor_repasse}
+                                onChange={(e) => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
+                                className="w-full pl-6 pr-1 py-1 text-xs border border-orange-200 rounded font-semibold text-orange-700 bg-orange-50/30"
+                              />
+                            </div>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-green-600 uppercase mb-1">Preço Venda *</label>
+                            <div className="relative">
+                              <span className="absolute left-1.5 top-1 text-[9px] text-green-400 font-bold">R$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.preco_unitario}
+                                onChange={(e) => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
+                                className="w-full pl-6 pr-1 py-1 text-xs border border-green-200 rounded font-semibold text-green-700 bg-white"
+                              />
+                            </div>
+                          </div>
+                       </div>
+
+                       <div className="flex justify-end gap-2 pt-1 border-t border-pink-100">
+                          <button onClick={() => atualizarItem(item.id, 'minimizado', true)} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">Minimizar</button>
+                          <button onClick={() => removerItem(item.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase">Remover</button>
+                       </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 
@@ -928,7 +1055,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.3
+              CORE ENGINE v4.5
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">

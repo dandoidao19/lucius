@@ -270,15 +270,9 @@ export default function ModuloCondicional() {
     setLoading(true)
 
     try {
-      // Gerar numero_transacao sequencial
-      const { data: ultimaTransacao } = await supabase
-        .from('transacoes_condicionais')
-        .select('numero_transacao')
-        .order('numero_transacao', { ascending: false })
-        .limit(1)
-        .single()
-
-      const proximoNumero = (ultimaTransacao?.numero_transacao || 0) + 1
+      // Gerar numero_transacao sequencial via RPC oficial (v4.1+)
+      const { data: proximoNumero, error: erroNum } = await supabase.rpc('obter_proximo_numero_transacao')
+      if (erroNum) throw erroNum
 
       const { data: transacao, error: erroTransacao } = await supabase
         .from('transacoes_condicionais')
@@ -296,11 +290,35 @@ export default function ModuloCondicional() {
       if (erroTransacao) throw erroTransacao
 
       for (const item of itens) {
+        let prodId = item.produto_id
+
+        // Se for novo cadastro, cria o produto primeiro
+        if (item.isNovoCadastro && !prodId) {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            const { data: novoProd, error: erroNovoProd } = await supabase
+              .from('produtos')
+              .insert({
+                descricao: item.descricao.toUpperCase(),
+                categoria: item.categoria,
+                preco_custo: item.preco_custo,
+                preco_venda: item.preco_venda,
+                valor_repasse: item.preco_custo, // Simplificado para condicional
+                quantidade: 0,
+                user_id: user.id
+              })
+              .select()
+              .single()
+
+            if (!erroNovoProd) prodId = novoProd.id
+          }
+        }
+
         const { error: erroItem } = await supabase
           .from('itens_condicionais')
           .insert({
             transacao_id: transacao.id,
-            produto_id: item.produto_id,
+            produto_id: prodId,
             descricao: item.descricao,
             quantidade: item.quantidade,
             categoria: item.categoria,
@@ -501,18 +519,11 @@ export default function ModuloCondicional() {
                           <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
                             Categoria *
                           </label>
-                          {!item.isNovoCadastro ? (
-                            <input
-                              type="text"
-                              value={item.categoria}
-                              disabled
-                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-gray-100"
-                            />
-                          ) : (
+                          {item.isNovoCadastro ? (
                             <select
                               value={item.categoria}
                               onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
-                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded"
+                              className="w-full px-1.5 py-0.5 text-xs border border-purple-300 rounded bg-white"
                               required
                             >
                               <option value="">Selecione uma categoria</option>
@@ -522,11 +533,18 @@ export default function ModuloCondicional() {
                                 </option>
                               ))}
                             </select>
+                          ) : (
+                            <input
+                              type="text"
+                              value={item.categoria}
+                              disabled
+                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded bg-gray-100"
+                            />
                           )}
                         </div>
 
                         <div className="grid grid-cols-2 gap-1">
-                          <div>
+                          <div className={item.isNovoCadastro ? 'col-span-2' : ''}>
                             <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
                               Quantidade *
                             </label>
@@ -540,24 +558,60 @@ export default function ModuloCondicional() {
                               required
                             />
                           </div>
-                          <div>
-                            <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
-                              Preço Custo (R$) *
-                            </label>
-                            <input
-                              type="number"
-                              step="0.01"
-                              value={item.preco_custo}
-                              onChange={(e) =>
-                                atualizarItem(item.id, 'preco_custo', parseFloat(e.target.value) || 0)
-                              }
-                              placeholder="0.00"
-                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded"
-                              required={item.isNovoCadastro}
-                              disabled={!item.isNovoCadastro && !item.produto_id}
-                            />
-                          </div>
+                          {!item.isNovoCadastro && (
+                            <div>
+                              <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
+                                Preço Un. (R$)
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.preco_custo}
+                                onChange={(e) =>
+                                  atualizarItem(item.id, 'preco_custo', parseFloat(e.target.value) || 0)
+                                }
+                                placeholder="0.00"
+                                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded"
+                                disabled={!item.produto_id}
+                              />
+                            </div>
+                          )}
                         </div>
+
+                        {item.isNovoCadastro && (
+                          <div className="grid grid-cols-2 gap-1">
+                            <div>
+                              <label className="block text-[10px] font-bold text-red-600 mb-0.5">
+                                Preço Custo *
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.preco_custo}
+                                onChange={(e) =>
+                                  atualizarItem(item.id, 'preco_custo', parseFloat(e.target.value) || 0)
+                                }
+                                className="w-full px-1.5 py-0.5 text-xs border border-red-200 rounded"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[10px] font-bold text-green-600 mb-0.5">
+                                Preço Venda *
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={item.preco_venda}
+                                onChange={(e) =>
+                                  atualizarItem(item.id, 'preco_venda', parseFloat(e.target.value) || 0)
+                                }
+                                className="w-full px-1.5 py-0.5 text-xs border border-green-200 rounded"
+                                required
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         <button
                           type="button"
