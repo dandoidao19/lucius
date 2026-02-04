@@ -27,7 +27,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.7 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V3.9 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -121,7 +121,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204') {
-      return `ERRO CRÍTICO DE SCHEMA: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V3.5 NO SEU SUPABASE (SQL EDITOR).`
+      return `ERRO CRÍTICO DE SCHEMA: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V3.9 NO SEU SUPABASE (SQL EDITOR).`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -915,7 +915,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.7
+              CORE ENGINE v3.9
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
