@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
+import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalDetalhesTransacao from './ModalDetalhesTransacao'
 import FiltrosTransacoes from './FiltrosTransacoes'
@@ -26,6 +27,7 @@ interface TransacaoUnificada {
 }
 
 export default function LojaPaginaTransacoes() {
+  const { versaoRefresh } = useDadosFinanceiros()
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoUnificada[]>([])
   const [loading, setLoading] = useState(true)
@@ -156,7 +158,7 @@ export default function LojaPaginaTransacoes() {
 
   useEffect(() => {
     carregarTransacoes()
-  }, [carregarTransacoes])
+  }, [carregarTransacoes, versaoRefresh])
 
   const aplicarFiltros = useCallback(() => {
     let result = [...transacoes]

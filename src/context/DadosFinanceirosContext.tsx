@@ -50,12 +50,15 @@ interface DadosFinanceirosContextType {
   dados: DadosCache
   carregando: boolean
   recarregarDados: () => void
+  versaoRefresh: number
+  triggerRefresh: () => void
 }
 
 const DadosFinanceirosContext = createContext<DadosFinanceirosContextType | undefined>(undefined)
 
 export function DadosFinanceirosProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
+  const [versaoRefresh, setVersaoRefresh] = React.useState(0)
 
   // 1. Buscar dados usando os novos hooks
   const { data: todosCentrosDeCusto = [], isLoading: carregandoCentros, dataUpdatedAt: centrosAtualizadoEm } = useCentrosDeCusto();
@@ -104,10 +107,19 @@ export function DadosFinanceirosProvider({ children }: { children: ReactNode }) 
     queryClient.invalidateQueries({ queryKey: ['centros_de_custo'] })
     queryClient.invalidateQueries({ queryKey: ['lancamentos_financeiros'] })
     queryClient.invalidateQueries({ queryKey: ['transacoes_loja'] })
+    // Também invalidar vendas, compras e condicionais se existirem queries para elas
+    queryClient.invalidateQueries({ queryKey: ['vendas'] })
+    queryClient.invalidateQueries({ queryKey: ['compras'] })
+    queryClient.invalidateQueries({ queryKey: ['transacoes_condicionais'] })
   }, [queryClient])
 
+  const triggerRefresh = useCallback(() => {
+    setVersaoRefresh(v => v + 1)
+    recarregarDados()
+  }, [recarregarDados])
+
   return (
-    <DadosFinanceirosContext.Provider value={{ dados, carregando, recarregarDados }}>
+    <DadosFinanceirosContext.Provider value={{ dados, carregando, recarregarDados, versaoRefresh, triggerRefresh }}>
       {children}
     </DadosFinanceirosContext.Provider>
   )

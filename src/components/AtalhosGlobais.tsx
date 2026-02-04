@@ -15,7 +15,7 @@ export default function AtalhosGlobais() {
   const [modalFinanceiroAberto, setModalFinanceiroAberto] = useState(false)
   const [modalVendaCasadaAberto, setModalVendaCasadaAberto] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const { recarregarDados } = useDadosFinanceiros()
+  const { triggerRefresh } = useDadosFinanceiros()
   const { hasDraft } = useFormDraft()
 
   useEffect(() => {
@@ -102,19 +102,19 @@ export default function AtalhosGlobais() {
       <ModalTransacaoUnificada
         aberto={modalLojaAberto}
         onClose={() => setModalLojaAberto(false)}
-        onSucesso={() => recarregarDados()}
+        onSucesso={() => triggerRefresh()}
       />
 
       <ModalFinanceiroAvulso
         aberto={modalFinanceiroAberto}
         onClose={() => setModalFinanceiroAberto(false)}
-        onSucesso={() => recarregarDados()}
+        onSucesso={() => triggerRefresh()}
       />
 
       <ModalVendaCasada
         aberto={modalVendaCasadaAberto}
         onClose={() => setModalVendaCasadaAberto(false)}
-        onSucesso={() => recarregarDados()}
+        onSucesso={() => triggerRefresh()}
       />
     </>
   )

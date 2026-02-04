@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil } from '@/lib/dateUtils'
+import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import SeletorProduto from './SeletorProduto'
 import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
 
@@ -32,6 +33,7 @@ interface TransacaoCondicional {
 }
 
 export default function ModuloCondicional() {
+  const { versaoRefresh } = useDadosFinanceiros()
   const [tipo, setTipo] = useState<'recebido' | 'enviado'>('recebido')
   const [origem, setOrigem] = useState('')
   const [dataTransacao, setDataTransacao] = useState(getDataAtualBrasil())
@@ -129,7 +131,7 @@ export default function ModuloCondicional() {
   useEffect(() => {
     carregarCategorias()
     carregarTransacoes()
-  }, [carregarCategorias, carregarTransacoes])
+  }, [carregarCategorias, carregarTransacoes, versaoRefresh])
 
   const aplicarFiltros = useCallback(() => {
     let resultado = [...transacoes]

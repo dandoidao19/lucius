@@ -95,9 +95,12 @@ export default function ImportacaoExcelLoja({ onImportacaoConcluida }: Importaca
             continue
           }
           
+          // Buscar número sequencial oficial
+          const { data: numSeq } = await supabase.rpc('obter_proximo_numero_transacao')
+
           transacoes.push({
             user_id: user.id,
-            numero_transacao: Math.floor(Math.random() * 1000000),
+            numero_transacao: numSeq,
             descricao,
             total: valor,
             tipo,

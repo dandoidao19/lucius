@@ -51,7 +51,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.1 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.2 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -359,7 +359,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.1 NO SEU SUPABASE (SQL EDITOR).`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.2 NO SEU SUPABASE (SQL EDITOR).`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -657,10 +657,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       if (idPedidoOrigem) {
         // Reverter impacto de estoque do pedido antes de aplicar o da venda/compra final
+        // Mas APENAS se for Condicional (Pedidos não impactam estoque desde v4.2)
         const { data: itensPed } = await supabase.from('itens_condicionais').select('*').eq('transacao_id', idPedidoOrigem)
-        const { data: pedInfo } = await supabase.from('transacoes_condicionais').select('tipo').eq('id', idPedidoOrigem).single()
+        const { data: pedInfo } = await supabase.from('transacoes_condicionais').select('tipo, observacao').eq('id', idPedidoOrigem).single()
 
-        if (itensPed && pedInfo) {
+        const isPedidoOrigem = pedInfo?.observacao?.toUpperCase().includes('[PEDIDO]')
+
+        if (itensPed && pedInfo && !isPedidoOrigem) {
           const multReversao = pedInfo.tipo === 'enviado' ? 1 : -1
           for (const itP of itensPed) {
             if (itP.produto_id) {
@@ -838,10 +841,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
         if (erroIt) throw erroIt
 
-        // 2. Impacto no Estoque
-        if (prodId) {
+        // 2. Impacto no Estoque (Apenas se NÃO for Pedido)
+        if (prodId && !isPedidoTipo) {
           const multiplicadorEstoque = isVendaPedido ? -1 : 1
-          console.log(`📦 DEBUG ESTOQUE: Atualizando (Pedido) Produto ${prodId}, Qtd: ${item.quantidade * multiplicadorEstoque}`)
+          console.log(`📦 DEBUG ESTOQUE: Atualizando (Condicional) Produto ${prodId}, Qtd: ${item.quantidade * multiplicadorEstoque}`)
           const { error: errorRPC } = await supabase.rpc('atualizar_estoque', {
             produto_id_param: prodId,
             quantidade_param: Math.round(item.quantidade * multiplicadorEstoque)
@@ -852,8 +855,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             produto_id: prodId,
             tipo: isVendaPedido ? 'saida' : 'entrada',
             quantidade: item.quantidade,
-            observacao: `${isPedidoTipo ? 'Pedido' : 'Condicional'} #${numTransacao}`
+            observacao: `Condicional #${numTransacao}`
           })
+        } else if (prodId && isPedidoTipo) {
+           console.log(`📦 INFO: Pedido #${numTransacao} não gera impacto em estoque imediato.`)
         }
       }
 
@@ -1013,13 +1018,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 </div>
                 <button onClick={() => setErro('')} className="text-red-500 hover:text-red-700 p-1">✕</button>
               </div>
-              {erro.includes('V4.1') && (
+              {erro.includes('V4.2') && (
                 <div className="mt-3 bg-white/50 p-2 rounded border border-orange-200">
                    <p className="text-[10px] text-orange-900 font-bold">Como resolver:</p>
                    <ol className="list-decimal ml-4 text-[9px] text-orange-800 mt-1 space-y-1">
                       <li>Abra o seu Dashboard do Supabase.</li>
                       <li>Vá em <b>SQL Editor</b> (menu lateral esquerdo).</li>
-                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_1.sql</b> (disponível na raiz do projeto).</li>
+                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_2.sql</b> (disponível na raiz do projeto).</li>
                       <li>Cole no editor e clique em <b>RUN</b>.</li>
                    </ol>
                 </div>
@@ -1397,7 +1402,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.1
+              CORE ENGINE v4.2
             </div>
             <button
               onClick={handleCancelar}

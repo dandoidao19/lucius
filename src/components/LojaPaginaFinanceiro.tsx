@@ -61,6 +61,7 @@ let cacheGlobalUltimaAtualizacao: number = 0
 const CACHE_TEMPO_VIDA = 30000
 
 export default function LojaPaginaFinanceiro() {
+  const { versaoRefresh } = useDadosFinanceiros()
   const [transacoes, setTransacoes] = useState<Transacao[]>(cacheGlobalTransacoes)
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<Transacao[]>([])
   const [loading, setLoading] = useState(false)
@@ -216,7 +217,7 @@ export default function LojaPaginaFinanceiro() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [buscarTransacoes])
+  }, [buscarTransacoes, versaoRefresh])
 
   // Verifica período e mês
   const estaNoPeriodo = useCallback((dataString: string, inicio: string, fim: string) => {
@@ -508,7 +509,7 @@ export default function LojaPaginaFinanceiro() {
                       <th className="px-0.5 py-1 text-right font-semibold uppercase w-[60px]">Pago</th>
                       <th className="px-0.5 py-1 text-right font-semibold uppercase w-[40px]">Dif.</th>
                       <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px]">Parc.</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[50px]">Tipo</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[80px]">Tipo</th>
                       <th className="px-0.5 py-1 text-center font-semibold uppercase w-[65px]">Status</th>
                       <th className="px-0.5 py-1 text-center font-semibold uppercase w-[35px]">Ação</th>
                     </tr>
@@ -535,7 +536,7 @@ export default function LojaPaginaFinanceiro() {
                           </td>
                           <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-center text-gray-500"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
+                          <td className="px-0.5 py-1 text-center whitespace-nowrap"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">

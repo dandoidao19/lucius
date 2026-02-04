@@ -27,7 +27,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.1 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.2 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -121,7 +121,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.1 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.2 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -274,6 +274,21 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       if (pedido.data_vencimento) setPagCompra(prev => ({ ...prev, vencimento: pedido.data_vencimento.split('T')[0] }))
       setMostrarBuscaEntrada(false)
     }
+  }
+
+  const resetForm = () => {
+    setCliente('')
+    setFornecedor('')
+    setData(getDataAtualBrasil())
+    setItens([{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
+    setPagVenda({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
+    setPagCompra({ status: 'pago', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
+    setVendaAnexar(null)
+    setCompraAnexar(null)
+    setIdSaidaAnexar(null)
+    setIdEntradaAnexar(null)
+    setTotalSaidaAnterior(0)
+    setTotalEntradaAnterior(0)
   }
 
   const handleSubmit = async () => {
@@ -478,33 +493,38 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
         // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
 
-        // Saída (Venda ou Pedido)
-        console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${item.id_produto}, Qtd: -${item.quantidade}`)
-        const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
-        if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
+        // Saída (Apenas se NÃO for Pedido)
+        if (tipoSaida !== 'pedido_venda') {
+          console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${item.id_produto}, Qtd: -${item.quantidade}`)
+          const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: -item.quantidade })
+          if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
 
-        await supabase.from('movimentacoes_estoque').insert({
-            produto_id: item.id_produto,
-            tipo: 'saida',
-            quantidade: item.quantidade,
-            observacao: `Venda Casada #${numSaida}`
-        })
+          await supabase.from('movimentacoes_estoque').insert({
+              produto_id: item.id_produto,
+              tipo: 'saida',
+              quantidade: item.quantidade,
+              observacao: `Venda Casada #${numSaida}`
+          })
+        }
 
-        // Entrada (Compra ou Pedido)
-        console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${item.id_produto}, Qtd: ${item.quantidade}`)
-        const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
-        if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
+        // Entrada (Apenas se NÃO for Pedido)
+        if (tipoEntrada !== 'pedido_compra') {
+          console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${item.id_produto}, Qtd: ${item.quantidade}`)
+          const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: item.id_produto, quantidade_param: item.quantidade })
+          if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
 
-        await supabase.from('movimentacoes_estoque').insert({
-            produto_id: item.id_produto,
-            tipo: 'entrada',
-            quantidade: item.quantidade,
-            observacao: `Compra Casada #${numEntrada}`
-        })
+          await supabase.from('movimentacoes_estoque').insert({
+              produto_id: item.id_produto,
+              tipo: 'entrada',
+              quantidade: item.quantidade,
+              observacao: `Compra Casada #${numEntrada}`
+          })
+        }
       }
 
       alert('✅ Venda Casada gerada com sucesso!')
       clearDraft('venda_casada')
+      resetForm()
       recarregarDados()
       onSucesso()
       onClose()
@@ -520,18 +540,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const handleCancelar = () => {
     if (window.confirm('Deseja realmente cancelar o lançamento de Venda Casada? Todos os dados serão perdidos.')) {
       clearDraft('venda_casada')
-      setCliente('')
-      setFornecedor('')
-      setData(getDataAtualBrasil())
-      setItens([{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
-      setPagVenda({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
-      setPagCompra({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
-      setVendaAnexar(null)
-      setCompraAnexar(null)
-      setIdSaidaAnexar(null)
-      setIdEntradaAnexar(null)
-      setTotalSaidaAnterior(0)
-      setTotalEntradaAnterior(0)
+      resetForm()
       onClose()
     }
   }
@@ -919,7 +928,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.1
+              CORE ENGINE v4.2
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
