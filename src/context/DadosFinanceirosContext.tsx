@@ -1,7 +1,7 @@
 // context/DadosFinanceirosContext.tsx
 'use client'
 
-import { createContext, useContext, ReactNode, useMemo, useCallback } from 'react'
+import { createContext, useContext, ReactNode, useMemo, useCallback, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useCentrosDeCusto } from '@/hooks/useCentrosDeCusto'
 import { useLancamentosFinanceiros } from '@/hooks/useLancamentosFinanceiros'
@@ -58,7 +58,7 @@ const DadosFinanceirosContext = createContext<DadosFinanceirosContextType | unde
 
 export function DadosFinanceirosProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
-  const [versaoRefresh, setVersaoRefresh] = React.useState(0)
+  const [versaoRefresh, setVersaoRefresh] = useState(0)
 
   // 1. Buscar dados usando os novos hooks
   const { data: todosCentrosDeCusto = [], isLoading: carregandoCentros, dataUpdatedAt: centrosAtualizadoEm } = useCentrosDeCusto();

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- SCRIPT SQL NUCLEAR LUCIUS V4.2 - CONTADOR SEQUENCIAL E LIMPEZA DE "NÚMEROS ESTRANHOS"
+-- SCRIPT SQL NUCLEAR LUCIUS V4.3 - CONTADOR SEQUENCIAL E LIMPEZA DE "NÚMEROS ESTRANHOS"
 -- EXECUTE ESTE SCRIPT NO "SQL EDITOR" DO SEU DASHBOARD SUPABASE
 -- ESTE SCRIPT É SEGURO: NÃO APAGA DADOS, APENAS SINCRONIZA O CONTADOR.
 -- ==============================================================================
@@ -32,7 +32,7 @@ BEGIN
         ), 0) + 1, false
     );
 
-    -- 3. GARANTIR COLUNAS V3.5 ~ V4.1 (Caso não tenham sido executadas)
+    -- 3. GARANTIR COLUNAS V3.5 ~ V4.3 (Caso não tenham sido executadas)
     -- User_id
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='user_id') THEN ALTER TABLE vendas ADD COLUMN user_id UUID; END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='user_id') THEN ALTER TABLE compras ADD COLUMN user_id UUID; END IF;
