@@ -10,6 +10,7 @@ import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
 interface ItemCondicional {
   id: string
   produto_id: string | null
+  codigo: string
   descricao: string
   quantidade: number
   categoria: string
@@ -42,6 +43,7 @@ export default function ModuloCondicional() {
     {
       id: Date.now().toString(),
       produto_id: null,
+      codigo: '',
       descricao: '',
       quantidade: 1,
       categoria: '',
@@ -219,6 +221,7 @@ export default function ModuloCondicional() {
       {
         id: Date.now().toString(),
         produto_id: null,
+        codigo: '',
         descricao: '',
         quantidade: 1,
         categoria: categorias[0]?.nome || '',
@@ -247,6 +250,7 @@ export default function ModuloCondicional() {
 
   const handleSelecionarProduto = (produto: any, itemId: string) => {
     atualizarItem(itemId, 'produto_id', produto.id)
+    atualizarItem(itemId, 'codigo', produto.codigo || '')
     atualizarItem(itemId, 'descricao', produto.descricao)
     atualizarItem(itemId, 'categoria', produto.categoria)
     atualizarItem(itemId, 'preco_custo', produto.preco_custo)
@@ -294,11 +298,13 @@ export default function ModuloCondicional() {
 
         // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
+          if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
           const { data: { user } } = await supabase.auth.getUser()
           if (user) {
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
               .insert({
+                codigo: item.codigo.toUpperCase().trim(),
                 descricao: item.descricao.toUpperCase(),
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
@@ -339,6 +345,7 @@ export default function ModuloCondicional() {
         {
           id: Date.now().toString(),
           produto_id: null,
+          codigo: '',
           descricao: '',
           quantidade: 1,
           categoria: categorias[0]?.nome || '',
@@ -500,18 +507,31 @@ export default function ModuloCondicional() {
                         )}
 
                         {!item.produto_id && (
-                          <div>
-                            <label className="block text-[10px] font-medium text-gray-700 mb-0.5">
-                              Descrição do Produto *
-                            </label>
-                            <input
-                              type="text"
-                              value={item.descricao}
-                              onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
-                              placeholder="Nome do novo produto"
-                              className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded"
-                              required
-                            />
+                          <div className="space-y-1">
+                            <div className="grid grid-cols-3 gap-2">
+                               <div className="col-span-1">
+                                  <label className="block text-[10px] font-bold text-purple-600 mb-0.5 uppercase">Código *</label>
+                                  <input
+                                    type="text"
+                                    value={item.codigo}
+                                    onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)}
+                                    placeholder="REF..."
+                                    className="w-full px-1.5 py-0.5 text-xs border border-purple-200 rounded uppercase font-mono"
+                                    required
+                                  />
+                               </div>
+                               <div className="col-span-2">
+                                  <label className="block text-[10px] font-bold text-purple-600 mb-0.5 uppercase">Descrição *</label>
+                                  <input
+                                    type="text"
+                                    value={item.descricao}
+                                    onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
+                                    placeholder="Nome do novo produto"
+                                    className="w-full px-1.5 py-0.5 text-xs border border-purple-200 rounded"
+                                    required
+                                  />
+                               </div>
+                            </div>
                           </div>
                         )}
 

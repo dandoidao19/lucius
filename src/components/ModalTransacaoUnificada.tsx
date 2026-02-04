@@ -12,6 +12,7 @@ type TipoTransacao = 'venda' | 'compra' | 'pedido_venda' | 'pedido_compra' | 'co
 interface ItemTransacao {
   id: string
   produto_id: string | null
+  codigo: string
   descricao: string
   quantidade: number
   categoria: string
@@ -63,6 +64,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     {
       id: Date.now().toString(),
       produto_id: null,
+      codigo: '',
       descricao: '',
       quantidade: 1,
       categoria: '',
@@ -131,6 +133,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       {
         id: Date.now().toString(),
         produto_id: null,
+        codigo: '',
         descricao: '',
         quantidade: 1,
         categoria: '',
@@ -188,6 +191,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {
           id: Date.now().toString(),
           produto_id: null,
+          codigo: '',
           descricao: '',
           quantidade: 1,
           categoria: categorias[0]?.nome || '',
@@ -246,6 +250,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               ...item,
               isNovoCadastro: !item.isNovoCadastro,
               produto_id: null,
+              codigo: '',
               descricao: '',
               categoria: !item.isNovoCadastro ? categorias[0]?.nome || '' : '',
               preco_custo: 0,
@@ -276,6 +281,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           ? {
               ...item,
               produto_id: produto.id,
+              codigo: (produto as any).codigo || '',
               descricao: produto.descricao || '',
               categoria: categoriaNome,
               preco_custo: precoCusto,
@@ -512,9 +518,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           // Se for novo cadastro, cria o produto primeiro
           if (item.isNovoCadastro && !prodId) {
+            if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
               .insert({
+                codigo: item.codigo.toUpperCase().trim(),
                 descricao: item.descricao.toUpperCase(),
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
@@ -607,9 +616,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           // Se for novo cadastro, cria o produto primeiro
           if (item.isNovoCadastro && !prodId) {
+            if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
               .insert({
+                codigo: item.codigo.toUpperCase().trim(),
                 descricao: item.descricao.toUpperCase(),
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
@@ -807,9 +819,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         // Suporte a novo cadastro no condicional também
         if (item.isNovoCadastro && !prodId) {
+          if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+
           const { data: novoProd, error: erroNovoProd } = await supabase
             .from('produtos')
             .insert({
+              codigo: item.codigo.toUpperCase().trim(),
               descricao: item.descricao.toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
@@ -1210,13 +1225,30 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                                descricaoPreenchida={item.descricao || ''}
                              />
                            ) : (
-                             <input
-                               type="text"
-                               value={item.descricao || ''}
-                               onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
-                               placeholder="Descrição do novo produto"
-                               className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                             />
+                             <div className="space-y-2">
+                               <div className="grid grid-cols-3 gap-2">
+                                 <div className="col-span-1">
+                                    <label className="block text-[10px] text-gray-600 font-bold uppercase">Código *</label>
+                                    <input
+                                      type="text"
+                                      value={item.codigo || ''}
+                                      onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)}
+                                      placeholder="Ex: REF001"
+                                      className="w-full px-2 py-1 text-xs border border-purple-300 rounded uppercase font-mono"
+                                    />
+                                 </div>
+                                 <div className="col-span-2">
+                                    <label className="block text-[10px] text-gray-600 font-bold uppercase">Descrição *</label>
+                                    <input
+                                      type="text"
+                                      value={item.descricao || ''}
+                                      onChange={(e) => atualizarItem(item.id, 'descricao', e.target.value)}
+                                      placeholder="Descrição do novo produto"
+                                      className="w-full px-2 py-1 text-xs border border-purple-300 rounded"
+                                    />
+                                 </div>
+                               </div>
+                             </div>
                            )}
 
                            {item.isNovoCadastro ? (

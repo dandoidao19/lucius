@@ -12,6 +12,7 @@ import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
 interface ItemVendaCasada {
   id: string
   id_produto: string
+  codigo: string
   nome: string
   quantidade: number
   preco_unitario: number // Preço de Venda
@@ -57,7 +58,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   // Lista Única de Itens
   const [itens, setItens] = useState<ItemVendaCasada[]>([
-    { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }
+    { id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }
   ])
 
   // Pagamentos
@@ -83,7 +84,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         setCliente(draft.cliente || '')
         setFornecedor(draft.fornecedor || '')
         setData(draft.data || getDataAtualBrasil())
-        setItens(draft.itens || [{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
+        setItens(draft.itens || [{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
         setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
         setPagCompra(draft.pagCompra || { status: 'pago', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
       }
@@ -101,7 +102,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const adicionarItem = () => {
     setItens(prev => {
       const novos = prev.map(i => ({ ...i, minimizado: true }))
-      return [...novos, { id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }]
+      return [...novos, { id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }]
     })
   }
 
@@ -138,6 +139,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       ...i,
       isNovoCadastro: !i.isNovoCadastro,
       id_produto: '',
+      codigo: '',
       nome: '',
       categoria: !i.isNovoCadastro ? categorias[0]?.nome || '' : '',
       preco_custo: 0,
@@ -151,6 +153,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     setItens(prev => prev.map(i => i.id === id ? {
       ...i,
       id_produto: produto.id,
+      codigo: (produto as any).codigo || '',
       nome: produto.descricao,
       preco_unitario: produto.preco_venda || 0,
       valor_repasse: produto.valor_repasse || 0,
@@ -326,7 +329,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     setCliente('')
     setFornecedor('')
     setData(getDataAtualBrasil())
-    setItens([{ id: Date.now().toString(), id_produto: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
+    setItens([{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
     setPagVenda({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
     setPagCompra({ status: 'pago', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
     setVendaAnexar(null)
@@ -527,9 +530,12 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
         // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
+          if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.nome}`)
+
           const { data: novoProd, error: erroNovoProd } = await supabase
             .from('produtos')
             .insert({
+              codigo: item.codigo.toUpperCase().trim(),
               descricao: item.nome.toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
@@ -858,13 +864,28 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                          />
                        ) : (
                          <div className="space-y-2">
-                            <input
-                              type="text"
-                              value={item.nome || ''}
-                              onChange={(e) => atualizarItem(item.id, 'nome', e.target.value)}
-                              placeholder="Descrição do novo produto..."
-                              className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500"
-                            />
+                            <div className="grid grid-cols-3 gap-2">
+                               <div className="col-span-1">
+                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código *</label>
+                                 <input
+                                   type="text"
+                                   value={item.codigo || ''}
+                                   onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)}
+                                   placeholder="Ex: REF001"
+                                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500 uppercase font-mono"
+                                 />
+                               </div>
+                               <div className="col-span-2">
+                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição *</label>
+                                 <input
+                                   type="text"
+                                   value={item.nome || ''}
+                                   onChange={(e) => atualizarItem(item.id, 'nome', e.target.value)}
+                                   placeholder="Descrição do novo produto..."
+                                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500"
+                                 />
+                               </div>
+                            </div>
                             <div className="grid grid-cols-2 gap-2">
                                <div>
                                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria *</label>
