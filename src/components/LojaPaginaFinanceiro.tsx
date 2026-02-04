@@ -29,6 +29,10 @@ interface Transacao {
   parcela_total?: number
   transacao_principal_id?: string
   origem_id?: string
+  observacao?: string
+  id_venda?: string
+  id_compra?: string
+  id_condicional?: string
 }
 
 // Definição explícita para o tipo de dado bruto vindo do Supabase
@@ -45,6 +49,10 @@ interface SupabaseTransacaoLoja {
   juros_descontos?: number;
   status_pagamento?: string;
   quantidade_parcelas?: number;
+  observacao?: string;
+  id_venda?: string;
+  id_compra?: string;
+  id_condicional?: string;
 }
 
 
@@ -73,6 +81,7 @@ export default function LojaPaginaFinanceiro() {
   const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
   const [exibirFormularioLancamento, setExibirFormularioLancamento] = useState(false)
   const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Transacao | null>(null)
+  const [caixaMinimizado, setCaixaMinimizado] = useState(true)
 
   const { recarregarDados } = useDadosFinanceiros()
 
@@ -117,6 +126,10 @@ export default function LojaPaginaFinanceiro() {
         parcela_total: trans.quantidade_parcelas || parcela_total,
         cliente_fornecedor: descricaoLimpa,
         origem_id: trans.id,
+        observacao: trans.observacao,
+        id_venda: trans.id_venda,
+        id_compra: trans.id_compra,
+        id_condicional: trans.id_condicional,
       }
     })
   }, [])
@@ -139,12 +152,12 @@ export default function LojaPaginaFinanceiro() {
 
     try {
       console.log('📊 Buscando transações da loja...')
-      const { data: transacoesLoja, error } = await supabase
+      const { data: transacoesLoja, error: fetchError } = await supabase
         .from('transacoes_loja')
         .select('*')
         .order('data', { ascending: true })
 
-      if (error) throw error
+      if (fetchError) throw fetchError
 
       if (!transacoesLoja || transacoesLoja.length === 0) {
         console.log('📭 Nenhuma transação encontrada')
@@ -212,7 +225,7 @@ export default function LojaPaginaFinanceiro() {
       const dataInicio = new Date(inicio + 'T00:00:00')
       const dataFim = new Date(fim + 'T23:59:59')
       return data >= dataInicio && data <= dataFim
-    } catch (error) {
+    } catch {
       return false
     }
   }, [])
@@ -335,12 +348,21 @@ export default function LojaPaginaFinanceiro() {
 
   const getStatusLabel = useCallback((status: string | null) => {
     if (!status) return 'N/A'
-    if (status === 'pago') return '✓Pago'
+    if (status === 'pago') return 'PAGO'
     return status.charAt(0).toUpperCase() + status.slice(1)
   }, [])
 
-  const getTipoColor = useCallback((tipo: string) => tipo === 'entrada' ? 'bg-green-500' : 'bg-orange-500', [])
-  const getTipoLabel = useCallback((tipo: string) => tipo === 'entrada' ? 'VENDA' : 'COMPRA', [])
+  const getTipoColor = useCallback((transacao: Transacao) => {
+    const isPedido = !!transacao.id_condicional || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
+    if (transacao.tipo === 'entrada') return isPedido ? 'bg-blue-600' : 'bg-green-600'
+    return isPedido ? 'bg-orange-600' : 'bg-red-600'
+  }, [])
+
+  const getTipoLabel = useCallback((transacao: Transacao) => {
+    const isPedido = !!transacao.id_condicional || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
+    if (transacao.tipo === 'entrada') return isPedido ? 'P. VENDA' : 'VENDA'
+    return isPedido ? 'P. COMPRA' : 'COMPRA'
+  }, [])
   const getValorExibicao = useCallback((transacao: Transacao) => transacao.valor_pago ?? transacao.valor, [])
   const getDiferenca = useCallback((transacao: Transacao) => {
     if (transacao.valor_pago === undefined || transacao.valor_pago === null) return 0
@@ -427,31 +449,44 @@ export default function LojaPaginaFinanceiro() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 items-start">
-        <div className="lg:col-span-1">
-          <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
+      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+        {/* Barra Lateral do Caixa (Retrátil) */}
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+        >
+          <div className="min-w-[250px]">
+            <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
+          </div>
         </div>
 
-        <div className="lg:col-span-3 min-h-0">
-          <div className="bg-white rounded-lg shadow-md p-3">
-            <div className="flex justify-between items-center mb-3">
-               <div className="flex items-center gap-4">
-                <h3 className="font-semibold text-gray-800 text-sm">
+        {/* Lista de Transações (Expandida) */}
+        <div className="flex-1 min-h-0 w-full">
+          <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
+            <div className="bg-purple-600 flex justify-between items-center px-3 py-1 text-white border-b border-purple-700">
+               <div className="flex items-center gap-4 h-full">
+                <button
+                  onClick={() => setCaixaMinimizado(!caixaMinimizado)}
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+                  title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
+                >
+                  <span className="text-xs">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
+                </button>
+                <h3 className="text-xs font-semibold uppercase tracking-widest flex items-center">
                   {tituloLista}
                   {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
                 </h3>
                 <button
                   onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-md text-xs font-medium"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
                 >
-                  {exibirFormularioLancamento ? 'Fechar Lançamento' : '+ Lançamento Avulso'}
+                  {exibirFormularioLancamento ? 'FECHAR' : '+ LANÇAMENTO AVULSO'}
                 </button>
               </div>
               <button
                 onClick={() => setVerTodas(!verTodas)}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${verTodas ? 'bg-blue-500 text-white hover:bg-blue-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
               >
-                {verTodas ? 'Mês Atual' : 'Ver Todas'}
+                {verTodas ? 'MÊS ATUAL' : 'VER TODAS'}
               </button>
             </div>
 
@@ -463,18 +498,19 @@ export default function LojaPaginaFinanceiro() {
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse text-xs">
                   <thead>
-                    <tr className="bg-gray-100 border-b border-gray-300">
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-700" style={{ fontSize: '10px' }}>Vencimento</th>
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-700" style={{ fontSize: '10px' }}>Pagamento</th>
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-700" style={{ fontSize: '10px' }}>Transação</th>
-                      <th className="px-1 py-0.5 text-left font-semibold text-gray-700" style={{ fontSize: '10px' }}>Cliente/Fornecedor</th>
-                      <th className="px-1 py-0.5 text-right font-semibold text-gray-700" style={{ fontSize: '10px' }}>Valor Parcela</th>
-                      <th className="px-1 py-0.5 text-right font-semibold text-gray-700" style={{ fontSize: '10px' }}>Valor Pago</th>
-                      <th className="px-1 py-0.5 text-right font-semibold text-gray-700" style={{ fontSize: '10px' }}>Diferença</th>
-                      <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Parcela</th>
-                      <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Tipo</th>
-                      <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Status</th>
-                      <th className="px-1 py-0.5 text-center font-semibold text-gray-700" style={{ fontSize: '10px' }}>Ação</th>
+                    <tr className="bg-purple-600 text-white border-b border-purple-500">
+                      <th className="px-1 py-1 text-left font-semibold uppercase w-[85px]">Venc.</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase w-[85px]">Pagto.</th>
+                      <th className="px-0.5 py-1 text-left font-semibold uppercase w-[45px]">Nº</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[90px]">Cliente/Fornecedor</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[150px]">Observações</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[60px]">Valor</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[60px]">Pago</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[40px]">Dif.</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px]">Parc.</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[50px]">Tipo</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[65px]">Status</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[35px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -483,33 +519,34 @@ export default function LojaPaginaFinanceiro() {
                       const diferenca = getDiferenca(transacao)
                       const temPag = temPagamento(transacao)
                       return (
-                        <tr key={`${transacao.id}-${index}`} className="border-b border-gray-200 hover:bg-gray-50">
-                          <td className="px-1 py-0.5 text-gray-700" style={{ fontSize: '11px' }}>{formatarDataParaExibicao(transacao.data)}</td>
-                          <td className="px-1 py-0.5 text-gray-700" style={{ fontSize: '11px' }}>{transacao.data_pagamento ? <span className="text-green-600 font-medium">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
-                          <td className="px-1 py-0.5 text-gray-700" style={{ fontSize: '11px' }}>#{transacao.numero_transacao || 'N/A'}</td>
-                          <td className="px-1 py-0.5 text-gray-700 truncate max-w-[100px]" style={{ fontSize: '11px' }}>{transacao.descricao}</td>
-                          <td className="px-1 py-0.5 text-right">
-                            <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold text-xs' : 'text-red-600 font-bold text-xs')}>
+                        <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
+                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-1 text-gray-500">#{transacao.numero_transacao || '—'}</td>
+                          <td className="px-1 py-1 text-gray-800 truncate max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
+                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={transacao.observacao}>{transacao.observacao || '—'}</td>
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap">
+                            <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>
                               R$ {transacao.valor.toFixed(2)}
                             </span>
                           </td>
-                          <td className="px-1 py-0.5 text-right">
-                            {temPag ? <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold text-xs' : 'text-red-600 font-bold text-xs')}>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400 text-xs">—</span>}
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap">
+                            {temPag ? <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
                           </td>
-                          <td className="px-1 py-0.5 text-right">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block text-xs') : (diferenca > 0 ? 'text-yellow-600 font-bold text-xs' : 'text-blue-600 font-bold text-xs')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400 text-xs">—</span>}</td>
-                          <td className="px-1 py-0.5 text-center text-gray-700" style={{ fontSize: '11px' }}><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-white font-bold text-xs ${getTipoColor(transacao.tipo)}`}>{getTipoLabel(transacao.tipo)}</span></td>
-                          <td className="px-1 py-0.5 text-center"><span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
-                          <td className="px-1 py-0.5 text-center">
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-1 text-center text-gray-500"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
+                          <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {transacao.status_pagamento === 'pago' ? (
                                 <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
-                                  ↩️ Estornar
+                                  ↩️
                                 </button>
                               ) : (
                                 <>
                                   <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
-                                    💰 Pagar
+                                    💰
                                   </button>
                                   {((transacao.parcela_total || transacao.quantidade_parcelas || 1) <= 1) && (
                                     <button
@@ -520,7 +557,7 @@ export default function LojaPaginaFinanceiro() {
                                       className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1.5 py-0.5 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                                       title="Editar"
                                     >
-                                      ✏️ Editar
+                                      ✏️
                                     </button>
                                   )}
                                 </>

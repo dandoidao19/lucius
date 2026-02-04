@@ -19,6 +19,9 @@ interface ModalPagarTransacaoProps {
     data?: string
     valor_pago?: number
     juros_descontos?: number
+    id_venda?: string
+    id_compra?: string
+    id_condicional?: string
   } | null
   onClose: () => void
   onPagamentoRealizado: () => void
@@ -142,16 +145,18 @@ export default function ModalPagarTransacao({
         
         // 2. CRIAR NOVA PARCELA SE SOLICITADO
         if (criarNovaParcela && valorRestante > 0.01) {
-          const { data: proximoNumero } = await supabase.rpc('obter_proximo_numero_transacao')
-          
+          // Mantemos o MESMO número de transação da parcela original para agrupamento lógico
           const novaParcela = {
             user_id: user.id,
-            numero_transacao: proximoNumero,
+            numero_transacao: transacao.numero_transacao,
             descricao: transacao.descricao,
             total: valorRestante,
             tipo: transacao.tipo,
             data: prepararDataParaInsert(novaDataVencimento),
-            status_pagamento: 'pendente'
+            status_pagamento: 'pendente',
+            id_venda: transacao.id_venda,
+            id_compra: transacao.id_compra,
+            id_condicional: transacao.id_condicional
           }
 
           const { error: errorInsert } = await supabase

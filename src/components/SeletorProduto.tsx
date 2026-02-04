@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 interface Produto {
@@ -18,7 +18,6 @@ interface SeletorProdutoProps {
   onNovoItem?: () => void
   placeholder?: string
   descricaoPreenchida?: string
-  // CORREÇÃO: Removido key daqui (não é prop válida)
 }
 
 export default function SeletorProduto({
@@ -32,19 +31,18 @@ export default function SeletorProduto({
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const ignorarBuscaRef = useRef(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Sincronizar busca com prop externa (ex: ao limpar form ou selecionar outro item)
   useEffect(() => {
-    setBusca(descricaoPreenchida)
+    if (descricaoPreenchida !== busca) {
+      setBusca(descricaoPreenchida)
+      ignorarBuscaRef.current = true
+    }
   }, [descricaoPreenchida])
 
-  useEffect(() => {
-    if (busca.length > 2) {
-      buscarProdutos(busca)
-    } else {
-      setProdutos([])
-    }
-  }, [busca])
-
-  const buscarProdutos = async (termo: string) => {
+  const buscarProdutos = useCallback(async (termo: string) => {
     setLoading(true)
     try {
       const { data, error } = await supabase
@@ -55,57 +53,92 @@ export default function SeletorProduto({
 
       if (error) throw error
       setProdutos(data || [])
-      setMostrarSugestoes(true)
+      // Apenas mostra se ainda houver texto e não tiver sido ignorado
+      if (busca.length > 2 && !ignorarBuscaRef.current) {
+        setMostrarSugestoes(true)
+      }
     } catch (error) {
       console.error('Erro ao buscar produtos:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [busca])
+
+  // Efeito de busca com debounce
+  useEffect(() => {
+    if (ignorarBuscaRef.current) {
+      ignorarBuscaRef.current = false
+      setMostrarSugestoes(false)
+      return
+    }
+
+    if (busca.length > 2) {
+      const timer = setTimeout(() => {
+        buscarProdutos(busca)
+      }, 300)
+      return () => clearTimeout(timer)
+    } else {
+      setProdutos([])
+      setMostrarSugestoes(false)
+    }
+  }, [busca, buscarProdutos])
+
+  // Fechar ao clicar fora
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setMostrarSugestoes(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
 
   const handleSelecionarProduto = (produto: Produto) => {
-    console.log('✅ Produto selecionado no SeletorProduto:', produto.descricao)
-    onSelecionarProduto(produto)
+    ignorarBuscaRef.current = true
     setBusca(produto.descricao)
     setMostrarSugestoes(false)
+    setProdutos([])
+    onSelecionarProduto(produto)
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={containerRef}>
       <div className="flex gap-1">
         <div className="flex-1 relative">
           <input
             type="text"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
-            onFocus={() => busca.length > 2 && setMostrarSugestoes(true)}
+            onFocus={() => busca.length > 2 && produtos.length > 0 && setMostrarSugestoes(true)}
             placeholder={placeholder}
             className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-            // CORREÇÃO: key não deve ser usada aqui
           />
 
           {mostrarSugestoes && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-50 max-h-48 overflow-y-auto">
               {loading ? (
-                <div className="p-2 text-gray-600 text-xs">Buscando...</div>
+                <div className="p-2 text-gray-600 text-xs italic">Buscando...</div>
               ) : produtos.length > 0 ? (
-                <div className="divide-y">
+                <div className="divide-y divide-gray-100">
                   {produtos.map((produto) => (
                     <button
                       key={produto.id}
                       type="button"
-                      onClick={() => handleSelecionarProduto(produto)}
-                      className="w-full text-left px-2 py-1 hover:bg-blue-50 transition-colors text-xs"
+                      onMouseDown={(e) => {
+                        e.preventDefault() // Evita que o input perca o foco e dispare blur antes do clique
+                        handleSelecionarProduto(produto)
+                      }}
+                      className="w-full text-left px-2 py-1.5 hover:bg-blue-50 transition-colors text-xs"
                     >
-                      <div className="font-medium text-gray-800 truncate">{produto.descricao}</div>
-                      <div className="text-[10px] text-gray-600">
+                      <div className="font-semibold text-gray-800 truncate">{produto.descricao}</div>
+                      <div className="text-[10px] text-gray-500">
                         {produto.codigo} • Est: {produto.quantidade} • R$ {produto.preco_venda.toFixed(2)}
                       </div>
                     </button>
                   ))}
                 </div>
-              ) : busca.length > 2 ? (
-                <div className="p-2 text-gray-600 text-xs">Nenhum produto encontrado</div>
               ) : null}
             </div>
           )}
@@ -115,7 +148,7 @@ export default function SeletorProduto({
           <button
             type="button"
             onClick={onNovoItem}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium transition-colors whitespace-nowrap"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs font-semibold transition-colors whitespace-nowrap"
           >
             + Novo
           </button>

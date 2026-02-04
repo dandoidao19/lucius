@@ -3,7 +3,7 @@
 import { useCaixaUniversal } from '@/hooks/useCaixaUniversal'
 
 export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
-  // 1. Consumir o hook centralizado e otimizado
+  // 1. Consumir o hook centralizado e otimizado (específico para Casa)
   const {
     caixaRealCasa,
     entradasHoje,
@@ -15,7 +15,7 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao,
-  } = useCaixaUniversal()
+  } = useCaixaUniversal('casa')
 
   // 2. Toda a lógica de busca de dados, cálculo, useEffects e useStates foi removida.
   // O componente agora é muito mais simples e apenas exibe os dados recebidos.
@@ -37,10 +37,10 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
   }
 
   // Estilos permanecem os mesmos
-  const caixaTituloStyle: React.CSSProperties = { fontSize: '11px', marginBottom: 2, whiteSpace: 'nowrap' }
+  const caixaTituloStyle: React.CSSProperties = { fontSize: '12px', marginBottom: 2, whiteSpace: 'nowrap' }
   const caixaValorStyle: React.CSSProperties = { fontSize: '1.5rem', fontWeight: 700, lineHeight: '1.05', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
-  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '11px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
-  const periodoLinhaStyle: React.CSSProperties = { fontSize: '11px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
+  const caixaSubContainerStyle: React.CSSProperties = { fontSize: '12px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', gap: 8, alignItems: 'center' }
+  const periodoLinhaStyle: React.CSSProperties = { fontSize: '12px', color: '#374151', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 4, marginBottom: 4, paddingLeft: 4 }
   const botoesContainerStyle: React.CSSProperties = { display: 'flex', gap: 6, alignItems: 'center', whiteSpace: 'nowrap' }
 
   const formatarMoeda = (valor: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(valor)
@@ -49,23 +49,23 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
   const renderBotoesModo = () => {
     return filtro !== 'mes' ? (
       <div style={botoesContainerStyle}>
-        <button onClick={handleMudarParaMes} disabled={carregando} className="px-1.5 py-0.5 bg-blue-500 text-white rounded text-xs font-medium">Ver Mês</button>
-        <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-500 text-white rounded text-xs font-medium">TUDO</button>
+        <button onClick={handleMudarParaMes} disabled={carregando} className="px-1.5 py-0.5 bg-blue-600 text-white rounded text-xs font-bold uppercase">Ver Mês</button>
+        <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-xs font-bold uppercase">TUDO</button>
       </div>
     ) : (
       <div style={botoesContainerStyle}>
         <input type="month" value={mesFiltro} onChange={handleMesFiltroChange} disabled={carregando} className="px-1.5 py-0.5 text-xs border border-gray-300 rounded" />
-        <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-xs font-medium">30 Dias</button>
-        <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-500 text-white rounded text-xs font-medium">TUDO</button>
+        <button onClick={handleVoltar30Dias} disabled={carregando} className="px-1.5 py-0.5 bg-gray-500 text-white rounded text-xs font-bold uppercase">30 Dias</button>
+        <button onClick={handleMostrarHistorico} disabled={carregando} className="px-1.5 py-0.5 bg-green-600 text-white rounded text-xs font-bold uppercase">TUDO</button>
       </div>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-1 space-y-1" style={{ minWidth: 0 }}>
+    <div className="bg-white rounded shadow-sm p-1 space-y-1 border border-gray-200" style={{ minWidth: 0 }}>
       <h2 className="font-semibold text-gray-800" style={{ fontSize: '12px' }}>{titulo || 'Caixa'}</h2>
 
-      <div className={`rounded p-1.5 ${caixaRealCasa < 0 ? 'bg-red-500' : 'bg-blue-50 border border-blue-200'}`} style={{ minWidth: 0 }}>
+      <div className={`rounded p-1.5 ${caixaRealCasa < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>
         <div>
           <p style={caixaTituloStyle} className={`${caixaRealCasa < 0 ? 'text-red-100' : 'text-gray-600'}`}>Caixa Real:</p>
           <p style={caixaValorStyle} className={`${caixaRealCasa < 0 ? 'text-white' : 'text-blue-600'}`}>{formatarMoeda(caixaRealCasa)}</p>
@@ -90,16 +90,16 @@ export default function CaixaCasaDetalhado({ titulo }: { titulo?: string }) {
           <p className="text-gray-500 text-center py-2" style={{ fontSize: '12px' }}>Carregando...</p>
         ) : caixaPrevistoGeral.length > 0 ? (
           <div className="overflow-x-auto">
-            <div className="text-[10px] text-gray-500 mb-1">
+            <div className="text-xs text-gray-500 mb-1">
               Mostrando {caixaPrevistoGeral.length} dias
             </div>
             <table className="w-full text-xs border-collapse">
               <thead>
-                <tr className="bg-gray-100 border-b border-gray-300">
-                  <th className="px-1 py-0.5 text-left font-semibold text-gray-700">Data</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Receitas</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Despesas</th>
-                  <th className="px-1 py-0.5 text-right font-semibold text-gray-700">Acumulado</th>
+                <tr className="bg-blue-50/50 border-b border-blue-100">
+                  <th className="px-1 py-0.5 text-left font-bold text-blue-800">Data</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Receitas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Despesas</th>
+                  <th className="px-1 py-0.5 text-right font-bold text-blue-800">Acumulado</th>
                 </tr>
               </thead>
               <tbody>

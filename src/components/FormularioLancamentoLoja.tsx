@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { useFormDraft } from '@/context/FormDraftContext'
+import SeletorEntidade from './SeletorEntidade'
 
 interface Transacao {
   id: string
@@ -13,6 +15,7 @@ interface Transacao {
   tipo: 'entrada' | 'saida'
   valor_pago?: number | null
   status_pagamento?: string | null
+  observacao?: string | null
 }
 
 interface FormularioLancamentoLojaProps {
@@ -22,11 +25,13 @@ interface FormularioLancamentoLojaProps {
 }
 
 export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCancel, lancamentoInicial }: FormularioLancamentoLojaProps) {
+  const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [clienteFornecedor, setClienteFornecedor] = useState('')
   const [valor, setValor] = useState(0)
   const [data, setData] = useState(getDataAtualBrasil())
   const [tipo, setTipo] = useState('saida')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
+  const [observacao, setObservacao] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
@@ -39,14 +44,40 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       setData(lancamentoInicial.data)
       setTipo(lancamentoInicial.tipo)
       setStatusPagamento(lancamentoInicial.status_pagamento || 'pendente')
+      setObservacao(lancamentoInicial.observacao || '')
     } else {
-      setClienteFornecedor('')
-      setValor(0)
-      setData(getDataAtualBrasil())
-      setTipo('saida')
-      setStatusPagamento('pendente')
+      const draft = getDraft('financeiro')
+      if (draft) {
+        setClienteFornecedor(draft.clienteFornecedor)
+        setValor(draft.valor)
+        setData(draft.data)
+        setTipo(draft.tipo)
+        setStatusPagamento(draft.statusPagamento)
+        setObservacao(draft.observacao)
+      } else {
+        setClienteFornecedor('')
+        setValor(0)
+        setData(getDataAtualBrasil())
+        setTipo('saida')
+        setStatusPagamento('pendente')
+        setObservacao('')
+      }
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lancamentoInicial, isEditMode])
+
+  useEffect(() => {
+    if (!isEditMode && clienteFornecedor) {
+      setDraft('financeiro', {
+        clienteFornecedor,
+        valor,
+        data,
+        tipo,
+        statusPagamento,
+        observacao
+      })
+    }
+  }, [isEditMode, clienteFornecedor, valor, data, tipo, statusPagamento, observacao, setDraft])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,6 +103,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         status_pagamento: statusPagamento,
         data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
         valor_pago: statusPagamento === 'pago' ? valor : null,
+        observacao: observacao.trim() || null,
       }
 
       if (isEditMode && lancamentoInicial) {
@@ -102,6 +134,9 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         if (error) throw error
       }
 
+      if (!isEditMode) {
+        clearDraft('financeiro')
+      }
       onLancamentoAdicionado()
 
     } catch (err) {
@@ -113,10 +148,13 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-3 space-y-2 border border-blue-300">
-      <h2 className="text-sm font-semibold text-gray-800 mb-2">
-        {isEditMode ? 'Editar Lançamento' : 'Novo Lançamento Avulso'}
-      </h2>
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-purple-200">
+      <div className="bg-purple-600 px-3 py-1 flex justify-between items-center text-white border-b border-purple-700">
+        <h2 className="text-xs font-semibold uppercase tracking-widest">
+          {isEditMode ? 'Editar Lançamento' : 'Novo Lançamento Avulso'}
+        </h2>
+      </div>
+      <div className="p-3 space-y-2">
 
       {erro && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-2 py-1 rounded text-xs">
@@ -129,13 +167,11 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Cliente/Fornecedor *
           </label>
-          <input
-            type="text"
-            value={clienteFornecedor}
-            onChange={(e) => setClienteFornecedor(e.target.value)}
+          <SeletorEntidade
+            valor={clienteFornecedor}
+            onChange={setClienteFornecedor}
+            tipo="ambos"
             placeholder="Nome do cliente ou fornecedor"
-            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            required
           />
         </div>
 
@@ -196,6 +232,19 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
           </div>
         </div>
 
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Observações
+          </label>
+          <textarea
+            value={observacao}
+            onChange={(e) => setObservacao(e.target.value)}
+            placeholder="Notas adicionais sobre este lançamento..."
+            className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={2}
+          />
+        </div>
+
         <div className="flex items-center gap-2 pt-2">
             <button
               type="submit"
@@ -213,6 +262,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
             </button>
         </div>
       </form>
+      </div>
     </div>
   )
 }

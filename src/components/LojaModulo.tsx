@@ -3,29 +3,18 @@
 import { useState } from 'react'
 import LojaPaginaFinanceiro from './LojaPaginaFinanceiro'
 import LojaPaginaEstoque from './LojaPaginaEstoque'
-import LojaPaginaCompras from './LojaPaginaCompras'
-import LojaPaginaVendas from './LojaPaginaVendas'
-import ModuloCondicional from './ModuloCondicional'
-import { isDevFeaturesEnabled } from '@/lib/envUtils'
+import LojaPaginaTransacoes from './LojaPaginaTransacoes'
 
-type AbaLoja = 'financeiro' | 'estoque' | 'vendas' | 'compras' | 'condicional'
+type AbaLoja = 'financeiro' | 'transacoes' | 'estoque'
 
 export default function LojaModulo() {
   const [abaAtiva, setAbaAtiva] = useState<AbaLoja>('financeiro')
-  const devFeaturesEnabled = isDevFeaturesEnabled()
 
-  // Define as abas base (sempre visíveis)
-  const abasBase: { id: AbaLoja; titulo: string; icone: string }[] = [
-    { id: 'financeiro', titulo: 'Financeiro', icone: '💳' },
-    { id: 'estoque', titulo: 'Estoque', icone: '📦' },
-    { id: 'vendas', titulo: 'Vendas', icone: '💰' },
-    { id: 'compras', titulo: 'Compras', icone: '📥' },
+  const abas: { id: AbaLoja; titulo: string; icone: string; corAtiva: string }[] = [
+    { id: 'financeiro', titulo: 'Financeiro', icone: '💳', corAtiva: 'bg-purple-600 text-white shadow-md' },
+    { id: 'transacoes', titulo: 'Transações', icone: '🔄', corAtiva: 'bg-pink-700 text-white shadow-md' },
+    { id: 'estoque', titulo: 'Estoque', icone: '📦', corAtiva: 'bg-red-700 text-white shadow-md' },
   ]
-
-  // Adiciona aba Condicional apenas em desenvolvimento
-  const abas = devFeaturesEnabled 
-    ? [...abasBase, { id: 'condicional' as AbaLoja, titulo: 'Condicional', icone: '⚙️' }]
-    : abasBase
 
   const renderizarConteudo = () => {
     switch (abaAtiva) {
@@ -33,31 +22,26 @@ export default function LojaModulo() {
         return <LojaPaginaFinanceiro />
       case 'estoque':
         return <LojaPaginaEstoque />
-      case 'vendas':
-        return <LojaPaginaVendas />
-      case 'compras':
-        return <LojaPaginaCompras />
-      case 'condicional':
-        // Renderiza apenas se recursos de dev estiverem habilitados
-        return devFeaturesEnabled ? <ModuloCondicional /> : null
+      case 'transacoes':
+        return <LojaPaginaTransacoes />
       default:
         return null
     }
   }
 
   return (
-    <div className="space-y-6">
-      {/* Menu Horizontal */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        <nav className="flex flex-wrap gap-0">
+    <div className="space-y-1">
+      {/* Menu Horizontal Compacto */}
+      <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200 p-0.5">
+        <nav className="flex flex-wrap gap-0.5">
           {abas.map((aba) => (
             <button
               key={aba.id}
               onClick={() => setAbaAtiva(aba.id)}
-              className={`flex-1 min-w-max px-6 py-4 font-medium transition-all border-b-2 ${
+              className={`flex-1 min-w-max px-4 py-1 text-sm font-semibold transition-all rounded flex items-center justify-center ${
                 abaAtiva === aba.id
-                  ? 'bg-blue-50 text-blue-600 border-blue-500'
-                  : 'bg-white text-gray-700 border-transparent hover:bg-gray-50'
+                  ? aba.corAtiva
+                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent'
               }`}
             >
               <span className="mr-2">{aba.icone}</span>

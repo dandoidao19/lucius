@@ -18,7 +18,7 @@ interface FiltrosCasaProps {
   setFiltroStatus: (v: string) => void
   
   // Dados
-  centrosCusto?: any[]
+  centrosCusto?: { id: string; nome: string }[]
   
   // Ações
   onLimpar: () => void
@@ -85,91 +85,91 @@ export default function FiltrosCasa({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-md mb-3">
+    <div className="bg-white rounded shadow-sm mb-1 border border-blue-600 overflow-hidden">
       {/* Cabeçalho Minimizado */}
       <button
         onClick={() => setAberto(!aberto)}
-        className="w-full px-3 py-2 flex items-center justify-between text-xs font-semibold text-gray-800 hover:bg-gray-50 transition-colors rounded-lg"
+        className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-blue-600 uppercase tracking-widest hover:bg-blue-50 transition-colors"
       >
-        <span>🔍 Filtros de Lançamentos</span>
-        <span className="text-lg">{aberto ? '▼' : '▶'}</span>
+        <span className="flex items-center gap-1">🔍 Filtros de Lançamentos</span>
+        <span className="flex items-center justify-center h-4 w-4">{aberto ? '▼' : '▶'}</span>
       </button>
 
       {/* Conteúdo dos Filtros */}
       {aberto && (
-        <div className="px-3 pb-3 pt-2 border-t border-gray-200">
+        <div className="px-2 pb-2 pt-1 bg-white border-t border-blue-200">
           {/* Grid com 6 colunas - ORDEM: Data Início, Data Fim, Mês, Descrição, CDC, Status */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1">
             {/* Data Início */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Início Data
               </label>
               <input
                 type="date"
                 value={filtroDataInicio}
                 onChange={(e) => setFiltroDataInicio(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {/* Data Fim */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Fim Data
               </label>
               <input
                 type="date"
                 value={filtroDataFim}
                 onChange={(e) => setFiltroDataFim(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {/* Mês Fechado */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Mês Fechado
               </label>
               <select
                 value={filtroMes}
                 onChange={(e) => setFiltroMes(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Todos</option>
                 {meses.map(m => (
-                  <option key={m.valor} value={m.valor} className="text-[10px]">{m.nome}</option>
+                  <option key={m.valor} value={m.valor}>{m.nome}</option>
                 ))}
               </select>
             </div>
 
             {/* Descrição */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Descrição
               </label>
               <input
                 type="text"
                 value={filtroDescricao}
                 onChange={(e) => setFiltroDescricao(e.target.value)}
-                placeholder="Buscar descrição..."
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="Buscar..."
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
 
             {/* CDC */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 CDC
               </label>
               <select
                 value={filtroCDC}
                 onChange={(e) => setFiltroCDC(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 <option value="">Todos</option>
                 {centrosCusto.map(centro => (
-                  <option key={centro.id} value={centro.id} className="text-[10px]">
+                  <option key={centro.id} value={centro.id}>
                     {centro.nome}
                   </option>
                 ))}
@@ -178,16 +178,16 @@ export default function FiltrosCasa({
 
             {/* Status */}
             <div className="col-span-1">
-              <label className="block text-[9px] font-medium text-gray-700 mb-0.5">
+              <label className="block text-xs font-medium text-gray-700 mb-0.5">
                 Status
               </label>
               <select
                 value={filtroStatus}
                 onChange={(e) => setFiltroStatus(e.target.value)}
-                className="w-full px-1.5 py-0.5 text-[10px] border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full px-1.5 py-0.5 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               >
                 {getStatusOptions().map(option => (
-                  <option key={option.value} value={option.value} className="text-[10px]">
+                  <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
@@ -199,7 +199,7 @@ export default function FiltrosCasa({
           <div className="flex gap-2 mt-2">
             <button
               onClick={onLimpar}
-              className="px-2 py-0.5 bg-gray-500 text-white text-[10px] rounded hover:bg-gray-600 transition-colors"
+              className="px-2 py-0.5 bg-gray-500 text-white text-xs rounded hover:bg-gray-600 transition-colors"
             >
               🗑️ Limpar
             </button>
@@ -207,7 +207,7 @@ export default function FiltrosCasa({
             {onGerarPDF && (
               <button
                 onClick={onGerarPDF}
-                className="px-2 py-0.5 bg-red-500 text-white text-[10px] rounded hover:bg-red-600 transition-colors"
+                className="px-2 py-0.5 bg-red-500 text-white text-xs rounded hover:bg-red-600 transition-colors"
               >
                 📄 PDF
               </button>

@@ -80,19 +80,19 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <div className="h-1 w-12 bg-green-500 rounded"></div>
             </div>
             
-            <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded text-sm space-y-1">
+            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded text-xs space-y-1">
               <p><span className="font-semibold text-gray-700">Lançamento:</span> {lancamento.descricao}</p>
-              <p><span className="font-semibold text-gray-700">Valor Total:</span> <span className="text-lg font-bold text-green-700">R$ {lancamento.valor.toFixed(2)}</span></p>
+              <p><span className="font-semibold text-gray-700">Valor Total:</span> <span className="text-lg font-bold text-blue-700">R$ {lancamento.valor.toFixed(2)}</span></p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Data do Pagamento *</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Data do Pagamento *</label>
                 <input
                   type="date"
                   value={modalPagar.dataPagamento}
                   onChange={handleDataPagamentoChange}
-                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                  className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
@@ -102,7 +102,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
                   id="pagarTotalCasa"
                   checked={modalPagar.pagarTotal}
                   onChange={handlePagarTotalToggle}
-                  className="w-4 h-4 text-green-600 rounded focus:ring-green-500"
+                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                 />
                 <label htmlFor="pagarTotalCasa" className="ml-2 text-sm font-medium text-gray-700">
                   Pagar valor total deste lançamento
@@ -113,18 +113,18 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={fecharModal}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-4 py-2 text-xs font-bold text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                Cancelar
+                CANCELAR
               </button>
               <button
                 onClick={() => {
                   if (modalPagar.pagarTotal) processarPagamento(false)
                   else avancarPasso('valor', 0)
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                className="px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {modalPagar.pagarTotal ? 'Confirmar Pagamento' : 'Próximo'}
+                {modalPagar.pagarTotal ? 'CONFIRMAR PAGAMENTO' : 'PRÓXIMO'}
               </button>
             </div>
           </>

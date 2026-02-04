@@ -109,9 +109,9 @@ export default function ModuloCondicional() {
         itens: t.itens_condicionais?.map((i: any) => ({
           id: i.id,
           produto_id: i.produto_id,
-          descricao: i.produtos?.descricao || '',
+          descricao: i.descricao || i.produtos?.descricao || '',
           quantidade: i.quantidade,
-          categoria: i.produtos?.categoria || '',
+          categoria: i.categoria || i.produtos?.categoria || '',
           status: i.status,
           valor_efetivado: i.valor_efetivado,
           preco_custo: 0,
@@ -305,6 +305,7 @@ export default function ModuloCondicional() {
             preco_custo: item.preco_custo,
             preco_venda: item.preco_venda,
             status: 'pendente',
+            observacao: null // Garantindo consistência com o schema novo
           })
 
         if (erroItem) throw erroItem

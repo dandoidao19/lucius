@@ -14,15 +14,16 @@ interface DiaCaixa {
 }
 
 // 1. A lógica de cálculo pesada foi extraída para uma função pura.
-// Ela não busca dados, apenas os processa.
+// Ela não busca dados, apenas os processa separadamente por módulo.
 const calcularPrevisaoCaixa = (
   transacoesLoja: TransacaoLoja[],
   lancamentosCasa: LancamentoFinanceiro[]
 ) => {
-  console.log('[DEBUG] Executando cálculo pesado de Previsão de Caixa...')
+  console.log('[DEBUG] Executando cálculo pesado de Previsão de Caixa (Separado por Módulo)...')
 
   const hoje = getDataAtualBrasil()
 
+  // Real (Calculado para referência)
   const realLoja = transacoesLoja
     .filter(t => t.status_pagamento === 'pago')
     .reduce((acc, t) => acc + (t.tipo === 'entrada' ? (t.valor_pago ?? t.total) : -(t.valor_pago ?? t.total)), 0)
@@ -33,74 +34,108 @@ const calcularPrevisaoCaixa = (
 
   const realGeral = realLoja + realCasa
 
-  // Modificação: Coletar TODAS as entradas, não apenas a partir de hoje.
-  const allEntries: { data: string; valor: number }[] = []
+  // Agrupadores por data e módulo
+  const groupedLoja: Record<string, { receitas: number; despesas: number }> = {}
+  const groupedCasa: Record<string, { receitas: number; despesas: number }> = {}
+  const groupedGeral: Record<string, { receitas: number; despesas: number }> = {}
+
+  const allDatesSet = new Set<string>()
+
+  // Processar Loja
   transacoesLoja.forEach(t => {
-    const data = t.status_pagamento === 'pago' ? t.data_pagamento : t.data
+    const data = (t.status_pagamento === 'pago' ? t.data_pagamento : t.data)?.split('T')[0]
     if (!data) return
+    allDatesSet.add(data)
     const valor = t.valor_pago ?? t.total
-    allEntries.push({ data: data.split('T')[0], valor: t.tipo === 'entrada' ? valor : -valor })
-  })
-  lancamentosCasa.forEach(l => {
-    const data = l.status === 'realizado' ? l.data_lancamento : l.data_prevista
-    if (!data) return
-    allEntries.push({ data: data.split('T')[0], valor: l.tipo === 'entrada' ? l.valor : -l.valor })
-  })
 
-  const groupedByDate = allEntries.reduce((acc, curr) => {
-    if (!acc[curr.data]) {
-      acc[curr.data] = { receitas: 0, despesas: 0 }
+    if (!groupedLoja[data]) groupedLoja[data] = { receitas: 0, despesas: 0 }
+    if (!groupedGeral[data]) groupedGeral[data] = { receitas: 0, despesas: 0 }
+
+    if (t.tipo === 'entrada') {
+      groupedLoja[data].receitas += valor
+      groupedGeral[data].receitas += valor
+    } else {
+      groupedLoja[data].despesas += valor
+      groupedGeral[data].despesas += valor
     }
-    if (curr.valor > 0) acc[curr.data].receitas += curr.valor
-    else acc[curr.data].despesas += Math.abs(curr.valor)
-    return acc
-  }, {} as Record<string, { receitas: number; despesas: number }>)
+  })
 
-  const hojeData = groupedByDate[hoje] || { receitas: 0, despesas: 0 }
-  const entradasHoje = hojeData.receitas
-  const saidasHoje = hojeData.despesas
+  // Processar Casa
+  lancamentosCasa.forEach(l => {
+    const data = (l.status === 'realizado' ? l.data_lancamento : l.data_prevista)?.split('T')[0]
+    if (!data) return
+    allDatesSet.add(data)
+    const valor = l.valor
 
-  const sortedDates = Object.keys(groupedByDate).sort()
+    if (!groupedCasa[data]) groupedCasa[data] = { receitas: 0, despesas: 0 }
+    if (!groupedGeral[data]) groupedGeral[data] = { receitas: 0, despesas: 0 }
+
+    if (l.tipo === 'entrada') {
+      groupedCasa[data].receitas += valor
+      groupedGeral[data].receitas += valor
+    } else {
+      groupedCasa[data].despesas += valor
+      groupedGeral[data].despesas += valor
+    }
+  })
+
+  const sortedDates = Array.from(allDatesSet).sort()
+
   if (sortedDates.length === 0) {
-    return { // Retorna um estado vazio se não houver transações
+    return {
       caixaRealGeral: realGeral,
       caixaRealLoja: realLoja,
       caixaRealCasa: realCasa,
-      series: [],
-      entradasHoje: 0,
-      saidasHoje: 0,
+      loja: { series: [], entradasHoje: 0, saidasHoje: 0 },
+      casa: { series: [], entradasHoje: 0, saidasHoje: 0 },
+      geral: { series: [], entradasHoje: 0, saidasHoje: 0 },
     }
   }
 
-  // Modificação: A série agora é construída a partir da primeira data encontrada.
   const minDate = sortedDates[0]
   const maxDate = sortedDates[sortedDates.length - 1]
-  const series: DiaCaixa[] = []
-  let saldoAcumulado = 0
+
+  const seriesLoja: DiaCaixa[] = []
+  const seriesCasa: DiaCaixa[] = []
+  const seriesGeral: DiaCaixa[] = []
+
+  let saldoLoja = 0
+  let saldoCasa = 0
+  let saldoGeral = 0
+
   const currentDate = new Date(`${minDate}T12:00:00`)
   const finalDate = new Date(`${maxDate}T12:00:00`)
 
   while (currentDate <= finalDate) {
-    const dateStr = currentDate.toISOString().split('T')[0]
-    const { receitas, despesas } = groupedByDate[dateStr] || { receitas: 0, despesas: 0 }
-    saldoAcumulado += receitas - despesas
-    series.push({
-      data: dateStr,
-      data_formatada: formatarDataParaExibicao(dateStr),
-      receitas,
-      despesas,
-      saldo_acumulado: saldoAcumulado,
-    })
+    const d = currentDate.toISOString().split('T')[0]
+    const df = formatarDataParaExibicao(d)
+
+    const l = groupedLoja[d] || { receitas: 0, despesas: 0 }
+    const c = groupedCasa[d] || { receitas: 0, despesas: 0 }
+    const g = groupedGeral[d] || { receitas: 0, despesas: 0 }
+
+    saldoLoja += l.receitas - l.despesas
+    saldoCasa += c.receitas - c.despesas
+    saldoGeral += g.receitas - g.despesas
+
+    seriesLoja.push({ data: d, data_formatada: df, receitas: l.receitas, despesas: l.despesas, saldo_acumulado: saldoLoja })
+    seriesCasa.push({ data: d, data_formatada: df, receitas: c.receitas, despesas: c.despesas, saldo_acumulado: saldoCasa })
+    seriesGeral.push({ data: d, data_formatada: df, receitas: g.receitas, despesas: g.despesas, saldo_acumulado: saldoGeral })
+
     currentDate.setDate(currentDate.getDate() + 1)
   }
+
+  const lojaHoje = groupedLoja[hoje] || { receitas: 0, despesas: 0 }
+  const casaHoje = groupedCasa[hoje] || { receitas: 0, despesas: 0 }
+  const geralHoje = groupedGeral[hoje] || { receitas: 0, despesas: 0 }
 
   return {
     caixaRealGeral: realGeral,
     caixaRealLoja: realLoja,
     caixaRealCasa: realCasa,
-    series,
-    entradasHoje,
-    saidasHoje,
+    loja: { series: seriesLoja, entradasHoje: lojaHoje.receitas, saidasHoje: lojaHoje.despesas },
+    casa: { series: seriesCasa, entradasHoje: casaHoje.receitas, saidasHoje: casaHoje.despesas },
+    geral: { series: seriesGeral, entradasHoje: geralHoje.receitas, saidasHoje: geralHoje.despesas },
   }
 }
 
@@ -110,12 +145,8 @@ export function useCaixaPrevisto() {
   const { data: lancamentosCasa = [], isSuccess: lancamentosSuccess } = useLancamentosFinanceiros()
 
   return useQuery({
-    // A chave da query agora inclui os próprios dados. Se os dados mudarem, a chave muda,
-    // e o React Query executa o cálculo novamente.
-    queryKey: ['caixa_previsto_calculado', transacoesLoja, lancamentosCasa],
-    // A função da query é a nossa função de cálculo pura.
+    queryKey: ['caixa_previsto_calculado_v2', transacoesLoja, lancamentosCasa],
     queryFn: () => calcularPrevisaoCaixa(transacoesLoja, lancamentosCasa),
-    // O cálculo só é executado quando os dados brutos estiverem prontos.
     enabled: transacoesSuccess && lancamentosSuccess,
   })
 }
