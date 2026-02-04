@@ -27,19 +27,19 @@ export default function AtalhosGlobais() {
   return (
     <>
       {/* Botões Flutuantes (Balões) - Agora à Esquerda e Centralizados Verticalmente */}
-      <div className="fixed left-4 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[40]">
+      <div className="fixed left-3 top-1/2 -translate-y-1/2 flex flex-col gap-3.5 z-[40]">
         {/* Lançamento Casa */}
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalCasaAberto(true)}
-            className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center relative"
+            className="w-11 h-11 bg-blue-600 text-white rounded-full shadow-xl hover:bg-blue-700 transition-all flex items-center justify-center relative"
           >
-            <Home size={28} />
+            <Home size={22} />
             {hasDraft('casa') && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-14 bg-gray-900 text-white text-xs font-semibold px-2.5 h-7 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Lançamento Casa
           </span>
         </div>
@@ -48,14 +48,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalLojaAberto(true)}
-            className="w-14 h-14 bg-pink-700 text-white rounded-full shadow-xl hover:bg-pink-800 transition-all flex items-center justify-center relative"
+            className="w-11 h-11 bg-pink-700 text-white rounded-full shadow-xl hover:bg-pink-800 transition-all flex items-center justify-center relative"
           >
-            <ShoppingBag size={28} />
+            <ShoppingBag size={22} />
             {hasDraft('loja') && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-14 bg-gray-900 text-white text-xs font-semibold px-2.5 h-7 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Transação Loja
           </span>
         </div>
@@ -64,14 +64,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalFinanceiroAberto(true)}
-            className="w-14 h-14 bg-purple-600 text-white rounded-full shadow-xl hover:bg-purple-700 transition-all flex items-center justify-center relative"
+            className="w-11 h-11 bg-purple-600 text-white rounded-full shadow-xl hover:bg-purple-700 transition-all flex items-center justify-center relative"
           >
-            <Receipt size={28} />
+            <Receipt size={22} />
             {hasDraft('financeiro') && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-14 bg-gray-900 text-white text-xs font-semibold px-2.5 h-7 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Financeiro Avulso
           </span>
         </div>
@@ -80,14 +80,14 @@ export default function AtalhosGlobais() {
         <div className="relative group flex items-center">
           <button
             onClick={() => setModalVendaCasadaAberto(true)}
-            className="w-14 h-14 bg-slate-900 text-white rounded-full shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center relative"
+            className="w-11 h-11 bg-slate-900 text-white rounded-full shadow-xl hover:bg-slate-800 transition-all flex items-center justify-center relative"
           >
-            <Handshake size={28} />
+            <Handshake size={22} />
             {hasDraft('venda_casada') && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[10px] font-bold animate-pulse">!</span>
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 border-2 border-white rounded-full flex items-center justify-center text-[9px] font-bold animate-pulse">!</span>
             )}
           </button>
-          <span className="absolute left-16 bg-gray-900 text-white text-sm font-semibold px-3 h-8 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
+          <span className="absolute left-14 bg-gray-900 text-white text-xs font-semibold px-2.5 h-7 flex items-center rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-2xl">
             Venda Casada
           </span>
         </div>

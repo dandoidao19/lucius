@@ -170,6 +170,7 @@ export default function CasaModulo() {
     lancamento: null
   })
   const [editandoLancamento, setEditandoLancamento] = useState<Lancamento | null>(null)
+  const [caixaMinimizado, setCaixaMinimizado] = useState(true)
   
   const [form, setForm] = useState<FormLancamento>({
     descricao: '',
@@ -969,20 +970,35 @@ export default function CasaModulo() {
         )}
       </div>
 
-      <div className="grid grid-cols-3 gap-1">
-        <div className="col-span-1">
-          <CaixaCasaDetalhado titulo="CAIXA CASA" />
+      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+        {/* Barra Lateral do Caixa (Retrátil) */}
+        <div
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+        >
+          <div className="min-w-[250px]">
+            <CaixaCasaDetalhado titulo="CAIXA CASA" />
+          </div>
         </div>
 
-        <div className="col-span-2">
+        {/* Lista de Lançamentos (Expandida) */}
+        <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-            {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" */}
+            {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" E EXPANSÃO */}
             <div className="bg-blue-600 flex justify-between items-center px-3 py-1 text-white border-b border-blue-700">
-              <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">{tituloTabela}</h2>
+               <div className="flex items-center gap-4 h-full">
+                <button
+                  onClick={() => setCaixaMinimizado(!caixaMinimizado)}
+                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+                  title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
+                >
+                  <span className="text-xs">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
+                </button>
+                <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">{tituloTabela}</h2>
+              </div>
               <div className="flex gap-1">
                 <button
                   onClick={() => setMostrarTodos(!mostrarTodos)}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 py-1 rounded text-[10px] font-semibold uppercase transition-all shadow-sm"
+                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm"
                 >
                   {mostrarTodos ? '11 DIAS' : 'VER TUDO'}
                 </button>
