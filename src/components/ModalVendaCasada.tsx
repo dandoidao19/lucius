@@ -530,12 +530,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
         // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
-          if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.nome}`)
+          const codigoLimpo = (item.codigo || '').trim()
+          if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.nome}`)
 
           const { data: novoProd, error: erroNovoProd } = await supabase
             .from('produtos')
             .insert({
-              codigo: item.codigo.toUpperCase().trim(),
+              codigo: codigoLimpo.toUpperCase(),
               descricao: item.nome.toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,

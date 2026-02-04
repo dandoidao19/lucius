@@ -60,7 +60,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [tipo, setTipo] = useState<TipoTransacao | ''>(transacaoInicial?.tipo || '')
   const [data, setData] = useState(transacaoInicial?.data || getDataAtualBrasil())
   const [entidade, setEntidade] = useState(transacaoInicial?.entidade || '') // Cliente ou Fornecedor
-  const [itens, setItens] = useState<ItemTransacao[]>(transacaoInicial?.itens || [
+  const [itens, setItens] = useState<ItemTransacao[]>(transacaoInicial?.itens?.map(it => ({ ...it, codigo: it.codigo || '' })) || [
     {
       id: Date.now().toString(),
       produto_id: null,
@@ -518,12 +518,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           // Se for novo cadastro, cria o produto primeiro
           if (item.isNovoCadastro && !prodId) {
-            if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+            const codigoLimpo = (item.codigo || '').trim()
+            if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
 
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
               .insert({
-                codigo: item.codigo.toUpperCase().trim(),
+                codigo: codigoLimpo.toUpperCase(),
                 descricao: item.descricao.toUpperCase(),
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
@@ -616,12 +617,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           // Se for novo cadastro, cria o produto primeiro
           if (item.isNovoCadastro && !prodId) {
-            if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+            const codigoLimpo = (item.codigo || '').trim()
+            if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
 
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
               .insert({
-                codigo: item.codigo.toUpperCase().trim(),
+                codigo: codigoLimpo.toUpperCase(),
                 descricao: item.descricao.toUpperCase(),
                 categoria: item.categoria,
                 preco_custo: item.preco_custo,
@@ -819,12 +821,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         // Suporte a novo cadastro no condicional também
         if (item.isNovoCadastro && !prodId) {
-          if (!item.codigo.trim()) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
+          const codigoLimpo = (item.codigo || '').trim()
+          if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
 
           const { data: novoProd, error: erroNovoProd } = await supabase
             .from('produtos')
             .insert({
-              codigo: item.codigo.toUpperCase().trim(),
+              codigo: codigoLimpo.toUpperCase(),
               descricao: item.descricao.toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
@@ -929,7 +932,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       const { data, error } = await supabase
         .from('transacoes_condicionais')
-        .select('*, itens_condicionais(*)')
+        .select('*, itens_condicionais(*, produtos(codigo))')
         .eq('tipo', tipoCond)
         .eq('status', 'pendente')
         .ilike('observacao', '%[PEDIDO]%')
@@ -950,7 +953,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
        setTotalPedidoAnterior(pedido.total || 0)
        setEntidade(pedido.origem)
        setData(pedido.data_transacao.split('T')[0])
-       setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+       setObservacao((pedido.observacao || '').replace('[PEDIDO]', '').trim())
 
        // Restaurar estrutura financeira (v3.11/v3.12)
        if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
@@ -964,7 +967,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (!window.confirm(`Deseja importar os itens do Pedido #${pedido.numero_transacao}?`)) return
 
     setEntidade(pedido.origem)
-    setObservacao(pedido.observacao.replace('[PEDIDO]', '').trim())
+    setObservacao((pedido.observacao || '').replace('[PEDIDO]', '').trim())
 
     // Restaurar estrutura financeira do pedido
     if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
@@ -974,6 +977,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     const novosItens: ItemTransacao[] = pedido.itens_condicionais.map((it: any) => ({
       id: Date.now().toString() + Math.random(),
       produto_id: it.produto_id,
+      codigo: it.codigo || it.produtos?.codigo || '',
       descricao: it.descricao,
       quantidade: it.quantidade,
       categoria: it.categoria,
