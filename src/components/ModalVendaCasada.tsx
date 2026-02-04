@@ -27,7 +27,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V3.9 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.0 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -120,8 +120,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (!err) return 'Erro desconhecido'
     if (typeof err === 'string') return err
 
-    if (err.code === 'PGRST204') {
-      return `ERRO CRÍTICO DE SCHEMA: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V3.9 NO SEU SUPABASE (SQL EDITOR).`
+    if (err.code === 'PGRST204' || err.code === '23505') {
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.0 NO SEU SUPABASE (SQL EDITOR) PARA REMOVER RESTRIÇÕES ANTIGAS.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -915,7 +915,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v3.9
+              CORE ENGINE v4.0
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">

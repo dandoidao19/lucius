@@ -1,11 +1,17 @@
 -- ==============================================================================
--- SCRIPT SQL NUCLEAR LUCIUS V3.5 - RESOLUÇÃO DEFINITIVA DE SCHEMA
+-- SCRIPT SQL NUCLEAR LUCIUS V4.0 - RESOLUÇÃO DEFINITIVA DE SCHEMA E CONSTRAINTS
 -- EXECUTE ESTE SCRIPT NO "SQL EDITOR" DO SEU DASHBOARD SUPABASE
--- ESTE SCRIPT É SEGURO: NÃO APAGA DADOS, APENAS ADICIONA O QUE ESTÁ FALTANDO.
+-- ESTE SCRIPT É SEGURO: NÃO APAGA DADOS, APENAS AJUSTA ESTRUTURAS.
 -- ==============================================================================
 
 DO $$
 BEGIN
+    -- 0. REMOVER CONSTRAINT DE UNICIDADE EM TRANSACOES_LOJA (CRÍTICO PARA PARCELAMENTO)
+    -- O numero_transacao deve permitir duplicatas para representar parcelas da mesma venda/compra.
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'transacoes_loja_numero_transacao_key') THEN
+        ALTER TABLE public.transacoes_loja DROP CONSTRAINT transacoes_loja_numero_transacao_key;
+    END IF;
+
     -- 1. COLUNAS DE USUÁRIO (user_id) - Essencial para RLS e Autenticação
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='user_id') THEN
         ALTER TABLE vendas ADD COLUMN user_id UUID;
@@ -189,21 +195,23 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 6. FUNÇÃO SEQUENCIAL DE TRANSAÇÃO (REFORÇO)
+-- 6. FUNÇÃO SEQUENCIAL DE TRANSAÇÃO (REFORÇO UNIFICADO)
 CREATE OR REPLACE FUNCTION public.obter_proximo_numero_transacao()
 RETURNS INTEGER AS $$
 DECLARE
-    max_vendas INTEGER;
-    max_compras INTEGER;
-    max_condicionais INTEGER;
-    max_total INTEGER;
+    next_num INTEGER;
 BEGIN
-    SELECT COALESCE(MAX(numero_transacao), 0) INTO max_vendas FROM public.vendas;
-    SELECT COALESCE(MAX(numero_transacao), 0) INTO max_compras FROM public.compras;
-    SELECT COALESCE(MAX(numero_transacao), 0) INTO max_condicionais FROM public.transacoes_condicionais;
-
-    max_total := GREATEST(max_vendas, max_compras, max_condicionais);
-    RETURN max_total + 1;
+    SELECT COALESCE(MAX(max_num), 0) + 1 INTO next_num
+    FROM (
+        SELECT MAX(numero_transacao) as max_num FROM public.compras
+        UNION ALL
+        SELECT MAX(numero_transacao) as max_num FROM public.vendas
+        UNION ALL
+        SELECT MAX(numero_transacao) as max_num FROM public.transacoes_loja
+        UNION ALL
+        SELECT MAX(numero_transacao) as max_num FROM public.transacoes_condicionais
+    ) as all_trans;
+    RETURN next_num;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
