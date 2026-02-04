@@ -473,7 +473,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
-            prazoparcelas: prazoParcelas
+            prazoparcelas: prazoParcelas,
+            observacao: observacao.trim() || null
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: novaVenda, error: erroVenda } = await supabase
@@ -567,7 +568,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
-            prazoparcelas: prazoParcelas
+            prazoparcelas: prazoParcelas,
+            observacao: observacao.trim() || null
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: compra, error: erroCompra } = await supabase
