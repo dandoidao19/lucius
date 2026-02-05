@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
+import ModalFaturarPedido from './ModalFaturarPedido'
 
 interface ItemDetalhe {
   id: string
@@ -30,12 +31,13 @@ interface ModalDetalhesTransacaoProps {
   onClose: () => void
   onSucesso?: () => void
   transacaoId: string
-  tipo: 'vendas' | 'compras' | 'transacoes_condicionais'
+  tipo: 'vendas' | 'compras' | 'transacoes_condicionais' | 'pedidos_loja'
   dadosResumo: {
     numero: number
     data: string
     entidade: string
     total: number
+    total_financeiro?: number
     status: string
     observacao: string
   }
@@ -48,6 +50,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   const [loadingExcluir, setLoadingExcluir] = useState(false)
   const [transacaoFull, setTransacaoFull] = useState<any>(null)
   const [editAberto, setEditAberto] = useState(false)
+  const [faturarAberto, setFaturarAberto] = useState(false)
 
   const buscarFull = useCallback(async () => {
     try {
@@ -70,11 +73,13 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       let query = supabase.from(
         tipo === 'vendas' ? 'itens_venda' :
         tipo === 'compras' ? 'itens_compra' :
+        tipo === 'pedidos_loja' ? 'itens_pedido_loja' :
         'itens_condicionais'
       ).select('*')
 
       if (tipo === 'vendas') query = query.eq('venda_id', transacaoId)
       else if (tipo === 'compras') query = query.eq('compra_id', transacaoId)
+      else if (tipo === 'pedidos_loja') query = query.eq('pedido_id', transacaoId)
       else query = query.eq('transacao_id', transacaoId)
 
       const { data, error } = await query
@@ -160,6 +165,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       let queryDel = supabase.from('transacoes_loja').delete()
       if (tipo === 'vendas') queryDel = queryDel.eq('id_venda', transacaoId)
       else if (tipo === 'compras') queryDel = queryDel.eq('id_compra', transacaoId)
+      else if (tipo === 'pedidos_loja') queryDel = queryDel.eq('id_pedido', transacaoId)
       else queryDel = queryDel.eq('id_condicional', transacaoId)
 
       const { error: errorDel } = await queryDel
@@ -167,7 +173,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       // Fallback para registros antigos (sem a coluna de ID)
       if (!errorDel) {
         const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
-        if (tipo !== 'transacoes_condicionais') {
+        if (tipo !== 'transacoes_condicionais' && tipo !== 'pedidos_loja') {
           const { data: parcelasLoja } = await supabase
             .from('transacoes_loja')
             .select('id')
@@ -187,6 +193,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       } else if (tipo === 'compras') {
         await supabase.from('itens_compra').delete().eq('compra_id', transacaoId)
         await supabase.from('compras').delete().eq('id', transacaoId)
+      } else if (tipo === 'pedidos_loja') {
+        await supabase.from('itens_pedido_loja').delete().eq('pedido_id', transacaoId)
+        await supabase.from('pedidos_loja').delete().eq('id', transacaoId)
       } else if (tipo === 'transacoes_condicionais') {
         await supabase.from('itens_condicionais').delete().eq('transacao_id', transacaoId)
         await supabase.from('transacoes_condicionais').delete().eq('id', transacaoId)
@@ -210,6 +219,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
       if (tipo === 'vendas') query = query.eq('id_venda', transacaoId)
       else if (tipo === 'compras') query = query.eq('id_compra', transacaoId)
+      else if (tipo === 'pedidos_loja') query = query.eq('id_pedido', transacaoId)
       else query = query.eq('id_condicional', transacaoId)
 
       let { data, error } = await query.order('data', { ascending: true })
@@ -263,11 +273,13 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   }
 
   if (editAberto && transacaoFull) {
-    const isPedido = transacaoFull.observacao?.includes('[PEDIDO]')
+    const isPedido = transacaoFull.observacao?.includes('[PEDIDO]') || tipo === 'pedidos_loja'
     let tipoMapeado = ''
     if (tipo === 'vendas') tipoMapeado = 'venda'
     else if (tipo === 'compras') tipoMapeado = 'compra'
-    else {
+    else if (tipo === 'pedidos_loja') {
+      tipoMapeado = transacaoFull.tipo === 'venda' ? 'pedido_venda' : 'pedido_compra'
+    } else {
       if (isPedido) {
         tipoMapeado = transacaoFull.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
       } else {
@@ -279,9 +291,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
     const transacaoInicial = {
       id: transacaoId,
       tipo: tipoMapeado as 'venda' | 'compra' | 'pedido_venda' | 'pedido_compra' | 'condicional_cliente' | 'condicional_fornecedor',
-      data: (tipo === 'vendas' ? transacaoFull.data_venda : (tipo === 'compras' ? transacaoFull.data_compra : transacaoFull.data_transacao)) as string,
-      entidade: (tipo === 'vendas' ? transacaoFull.cliente : (tipo === 'compras' ? transacaoFull.fornecedor : transacaoFull.origem)) as string,
-      total: (transacaoFull.total as number) || 0,
+      data: (tipo === 'vendas' ? transacaoFull.data_venda : (tipo === 'compras' ? transacaoFull.data_compra : (tipo === 'pedidos_loja' ? transacaoFull.data_pedido : transacaoFull.data_transacao))) as string,
+      entidade: (tipo === 'vendas' ? transacaoFull.cliente : (tipo === 'compras' ? transacaoFull.fornecedor : (tipo === 'pedidos_loja' ? transacaoFull.entidade : transacaoFull.origem))) as string,
+      total: (transacaoFull.total || transacaoFull.total_geral) as number || 0,
       status_pagamento: (transacaoFull.status_pagamento || transacaoFull.status || 'pendente') as string,
       quantidade_parcelas: (transacaoFull.quantidade_parcelas as number) || 1,
       prazoparcelas: (transacaoFull.prazoparcelas as string) || 'mensal',
@@ -320,7 +332,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
         <div className="bg-purple-900 text-white px-4 py-1 flex justify-between items-center">
           <div>
             <h2 className="text-base font-bold flex items-center gap-2">
-              <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : 'Transação'}
+              <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : tipo === 'pedidos_loja' ? 'Pedido' : 'Transação'}
             </h2>
             <p className="text-xs text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
           </div>
@@ -337,14 +349,24 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase">Status</p>
               <span className={`inline-block text-xs font-black px-1.5 rounded ${
-                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-600 text-white' : 'bg-yellow-500 text-white'
+                dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-600 text-white' :
+                dadosResumo.status === 'faturado' ? 'bg-purple-600 text-white' :
+                dadosResumo.status === 'parcial' ? 'bg-blue-600 text-white' :
+                dadosResumo.status === 'cancelado' ? 'bg-gray-500 text-white' :
+                'bg-yellow-500 text-white'
               }`}>
                 {dadosResumo.status.toUpperCase()}
               </span>
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase">Total</p>
+              <p className="text-xs font-bold text-gray-500 uppercase">{tipo === 'pedidos_loja' ? 'Total Geral' : 'Total'}</p>
               <p className="text-sm font-black text-purple-700">R$ {dadosResumo.total.toFixed(2)}</p>
+              {tipo === 'pedidos_loja' && dadosResumo.total_financeiro !== undefined && (
+                <div className="mt-1">
+                   <p className="text-[10px] font-bold text-gray-500 uppercase">Total Financeiro (Saldo)</p>
+                   <p className="text-xs font-black text-green-700">R$ {dadosResumo.total_financeiro.toFixed(2)}</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -405,7 +427,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           </div>
 
           {/* Financeiro (Abaixo) */}
-          {(tipo !== 'transacoes_condicionais' || (dadosResumo.observacao?.includes('[PEDIDO]'))) && (
+          {(tipo !== 'transacoes_condicionais' || (dadosResumo.observacao?.includes('[PEDIDO]')) || tipo === 'pedidos_loja') && (
             <div className="space-y-1 pt-2 border-t">
               <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1">
                 💳 Financeiro / Parcelas ({parcelas.length})
@@ -457,6 +479,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
         <div className="p-2 bg-gray-50 border-t flex justify-between items-center">
           <div className="flex gap-2">
+            {tipo === 'pedidos_loja' && dadosResumo.status !== 'faturado' && dadosResumo.status !== 'cancelado' && (
+              <button
+                onClick={() => setFaturarAberto(true)}
+                className="px-4 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-700 transition-all text-xs"
+              >
+                Faturar
+              </button>
+            )}
             <button
               onClick={handleEditClick}
               disabled={loadingExcluir || !transacaoFull}
@@ -480,6 +510,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           </button>
         </div>
       </div>
+      {faturarAberto && (
+        <ModalFaturarPedido
+          aberto={faturarAberto}
+          onClose={() => setFaturarAberto(false)}
+          onSucesso={handleEditSucesso}
+          pedidoId={transacaoId}
+        />
+      )}
     </div>
   )
 }

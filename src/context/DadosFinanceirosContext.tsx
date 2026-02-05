@@ -111,6 +111,8 @@ export function DadosFinanceirosProvider({ children }: { children: ReactNode }) 
     queryClient.invalidateQueries({ queryKey: ['vendas'] })
     queryClient.invalidateQueries({ queryKey: ['compras'] })
     queryClient.invalidateQueries({ queryKey: ['transacoes_condicionais'] })
+    queryClient.invalidateQueries({ queryKey: ['pedidos_loja'] })
+    queryClient.invalidateQueries({ queryKey: ['itens_pedido_loja'] })
     queryClient.invalidateQueries({ queryKey: ['produtos'] })
   }, [queryClient])
 

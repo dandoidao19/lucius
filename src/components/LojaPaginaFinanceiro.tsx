@@ -33,6 +33,7 @@ interface Transacao {
   id_venda?: string
   id_compra?: string
   id_condicional?: string
+  id_pedido?: string
 }
 
 // Definição explícita para o tipo de dado bruto vindo do Supabase
@@ -53,6 +54,7 @@ interface SupabaseTransacaoLoja {
   id_venda?: string;
   id_compra?: string;
   id_condicional?: string;
+  id_pedido?: string;
 }
 
 
@@ -131,6 +133,7 @@ export default function LojaPaginaFinanceiro() {
         id_venda: trans.id_venda,
         id_compra: trans.id_compra,
         id_condicional: trans.id_condicional,
+        id_pedido: trans.id_pedido,
       }
     })
   }, [])
@@ -361,13 +364,13 @@ export default function LojaPaginaFinanceiro() {
   }, [])
 
   const getTipoColor = useCallback((transacao: Transacao) => {
-    const isPedido = !!transacao.id_condicional || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
+    const isPedido = !!transacao.id_condicional || !!transacao.id_pedido || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
     if (transacao.tipo === 'entrada') return isPedido ? 'bg-blue-600' : 'bg-green-600'
     return isPedido ? 'bg-orange-600' : 'bg-red-600'
   }, [])
 
   const getTipoLabel = useCallback((transacao: Transacao) => {
-    const isPedido = !!transacao.id_condicional || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
+    const isPedido = !!transacao.id_condicional || !!transacao.id_pedido || transacao.observacao?.toUpperCase().includes('[PEDIDO]')
     if (transacao.tipo === 'entrada') return isPedido ? 'P. VENDA' : 'VENDA'
     return isPedido ? 'P. COMPRA' : 'COMPRA'
   }, [])
@@ -567,8 +570,8 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
-                              {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional) */}
-                              {(!transacao.id_venda && !transacao.id_compra && !transacao.id_condicional) ? (
+                              {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional/pedido) */}
+                              {(!transacao.id_venda && !transacao.id_compra && !transacao.id_condicional && !transacao.id_pedido) ? (
                                 transacao.status_pagamento === 'pago' ? (
                                   <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
                                     ↩️

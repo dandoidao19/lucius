@@ -23,7 +23,8 @@ interface TransacaoUnificada {
   quantidade_itens: number
   observacao: string
   cor: string
-  tabela: 'vendas' | 'compras' | 'transacoes_condicionais'
+  tabela: 'vendas' | 'compras' | 'transacoes_condicionais' | 'pedidos_loja'
+  total_financeiro?: number
 }
 
 export default function LojaPaginaTransacoes() {
@@ -60,14 +61,25 @@ export default function LojaPaginaTransacoes() {
         .select('*')
         .order('data_compra', { ascending: false })
 
-      // 3. Buscar Condicionais/Pedidos com contagem de itens
+      // 3. Buscar Condicionais com contagem de itens
       const { data: condicionais } = await supabase
         .from('transacoes_condicionais')
         .select(`
           *,
           itens_condicionais (count)
         `)
+        .not('observacao', 'ilike', '%[PEDIDO]%') // Excluir legados que agora vão pro novo sistema? Ou manter?
+        // O usuário quer separar os módulos. Vou manter os legados mas focar no novo sistema para novos.
         .order('data_transacao', { ascending: false })
+
+      // 4. Buscar Novos Pedidos
+      const { data: pedidos } = await supabase
+        .from('pedidos_loja')
+        .select(`
+          *,
+          itens_pedido_loja (count)
+        `)
+        .order('data_pedido', { ascending: false })
 
       const unificadas: TransacaoUnificada[] = []
 
@@ -110,26 +122,10 @@ export default function LojaPaginaTransacoes() {
       })
 
       condicionais?.forEach(cn => {
-        const obs = cn.observacao || ''
-        const isPedido = obs.toUpperCase().includes('[PEDIDO]')
-        let tipoLabel = ''
-        let tipoSlug = ''
-        let cor = ''
-
-        if (isPedido) {
-          tipoLabel = cn.tipo === 'enviado' ? 'P. VENDA' : 'P. COMPRA'
-          tipoSlug = cn.tipo === 'enviado' ? 'pedido_venda' : 'pedido_compra'
-          cor = cn.tipo === 'enviado' ? 'bg-blue-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black'
-        } else {
-          tipoLabel = cn.tipo === 'enviado' ? 'COND. CLI.' : 'COND. FORN.'
-          tipoSlug = cn.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor'
-          cor = cn.tipo === 'enviado' ? 'bg-purple-600 text-white shadow-sm' : 'bg-indigo-600 text-white shadow-sm'
-        }
-
         unificadas.push({
           id: cn.id,
-          tipo_exibicao: tipoLabel,
-          tipo_slug: tipoSlug,
+          tipo_exibicao: cn.tipo === 'enviado' ? 'COND. CLI.' : 'COND. FORN.',
+          tipo_slug: cn.tipo === 'enviado' ? 'condicional_cliente' : 'condicional_fornecedor',
           tipo_original: cn.tipo,
           numero: cn.numero_transacao,
           data: cn.data_transacao,
@@ -139,8 +135,28 @@ export default function LojaPaginaTransacoes() {
           quantidade_parcelas: 1,
           quantidade_itens: cn.itens_condicionais?.[0]?.count || 0,
           observacao: cn.observacao || '',
-          cor: cor,
+          cor: cn.tipo === 'enviado' ? 'bg-purple-600 text-white shadow-sm' : 'bg-indigo-600 text-white shadow-sm',
           tabela: 'transacoes_condicionais'
+        })
+      })
+
+      pedidos?.forEach(p => {
+        unificadas.push({
+          id: p.id,
+          tipo_exibicao: p.tipo === 'venda' ? 'P. VENDA' : 'P. COMPRA',
+          tipo_slug: p.tipo === 'venda' ? 'pedido_venda' : 'pedido_compra',
+          tipo_original: p.tipo,
+          numero: p.numero_transacao,
+          data: p.data_pedido,
+          entidade: p.entidade,
+          total: p.total_geral || 0,
+          total_financeiro: p.total_financeiro,
+          status: p.status,
+          quantidade_parcelas: p.quantidade_parcelas || 1,
+          quantidade_itens: p.itens_pedido_loja?.[0]?.count || 0,
+          observacao: p.observacao || '',
+          cor: p.tipo === 'venda' ? 'bg-blue-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black',
+          tabela: 'pedidos_loja'
         })
       })
 
@@ -294,9 +310,16 @@ export default function LojaPaginaTransacoes() {
                     <td className="px-0.5 py-1 text-center uppercase">
                       <span className={`px-1 py-0.5 rounded font-semibold ${
                         t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-600 text-white' :
-                        t.status === 'pendente' ? 'bg-yellow-500 text-white' : 'bg-gray-200 text-gray-700'
+                        t.status === 'faturado' ? 'bg-purple-600 text-white' :
+                        t.status === 'pendente' ? 'bg-yellow-500 text-white' :
+                        t.status === 'parcial' ? 'bg-blue-600 text-white' :
+                        t.status === 'cancelado' ? 'bg-gray-500 text-white' :
+                        'bg-gray-200 text-gray-700'
                       }`}>
-                        {t.status === 'pago' ? 'PAGO' : t.status === 'resolvido' ? 'RESOLVIDO' : t.status}
+                        {t.status === 'pago' ? 'PAGO' :
+                         t.status === 'resolvido' ? 'RESOLVIDO' :
+                         t.status === 'faturado' ? 'FATURADO' :
+                         t.status}
                       </span>
                     </td>
                     <td className="px-1 py-1 text-center">
@@ -334,6 +357,7 @@ export default function LojaPaginaTransacoes() {
             data: modalDetalhes.transacao.data,
             entidade: modalDetalhes.transacao.entidade,
             total: modalDetalhes.transacao.total,
+            total_financeiro: modalDetalhes.transacao.total_financeiro,
             status: modalDetalhes.transacao.status,
             observacao: modalDetalhes.transacao.observacao
           }}

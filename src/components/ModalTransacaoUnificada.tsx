@@ -53,7 +53,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.8 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.9 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -310,7 +310,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     qtdParcelas: number,
     prazo: string,
     tipoFinanceiro: 'entrada' | 'saida',
-    parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string },
+    parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string; id_pedido?: string },
     numeroTransacaoBase: number,
     isPedidoFinanceiro: boolean = false
   ) => {
@@ -352,7 +352,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         status_pagamento: statusParcela,
         quantidade_parcelas: qtdParcelas,
         observacao: obsFinal || null,
-        ...parentIds
+        id_venda: parentIds.id_venda,
+        id_compra: parentIds.id_compra,
+        id_condicional: parentIds.id_condicional,
+        id_pedido: parentIds.id_pedido
       })
     }
 
@@ -463,7 +466,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       let numTransacao = transacaoInicial?.numero_transacao || nTrans
 
       if (idPedidoAnexar) {
-        const { data: pedOrig } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const { data: pedOrigC } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const { data: pedOrigP } = await supabase.from('pedidos_loja').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const pedOrig = pedOrigC || pedOrigP
         if (pedOrig) numTransacao = pedOrig.numero_transacao
       }
 
@@ -681,31 +686,39 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       }
 
       if (idPedidoOrigem) {
-        // Reverter impacto de estoque do pedido antes de aplicar o da venda/compra final
-        // Mas APENAS se for Condicional (Pedidos não impactam estoque desde v4.2)
-        const { data: itensPed } = await supabase.from('itens_condicionais').select('*').eq('transacao_id', idPedidoOrigem)
-        const { data: pedInfo } = await supabase.from('transacoes_condicionais').select('tipo, observacao').eq('id', idPedidoOrigem).single()
+        const { data: itensPedC } = await supabase.from('itens_condicionais').select('*').eq('transacao_id', idPedidoOrigem)
+        const { data: pedInfoC } = await supabase.from('transacoes_condicionais').select('tipo, observacao').eq('id', idPedidoOrigem).single()
 
-        const isPedidoOrigem = pedInfo?.observacao?.toUpperCase().includes('[PEDIDO]')
-
-        if (itensPed && pedInfo && !isPedidoOrigem) {
-          const multReversao = pedInfo.tipo === 'enviado' ? 1 : -1
-          for (const itP of itensPed) {
-            if (itP.produto_id) {
-              await supabase.rpc('atualizar_estoque', {
-                produto_id_param: itP.produto_id,
-                quantidade_param: itP.quantidade * multReversao
-              })
-              await supabase.from('movimentacoes_estoque').insert({
-                produto_id: itP.produto_id,
-                tipo: multReversao === 1 ? 'entrada' : 'saida',
-                quantidade: itP.quantidade,
-                observacao: `CONVERSÃO PEDIDO -> FINAL: #${numTransacao}`
-              })
+        if (itensPedC && pedInfoC) {
+          const isPedidoOrigem = pedInfoC.observacao?.toUpperCase().includes('[PEDIDO]')
+          if (!isPedidoOrigem) {
+            const multReversao = pedInfoC.tipo === 'enviado' ? 1 : -1
+            for (const itP of itensPedC) {
+              if (itP.produto_id) {
+                await supabase.rpc('atualizar_estoque', {
+                  produto_id_param: itP.produto_id,
+                  quantidade_param: itP.quantidade * multReversao
+                })
+                await supabase.from('movimentacoes_estoque').insert({
+                  produto_id: itP.produto_id,
+                  tipo: multReversao === 1 ? 'entrada' : 'saida',
+                  quantidade: itP.quantidade,
+                  observacao: `CONVERSÃO CONDICIONAL -> FINAL: #${numTransacao}`
+                })
+              }
             }
           }
+          await supabase.from('transacoes_condicionais').update({ status: 'realizado' }).eq('id', idPedidoOrigem)
+        } else {
+          const { data: pedInfoP } = await supabase.from('pedidos_loja').select('*').eq('id', idPedidoOrigem).single()
+          if (pedInfoP) {
+             await supabase.from('pedidos_loja').update({ status: 'faturado' }).eq('id', idPedidoOrigem)
+             await supabase.from('itens_pedido_loja')
+               .update({ status: 'efetuado', observacao_item: `Faturado na ${isVenda ? 'Venda' : 'Compra'} #${numTransacao}` })
+               .eq('pedido_id', idPedidoOrigem)
+               .eq('status', 'pendente')
+          }
         }
-        await supabase.from('transacoes_condicionais').update({ status: 'realizado' }).eq('id', idPedidoOrigem)
       }
 
       alert('✅ Transação gerada com sucesso!')
@@ -752,147 +765,172 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       let numTransacao = transacaoInicial?.numero_transacao || nTrans
 
       if (idPedidoAnexar) {
-        const { data: pedOrig } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const { data: pedOrigC } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const { data: pedOrigP } = await supabase.from('pedidos_loja').select('numero_transacao').eq('id', idPedidoAnexar).single()
+        const pedOrig = pedOrigC || pedOrigP
         if (pedOrig) numTransacao = pedOrig.numero_transacao
       }
 
       const isVendaPedido = tipo === 'venda' || tipo === 'pedido_venda' || tipo === 'condicional_cliente'
-      const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
-      const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
+      const isPedidoNovoSistema = tipo === 'pedido_venda' || tipo === 'pedido_compra'
 
       let transacaoId = transacaoInicial?.id || idPedidoAnexar
       let totalFinal = totalNovosItens
 
-      if (transacaoId) {
-        if (idPedidoAnexar) {
-           const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
-           totalFinal = (pOld?.total || 0) + totalNovosItens
+      if (isPedidoNovoSistema) {
+        if (transacaoId) {
+          if (idPedidoAnexar) {
+            const { data: pOld } = await supabase.from('pedidos_loja').select('total_geral').eq('id', idPedidoAnexar).single()
+            totalFinal = (pOld?.total_geral || 0) + totalNovosItens
+          }
+          await supabase.from('pedidos_loja').update({
+            tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
+            entidade,
+            data_pedido: prepararDataParaInsert(data),
+            observacao: (observacao || '').trim() || null,
+            total_geral: totalFinal,
+            total_financeiro: totalFinal,
+            quantidade_parcelas: quantidadeParcelas,
+            prazoparcelas: prazoParcelas,
+            data_vencimento: prepararDataParaInsert(dataVencimento)
+          }).eq('id', transacaoId)
+        } else {
+          const { data: pedido, error: errP } = await supabase.from('pedidos_loja').insert({
+            numero_transacao: numTransacao,
+            tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
+            entidade,
+            data_pedido: prepararDataParaInsert(data),
+            observacao: (observacao || '').trim() || null,
+            total_geral: totalFinal,
+            total_financeiro: totalFinal,
+            status: 'pendente',
+            quantidade_parcelas: quantidadeParcelas,
+            prazoparcelas: prazoParcelas,
+            data_vencimento: prepararDataParaInsert(dataVencimento),
+            user_id: user.id
+          }).select().single()
+          if (errP) throw errP
+          transacaoId = pedido.id
         }
 
-        await supabase.from('transacoes_condicionais').update({
-          tipo: isVendaPedido ? 'enviado' : 'recebido',
-          origem: entidade,
-          data_transacao: prepararDataParaInsert(data),
-          observacao: (prefixoPedido + observacao).trim() || null,
-          status: 'pendente',
-          total: totalFinal,
-          quantidade_parcelas: quantidadeParcelas,
-          prazoparcelas: prazoParcelas,
-          data_vencimento: prepararDataParaInsert(dataVencimento)
-        }).eq('id', transacaoId)
+        await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
+        await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId }, numTransacao, true)
+
+        for (const item of itensValidos) {
+          let prodId = item.produto_id
+          if (item.isNovoCadastro && !prodId) {
+            const { data: nP, error: eNP } = await supabase.from('produtos').insert({
+              descricao: (item.descricao || '').toUpperCase(),
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse,
+              preco_venda: item.preco_venda,
+              quantidade: 0,
+              user_id: user.id
+            }).select().single()
+            if (eNP) throw eNP
+            prodId = nP.id
+          }
+          await supabase.from('itens_pedido_loja').insert({
+            pedido_id: transacaoId,
+            produto_id: prodId,
+            descricao: item.descricao,
+            quantidade: item.quantidade,
+            preco_venda: item.preco_venda,
+            preco_custo: item.preco_custo,
+            valor_repasse: item.valor_repasse,
+            categoria: item.categoria,
+            status: 'pendente',
+            observacao_item: item.observacao_item || null
+          })
+        }
       } else {
-        const { data: transacao, error: erroTransacao } = await supabase
-          .from('transacoes_condicionais')
-          .insert({
-            numero_transacao: numTransacao,
+        const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
+        const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
+
+        if (transacaoId) {
+          if (idPedidoAnexar) {
+             const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
+             totalFinal = (pOld?.total || 0) + totalNovosItens
+          }
+
+          await supabase.from('transacoes_condicionais').update({
             tipo: isVendaPedido ? 'enviado' : 'recebido',
             origem: entidade,
             data_transacao: prepararDataParaInsert(data),
-            observacao: (prefixoPedido + observacao).trim() || null,
+            observacao: (prefixoPedido + (observacao || '')).trim() || null,
             status: 'pendente',
             total: totalFinal,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             data_vencimento: prepararDataParaInsert(dataVencimento)
-          })
-          .select()
-          .single()
+          }).eq('id', transacaoId)
+        } else {
+          const { data: transacao, error: erroTransacao } = await supabase
+            .from('transacoes_condicionais')
+            .insert({
+              numero_transacao: numTransacao,
+              tipo: isVendaPedido ? 'enviado' : 'recebido',
+              origem: entidade,
+              data_transacao: prepararDataParaInsert(data),
+              observacao: (prefixoPedido + (observacao || '')).trim() || null,
+              status: 'pendente',
+              total: totalFinal,
+              quantidade_parcelas: quantidadeParcelas,
+              prazoparcelas: prazoParcelas,
+              data_vencimento: prepararDataParaInsert(dataVencimento)
+            })
+            .select()
+            .single()
 
-        if (erroTransacao) throw erroTransacao
-        transacaoId = transacao.id
-      }
-
-      // 1. Gerar/Atualizar Financeiro
-      if (isPedidoTipo) {
-        // Deletar financeiro anterior (se houver) para recalcular o total
-        await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
-
-        // Fallback para legado
-        const numOriginal = transacaoInicial?.numero_transacao || (pedidosAbertos.find(p => p.id === idPedidoAnexar)?.numero_transacao)
-        if (numOriginal) {
-          await supabase.from('transacoes_loja').delete()
-            .eq('numero_transacao', numOriginal)
-            .ilike('descricao', `%${entidade}%`)
+          if (erroTransacao) throw erroTransacao
+          transacaoId = transacao.id
         }
 
-        await criarTransacoesParceladas(
-          totalFinal,
-          entidade,
-          dataVencimento,
-          quantidadeParcelas,
-          prazoParcelas,
-          isVendaPedido ? 'entrada' : 'saida',
-          { id_condicional: transacaoId || undefined },
-          numTransacao,
-          true
-        )
-      }
+        if (isPedidoTipo) {
+          await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
+          await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId }, numTransacao, true)
+        }
 
-      for (const item of itensValidos) {
-        let prodId = item.produto_id
+        for (const item of itensValidos) {
+          let prodId = item.produto_id
+          if (item.isNovoCadastro && !prodId) {
+            const { data: nP, error: eNP } = await supabase.from('produtos').insert({
+              descricao: (item.descricao || '').toUpperCase(),
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              valor_repasse: item.valor_repasse,
+              preco_venda: item.preco_venda,
+              quantidade: 0,
+              user_id: user.id
+            }).select().single()
+            if (eNP) throw eNP
+            prodId = nP.id
+          }
 
-        // Suporte a novo cadastro no condicional também
-        if (item.isNovoCadastro && !prodId) {
-          const codigoLimpo = (item.codigo || '').trim()
-
-          const payloadProduto: any = {
-            descricao: (item.descricao || '').toUpperCase(),
+          await supabase.from('itens_condicionais').insert({
+            transacao_id: transacaoId,
+            produto_id: prodId,
+            descricao: item.descricao,
+            quantidade: item.quantidade,
             categoria: item.categoria,
             preco_custo: item.preco_custo,
             valor_repasse: item.valor_repasse,
             preco_venda: item.preco_venda,
-            quantidade: 0,
-            user_id: user.id
-          }
-
-          if (codigoLimpo) {
-            payloadProduto.codigo = codigoLimpo.toUpperCase()
-          }
-
-          const { data: novoProd, error: erroNovoProd } = await supabase
-            .from('produtos')
-            .insert(payloadProduto)
-            .select()
-            .single()
-
-          if (erroNovoProd) throw erroNovoProd
-          prodId = novoProd.id
-        }
-
-        const dbItem = {
-          transacao_id: transacaoId,
-          produto_id: prodId,
-          descricao: item.descricao,
-          quantidade: item.quantidade,
-          categoria: item.categoria,
-          preco_custo: item.preco_custo,
-          valor_repasse: item.valor_repasse,
-          preco_venda: item.preco_venda,
-          status: 'pendente',
-          observacao: item.observacao_item || null
-        }
-
-        const { error: erroIt } = await supabase.from('itens_condicionais').insert(dbItem)
-        if (erroIt) throw erroIt
-
-        // 2. Impacto no Estoque (Apenas se NÃO for Pedido)
-        if (prodId && !isPedidoTipo) {
-          const multiplicadorEstoque = isVendaPedido ? -1 : 1
-          console.log(`📦 DEBUG ESTOQUE: Atualizando (Condicional) Produto ${prodId}, Qtd: ${item.quantidade * multiplicadorEstoque}`)
-          const { error: errorRPC } = await supabase.rpc('atualizar_estoque', {
-            produto_id_param: prodId,
-            quantidade_param: Math.round(item.quantidade * multiplicadorEstoque)
+            status: 'pendente',
+            observacao: item.observacao_item || null
           })
-          if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Pedido):', formatarErro(errorRPC))
 
-          await supabase.from('movimentacoes_estoque').insert({
-            produto_id: prodId,
-            tipo: isVendaPedido ? 'saida' : 'entrada',
-            quantidade: item.quantidade,
-            observacao: `Condicional #${numTransacao}`
-          })
-        } else if (prodId && isPedidoTipo) {
-           console.log(`📦 INFO: Pedido #${numTransacao} não gera impacto em estoque imediato.`)
+          if (prodId && !isPedidoTipo) {
+            const multiplicadorEstoque = isVendaPedido ? -1 : 1
+            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade * multiplicadorEstoque) })
+            await supabase.from('movimentacoes_estoque').insert({
+              produto_id: prodId,
+              tipo: isVendaPedido ? 'saida' : 'entrada',
+              quantidade: item.quantidade,
+              observacao: `Condicional #${numTransacao}`
+            })
+          }
         }
       }
 
@@ -941,21 +979,28 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
   const buscarPedidosAbertos = async (tipoAtual: string) => {
     try {
-      let tipoCond = ''
-      if (tipoAtual === 'venda') tipoCond = 'enviado'
-      else if (tipoAtual === 'compra') tipoCond = 'recebido'
-      else if (tipoAtual === 'pedido_venda') tipoCond = 'enviado'
-      else if (tipoAtual === 'pedido_compra') tipoCond = 'recebido'
+      const { data: pNovo, error: eNovo } = await supabase
+        .from('pedidos_loja')
+        .select('*, itens_pedido_loja(*, produtos(codigo))')
+        .eq('tipo', (tipoAtual === 'venda' || tipoAtual === 'pedido_venda') ? 'venda' : 'compra')
+        .in('status', ['pendente', 'parcial'])
 
-      const { data, error } = await supabase
+      let tipoCond = (tipoAtual === 'venda' || tipoAtual === 'pedido_venda') ? 'enviado' : 'recebido'
+      const { data: pAntigo, error: eAntigo } = await supabase
         .from('transacoes_condicionais')
         .select('*, itens_condicionais(*, produtos(codigo))')
         .eq('tipo', tipoCond)
         .eq('status', 'pendente')
         .ilike('observacao', '%[PEDIDO]%')
 
-      if (error) throw error
-      setPedidosAbertos(data || [])
+      if (eNovo || eAntigo) throw (eNovo || eAntigo)
+
+      const unificados = [
+        ...(pNovo || []).map(p => ({ ...p, isNovo: true, origem: p.entidade, data_transacao: p.data_pedido, itens_condicionais: p.itens_pedido_loja })),
+        ...(pAntigo || []).map(p => ({ ...p, isNovo: false }))
+      ]
+
+      setPedidosAbertos(unificados)
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error)
     }
@@ -967,12 +1012,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (isModoAnexar) {
        if (!window.confirm(`Deseja ADICIONAR os novos itens ao Pedido #${pedido.numero_transacao} existente?`)) return
        setIdPedidoAnexar(pedido.id)
-       setTotalPedidoAnterior(pedido.total || 0)
-       setEntidade(pedido.origem)
-       setData(pedido.data_transacao.split('T')[0])
+       setTotalPedidoAnterior((pedido.total_geral || pedido.total || 0))
+       setEntidade(pedido.entidade || pedido.origem)
+       setData((pedido.data_pedido || pedido.data_transacao).split('T')[0])
        setObservacao((pedido.observacao || '').replace('[PEDIDO]', '').trim())
 
-       // Restaurar estrutura financeira (v3.11/v3.12)
        if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
        if (pedido.prazoparcelas) setPrazoParcelas(pedido.prazoparcelas)
        if (pedido.data_vencimento) setDataVencimento(pedido.data_vencimento.split('T')[0])
@@ -983,15 +1027,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
     if (!window.confirm(`Deseja importar os itens do Pedido #${pedido.numero_transacao}?`)) return
 
-    setEntidade(pedido.origem)
+    setEntidade(pedido.entidade || pedido.origem)
     setObservacao((pedido.observacao || '').replace('[PEDIDO]', '').trim())
 
-    // Restaurar estrutura financeira do pedido
     if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
     if (pedido.prazoparcelas) setPrazoParcelas(pedido.prazoparcelas)
     if (pedido.data_vencimento) setDataVencimento(pedido.data_vencimento.split('T')[0])
 
-    const novosItens: ItemTransacao[] = pedido.itens_condicionais.map((it: any) => ({
+    const novosItens: ItemTransacao[] = (pedido.itens_pedido_loja || pedido.itens_condicionais).map((it: any) => ({
       id: Date.now().toString() + Math.random(),
       produto_id: it.produto_id,
       codigo: it.codigo || it.produtos?.codigo || '',
@@ -999,7 +1042,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       quantidade: it.quantidade,
       categoria: it.categoria,
       preco_custo: it.preco_custo || 0,
-      valor_repasse: it.preco_custo || 0, // Simplificado
+      valor_repasse: it.valor_repasse || 0,
       preco_venda: it.preco_venda || 0,
       estoque_atual: 0,
       minimizado: true,
@@ -1505,7 +1548,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.8
+              CORE ENGINE v4.9
             </div>
             <button
               onClick={handleCancelar}
