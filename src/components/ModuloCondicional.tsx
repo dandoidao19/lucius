@@ -302,7 +302,7 @@ export default function ModuloCondicional() {
           const { data: { user } } = await supabase.auth.getUser()
           if (user) {
             const payloadProduto: any = {
-              descricao: item.descricao.toUpperCase(),
+              descricao: (item.descricao || '').toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
               preco_venda: item.preco_venda,
@@ -321,7 +321,11 @@ export default function ModuloCondicional() {
               .select()
               .single()
 
-            if (!erroNovoProd) prodId = novoProd.id
+            if (erroNovoProd) {
+              console.error('Erro ao criar novo produto no condicional:', erroNovoProd)
+              throw erroNovoProd
+            }
+            prodId = novoProd.id
           }
         }
 

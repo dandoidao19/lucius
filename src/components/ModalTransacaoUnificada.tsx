@@ -52,7 +52,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.6 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.7 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -521,7 +521,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             const codigoLimpo = (item.codigo || '').trim()
 
             const payloadProduto: any = {
-              descricao: item.descricao.toUpperCase(),
+              descricao: (item.descricao || '').toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
               valor_repasse: item.valor_repasse,
@@ -624,7 +624,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             const codigoLimpo = (item.codigo || '').trim()
 
             const payloadProduto: any = {
-              descricao: item.descricao.toUpperCase(),
+              descricao: (item.descricao || '').toUpperCase(),
               categoria: item.categoria,
               preco_custo: item.preco_custo,
               valor_repasse: item.valor_repasse,
@@ -832,7 +832,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           const codigoLimpo = (item.codigo || '').trim()
 
           const payloadProduto: any = {
-            descricao: item.descricao.toUpperCase(),
+            descricao: (item.descricao || '').toUpperCase(),
             categoria: item.categoria,
             preco_custo: item.preco_custo,
             valor_repasse: item.valor_repasse,
@@ -1039,23 +1039,23 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         <div className="p-3 overflow-y-auto flex-1 text-xs">
           {erro && (
-            <div className={`mb-4 border-l-4 p-3 rounded shadow-md ${erro.includes('V4.6') ? 'bg-orange-100 border-orange-600 animate-pulse' : 'bg-red-50 border-red-500'}`}>
+            <div className={`mb-4 border-l-4 p-3 rounded shadow-md ${erro.includes('V4.7') ? 'bg-orange-100 border-orange-600 animate-pulse' : 'bg-red-50 border-red-500'}`}>
               <div className="flex justify-between items-start">
                 <div>
-                  <p className={`font-black uppercase tracking-tighter text-[11px] ${erro.includes('V4.6') ? 'text-orange-900' : 'text-red-800'}`}>
-                    {erro.includes('V4.6') ? '🚨 AÇÃO NECESSÁRIA NO SUPABASE 🚨' : 'Erro detectado:'}
+                  <p className={`font-black uppercase tracking-tighter text-[11px] ${erro.includes('V4.7') ? 'text-orange-900' : 'text-red-800'}`}>
+                    {erro.includes('V4.7') ? '🚨 AÇÃO NECESSÁRIA NO SUPABASE 🚨' : 'Erro detectado:'}
                   </p>
-                  <p className={`font-bold text-sm leading-tight mt-1 ${erro.includes('V4.6') ? 'text-orange-800' : 'text-red-700'}`}>{erro}</p>
+                  <p className={`font-bold text-sm leading-tight mt-1 ${erro.includes('V4.7') ? 'text-orange-800' : 'text-red-700'}`}>{erro}</p>
                 </div>
                 <button onClick={() => setErro('')} className="text-red-500 hover:text-red-700 p-1">✕</button>
               </div>
-              {erro.includes('V4.6') && (
+              {erro.includes('V4.7') && (
                 <div className="mt-3 bg-white/50 p-2 rounded border border-orange-200">
                    <p className="text-[10px] text-orange-900 font-bold">Como resolver:</p>
                    <ol className="list-decimal ml-4 text-[9px] text-orange-800 mt-1 space-y-1">
                       <li>Abra o seu Dashboard do Supabase.</li>
                       <li>Vá em <b>SQL Editor</b> (menu lateral esquerdo).</li>
-                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_6.sql</b> (disponível na raiz do projeto).</li>
+                      <li>Copie o conteúdo do arquivo <b>SQL_MASTER_V4_7.sql</b> (disponível na raiz do projeto).</li>
                       <li>Cole no editor e clique em <b>RUN</b>.</li>
                    </ol>
                 </div>
@@ -1500,7 +1500,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.6
+              CORE ENGINE v4.7
             </div>
             <button
               onClick={handleCancelar}

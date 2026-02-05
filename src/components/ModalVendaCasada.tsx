@@ -31,7 +31,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.6 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.7 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -170,7 +170,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.6 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.7 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -533,7 +533,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           const codigoLimpo = (item.codigo || '').trim()
 
           const payloadProduto: any = {
-            descricao: item.nome.toUpperCase(),
+            descricao: (item.nome || '').toUpperCase(),
             categoria: item.categoria,
             preco_custo: item.preco_custo,
             valor_repasse: item.valor_repasse,
@@ -552,7 +552,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             .select()
             .single()
 
-          if (erroNovoProd) throw erroNovoProd
+          if (erroNovoProd) {
+            console.error('Erro ao criar novo produto na venda casada:', erroNovoProd)
+            throw erroNovoProd
+          }
           prodId = novoProd.id
         }
 
@@ -1081,7 +1084,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.6
+              CORE ENGINE v4.7
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">

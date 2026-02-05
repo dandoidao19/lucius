@@ -89,8 +89,8 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
         data_ultima_compra: formData.data_ultima_compra,
       }
 
-      if (formData.codigo.trim()) {
-        dados.codigo = formData.codigo.trim()
+      if (formData.codigo && formData.codigo.trim()) {
+        dados.codigo = formData.codigo.trim().toUpperCase()
       }
 
       if (produto) {
@@ -139,6 +139,11 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
           {erro && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {erro}
+              {erro.includes('23502') && (
+                <p className="mt-2 text-[10px] font-bold uppercase underline">
+                  ⚠️ Por favor, execute o script SQL_MASTER_V4_7.sql no seu Supabase.
+                </p>
+              )}
             </div>
           )}
 
