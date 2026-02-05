@@ -73,9 +73,6 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
 
     try {
       // Validações básicas
-      if (!formData.codigo.trim()) {
-        throw new Error('Código é obrigatório')
-      }
       if (!formData.descricao.trim()) {
         throw new Error('Descrição é obrigatória')
       }
@@ -83,14 +80,17 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
         throw new Error('Preço de venda é obrigatório')
       }
 
-      const dados = {
-        codigo: formData.codigo.trim(),
+      const dados: any = {
         descricao: formData.descricao.trim(),
         quantidade: parseInt(formData.quantidade) || 0,
         preco_custo: parseFloat(formData.preco_custo) || 0,
         valor_repasse: parseFloat(formData.valor_repasse) || 0,
         preco_venda: parseFloat(formData.preco_venda),
         data_ultima_compra: formData.data_ultima_compra,
+      }
+
+      if (formData.codigo.trim()) {
+        dados.codigo = formData.codigo.trim()
       }
 
       if (produto) {
@@ -146,7 +146,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
             {/* Código */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Código *
+                Código (Auto)
               </label>
               <input
                 type="text"
@@ -154,8 +154,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
                 value={formData.codigo}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Ex: PROD001"
-                required
+                placeholder="Deixe vazio para gerar automático"
               />
             </div>
 

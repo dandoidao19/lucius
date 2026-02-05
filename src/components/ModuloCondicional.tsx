@@ -266,7 +266,7 @@ export default function ModuloCondicional() {
       return
     }
 
-    if (itens.some((item) => !item.descricao.trim())) {
+    if (itens.some((item) => !(item.descricao || '').trim())) {
       alert('❌ Todos os itens precisam ter uma descrição')
       return
     }
@@ -299,21 +299,25 @@ export default function ModuloCondicional() {
         // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
           const codigoLimpo = (item.codigo || '').trim()
-          if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.descricao}`)
           const { data: { user } } = await supabase.auth.getUser()
           if (user) {
+            const payloadProduto: any = {
+              descricao: item.descricao.toUpperCase(),
+              categoria: item.categoria,
+              preco_custo: item.preco_custo,
+              preco_venda: item.preco_venda,
+              valor_repasse: item.preco_custo, // Simplificado para condicional
+              quantidade: 0,
+              user_id: user.id
+            }
+
+            if (codigoLimpo) {
+              payloadProduto.codigo = codigoLimpo.toUpperCase()
+            }
+
             const { data: novoProd, error: erroNovoProd } = await supabase
               .from('produtos')
-              .insert({
-                codigo: codigoLimpo.toUpperCase(),
-                descricao: item.descricao.toUpperCase(),
-                categoria: item.categoria,
-                preco_custo: item.preco_custo,
-                preco_venda: item.preco_venda,
-                valor_repasse: item.preco_custo, // Simplificado para condicional
-                quantidade: 0,
-                user_id: user.id
-              })
+              .insert(payloadProduto)
               .select()
               .single()
 
@@ -511,14 +515,13 @@ export default function ModuloCondicional() {
                           <div className="space-y-1">
                             <div className="grid grid-cols-3 gap-2">
                                <div className="col-span-1">
-                                  <label className="block text-[10px] font-bold text-purple-600 mb-0.5 uppercase">Código *</label>
+                                  <label className="block text-[10px] font-bold text-purple-600 mb-0.5 uppercase">Código (Auto)</label>
                                   <input
                                     type="text"
                                     value={item.codigo}
                                     onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)}
                                     placeholder="REF..."
                                     className="w-full px-1.5 py-0.5 text-xs border border-purple-200 rounded uppercase font-mono"
-                                    required
                                   />
                                </div>
                                <div className="col-span-2">

@@ -1,5 +1,5 @@
 -- ==============================================================================
--- SCRIPT SQL NUCLEAR LUCIUS V4.6 - MANDATORY "CODIGO" IN PRODUCT CREATION
+-- SCRIPT SQL NUCLEAR LUCIUS V4.6 - TRANSACTION NUMBERING AND SCHEMA SYNC
 -- EXECUTE ESTE SCRIPT NO "SQL EDITOR" DO SEU DASHBOARD SUPABASE
 -- ESTE SCRIPT É SEGURO: NÃO APAGA DADOS, APENAS SINCRONIZA O CONTADOR E SCHEMA.
 -- ==============================================================================

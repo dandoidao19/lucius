@@ -31,7 +31,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.5 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.6 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { recarregarDados } = useDadosFinanceiros()
@@ -170,7 +170,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.5 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.6 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -531,20 +531,24 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
           const codigoLimpo = (item.codigo || '').trim()
-          if (!codigoLimpo) throw new Error(`O código é obrigatório para o item ${item.nome}`)
+
+          const payloadProduto: any = {
+            descricao: item.nome.toUpperCase(),
+            categoria: item.categoria,
+            preco_custo: item.preco_custo,
+            valor_repasse: item.valor_repasse,
+            preco_venda: item.preco_unitario,
+            quantidade: 0,
+            user_id: user.id
+          }
+
+          if (codigoLimpo) {
+            payloadProduto.codigo = codigoLimpo.toUpperCase()
+          }
 
           const { data: novoProd, error: erroNovoProd } = await supabase
             .from('produtos')
-            .insert({
-              codigo: codigoLimpo.toUpperCase(),
-              descricao: item.nome.toUpperCase(),
-              categoria: item.categoria,
-              preco_custo: item.preco_custo,
-              valor_repasse: item.valor_repasse,
-              preco_venda: item.preco_unitario,
-              quantidade: 0,
-              user_id: user.id
-            })
+            .insert(payloadProduto)
             .select()
             .single()
 
@@ -867,7 +871,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                          <div className="space-y-2">
                             <div className="grid grid-cols-3 gap-2">
                                <div className="col-span-1">
-                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código *</label>
+                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código (Auto)</label>
                                  <input
                                    type="text"
                                    value={item.codigo || ''}
@@ -1077,7 +1081,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.5
+              CORE ENGINE v4.6
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">
