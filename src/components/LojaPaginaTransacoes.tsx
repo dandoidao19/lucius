@@ -27,7 +27,7 @@ interface TransacaoUnificada {
 }
 
 export default function LojaPaginaTransacoes() {
-  const { versaoRefresh } = useDadosFinanceiros()
+  const { versaoRefresh, triggerRefresh } = useDadosFinanceiros()
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoUnificada[]>([])
   const [loading, setLoading] = useState(true)
@@ -319,14 +319,14 @@ export default function LojaPaginaTransacoes() {
       <ModalTransacaoUnificada
         aberto={modalAberto}
         onClose={() => setModalAberto(false)}
-        onSucesso={carregarTransacoes}
+        onSucesso={() => { carregarTransacoes(); triggerRefresh(); }}
       />
 
       {modalDetalhes.transacao && (
         <ModalDetalhesTransacao
           aberto={modalDetalhes.aberto}
           onClose={() => setModalDetalhes({ aberto: false, transacao: null })}
-          onSucesso={carregarTransacoes}
+          onSucesso={() => { carregarTransacoes(); triggerRefresh(); }}
           transacaoId={modalDetalhes.transacao.id}
           tipo={modalDetalhes.transacao.tabela}
           dadosResumo={{

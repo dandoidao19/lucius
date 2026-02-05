@@ -31,10 +31,10 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.7 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.8 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
-  const { recarregarDados } = useDadosFinanceiros()
+  const { triggerRefresh } = useDadosFinanceiros()
   const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [loading, setLoading] = useState(false)
   const [categorias, setCategorias] = useState<{ id: string; nome: string; percentual_repasse?: number }[]>([])
@@ -63,7 +63,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   // Pagamentos
   const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
-  const [pagCompra, setPagCompra] = useState({ status: 'pago', parcelas: 1, vencimento: data, prazo: 'mensal' })
+  const [pagCompra, setPagCompra] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
 
   const [casadasAbertas, setCasadasAbertas] = useState<any[]>([])
   const [mostrarBuscaCasada, setMostrarBuscaCasada] = useState(false)
@@ -86,7 +86,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         setData(draft.data || getDataAtualBrasil())
         setItens(draft.itens || [{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
         setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
-        setPagCompra(draft.pagCompra || { status: 'pago', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
+        setPagCompra(draft.pagCompra || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -170,7 +170,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (typeof err === 'string') return err
 
     if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.7 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -331,7 +331,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     setData(getDataAtualBrasil())
     setItens([{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0 }])
     setPagVenda({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
-    setPagCompra({ status: 'pago', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
+    setPagCompra({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
     setVendaAnexar(null)
     setCompraAnexar(null)
     setIdSaidaAnexar(null)
@@ -609,7 +609,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       alert('✅ Venda Casada gerada com sucesso!')
       clearDraft('venda_casada')
       resetForm()
-      recarregarDados()
+      triggerRefresh()
       onSucesso()
       onClose()
     } catch (error: any) {
@@ -1084,7 +1084,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.7
+              CORE ENGINE v4.8
             </div>
             <div className="flex gap-4 items-center">
               <div className="text-center md:text-left">

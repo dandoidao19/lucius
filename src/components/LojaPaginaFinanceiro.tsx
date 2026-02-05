@@ -84,7 +84,7 @@ export default function LojaPaginaFinanceiro() {
   const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Transacao | null>(null)
   const [caixaMinimizado, setCaixaMinimizado] = useState(true)
 
-  const { recarregarDados } = useDadosFinanceiros()
+  const { triggerRefresh } = useDadosFinanceiros()
 
   // Helpers locais para cálculo de datas
   const addDias = useCallback((dataStr: string, dias: number) => {
@@ -372,21 +372,21 @@ export default function LojaPaginaFinanceiro() {
   const temPagamento = useCallback((transacao: Transacao) => !!transacao.data_pagamento, [])
 
   const handlePagamentoRealizado = useCallback(() => {
-    recarregarDados()
+    triggerRefresh()
     buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
-  }, [recarregarDados, buscarTransacoes])
+  }, [triggerRefresh, buscarTransacoes])
 
   const handleEstornoRealizado = useCallback(() => {
-    recarregarDados()
+    triggerRefresh()
     buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
-  }, [recarregarDados, buscarTransacoes])
+  }, [triggerRefresh, buscarTransacoes])
 
   const handleLancamentoAdicionado = useCallback(() => {
     setExibirFormularioLancamento(false)
     setLancamentoParaEditar(null) // Limpa o estado de edição
-    recarregarDados()
+    triggerRefresh()
     buscarTransacoes(true)
-  }, [recarregarDados, buscarTransacoes])
+  }, [triggerRefresh, buscarTransacoes])
 
   const tituloLista = useMemo(() => {
     const temFiltros =

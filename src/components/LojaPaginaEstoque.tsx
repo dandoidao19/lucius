@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalEditarProduto from './ModalEditarProduto'
 import ModalLogProduto from './ModalLogProduto'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
@@ -31,6 +32,7 @@ export default function LojaPaginaEstoque() {
   const [modalEditarAberto, setModalEditarAberto] = useState(false)
   const [modalLogAberto, setModalLogAberto] = useState(false)
   const [produtoSelecionado, setProdutoSelecionado] = useState<Produto | null>(null)
+  const { versaoRefresh } = useDadosFinanceiros()
   
   // Estados de filtro
   const [filtroAberto, setFiltroAberto] = useState(false)
@@ -122,7 +124,7 @@ export default function LojaPaginaEstoque() {
 
   useEffect(() => {
     carregarProdutos()
-  }, [carregarProdutos])
+  }, [carregarProdutos, versaoRefresh])
 
   useEffect(() => {
     aplicarFiltrosEOrdenacao()
