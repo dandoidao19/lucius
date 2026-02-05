@@ -187,6 +187,13 @@ export default function LojaPaginaFinanceiro() {
   }, [processarTransacoes])
 
   useEffect(() => {
+    if (versaoRefresh > 0) {
+      console.log('🔄 Refresh solicitado via Contexto')
+      buscarTransacoes(true)
+    }
+  }, [versaoRefresh, buscarTransacoes])
+
+  useEffect(() => {
     const agora = Date.now()
     
     if (cacheGlobalTransacoes.length > 0 && (agora - cacheGlobalUltimaAtualizacao < CACHE_TEMPO_VIDA)) {
@@ -217,7 +224,7 @@ export default function LojaPaginaFinanceiro() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [buscarTransacoes, versaoRefresh])
+  }, [buscarTransacoes])
 
   // Verifica período e mês
   const estaNoPeriodo = useCallback((dataString: string, inicio: string, fim: string) => {
@@ -388,6 +395,26 @@ export default function LojaPaginaFinanceiro() {
     buscarTransacoes(true)
   }, [triggerRefresh, buscarTransacoes])
 
+  const handleExcluirLancamento = async (id: string) => {
+    if (!window.confirm('⚠️ Tem certeza que deseja excluir este lançamento financeiro AVULSO? Esta ação não pode ser desfeita.')) return
+
+    try {
+      const { error } = await supabase
+        .from('transacoes_loja')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      alert('✅ Lançamento excluído com sucesso!')
+      triggerRefresh()
+      buscarTransacoes(true)
+    } catch (err) {
+      console.error('Erro ao excluir lançamento:', err)
+      alert('❌ Erro ao excluir lançamento.')
+    }
+  }
+
   const tituloLista = useMemo(() => {
     const temFiltros =
       !!filtroNumeroTransacao ||
@@ -540,28 +567,41 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
-                              {transacao.status_pagamento === 'pago' ? (
-                                <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
-                                  ↩️
-                                </button>
-                              ) : (
-                                <>
-                                  <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
-                                    💰
+                              {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional) */}
+                              {(!transacao.id_venda && !transacao.id_compra && !transacao.id_condicional) ? (
+                                transacao.status_pagamento === 'pago' ? (
+                                  <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
+                                    ↩️
                                   </button>
-                                  {((transacao.parcela_total || transacao.quantidade_parcelas || 1) <= 1) && (
+                                ) : (
+                                  <>
+                                    <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
+                                      💰
+                                    </button>
                                     <button
                                       onClick={() => {
                                         setLancamentoParaEditar(transacao)
-                                        setExibirFormularioLancamento(true) // Reutiliza a flag para mostrar o form
+                                        setExibirFormularioLancamento(true)
                                       }}
                                       className="text-blue-500 hover:text-blue-700 font-medium text-xs px-1.5 py-0.5 bg-blue-50 rounded hover:bg-blue-100 transition-colors"
                                       title="Editar"
                                     >
                                       ✏️
                                     </button>
-                                  )}
-                                </>
+                                    <button
+                                      onClick={() => handleExcluirLancamento(transacao.id)}
+                                      className="text-red-500 hover:text-red-700 font-medium text-xs px-1.5 py-0.5 bg-red-50 rounded hover:bg-red-100 transition-colors"
+                                      title="Excluir"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </>
+                                )
+                              ) : (
+                                /* Se for vinculado, exibe apenas cadeado ou dica de que deve ser editado na transação */
+                                <span className="text-[10px] text-gray-400 font-semibold" title="Vínculo com Transação: Edite no módulo de Transações">
+                                  🔒
+                                </span>
                               )}
                             </div>
                           </td>
