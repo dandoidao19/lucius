@@ -10,6 +10,38 @@ BEGIN
         ALTER TABLE public.transacoes_loja DROP CONSTRAINT transacoes_loja_numero_transacao_key;
     END IF;
 
+    -- 0.1 GARANTIR COLUNAS DE SCHEMA (V3.5 ~ V4.8)
+    -- Transacoes Loja
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='quantidade_parcelas') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='user_id') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN user_id UUID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='observacao') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN observacao TEXT;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='id_venda') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN id_venda UUID REFERENCES public.vendas(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='id_compra') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN id_compra UUID REFERENCES public.compras(id) ON DELETE CASCADE;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_loja' AND column_name='id_condicional') THEN
+        ALTER TABLE public.transacoes_loja ADD COLUMN id_condicional UUID REFERENCES public.transacoes_condicionais(id) ON DELETE CASCADE;
+    END IF;
+
+    -- Vendas e Compras (Garantir quantidade_parcelas)
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='quantidade_parcelas') THEN
+        ALTER TABLE public.vendas ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='quantidade_parcelas') THEN
+        ALTER TABLE public.compras ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='transacoes_condicionais' AND column_name='quantidade_parcelas') THEN
+        ALTER TABLE public.transacoes_condicionais ADD COLUMN quantidade_parcelas INTEGER DEFAULT 1;
+    END IF;
+
     -- 1. GARANTIR QUE A TABELA DE SEQUÊNCIA EXISTE E ESTÁ CONFIGURADA
     IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sequencia_transacoes') THEN
         CREATE TABLE public.sequencia_transacoes (
@@ -37,9 +69,25 @@ BEGIN
         WHERE proximo_numero < 163;
     END IF;
 
+    -- 2. GARANTIR SEQUÊNCIA PARA CÓDIGOS DE PRODUTO
+    IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'seq_codigo_produto') THEN
+        CREATE SEQUENCE public.seq_codigo_produto START WITH 1000;
+    END IF;
+
+    -- 3. CONFIGURAR GERAÇÃO AUTOMÁTICA DE CÓDIGO DE PRODUTO
+    ALTER TABLE public.produtos ALTER COLUMN codigo SET DEFAULT 'P' || lpad(nextval('public.seq_codigo_produto')::text, 6, '0');
+
 END $$;
 
--- 2. ATUALIZAR FUNÇÃO PARA USAR A TABELA SEQUENCIA_TRANSACOES
+-- 4. FUNÇÃO DE ATUALIZAÇÃO DE ESTOQUE
+CREATE OR REPLACE FUNCTION public.atualizar_estoque(produto_id_param UUID, quantidade_param INTEGER)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE public.produtos SET quantidade = quantidade + quantidade_param WHERE id = produto_id_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. ATUALIZAR FUNÇÃO PARA USAR A TABELA SEQUENCIA_TRANSACOES
 CREATE OR REPLACE FUNCTION public.obter_proximo_numero_transacao()
 RETURNS INTEGER AS $$
 DECLARE

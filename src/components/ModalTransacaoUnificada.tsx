@@ -350,6 +350,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: statusParcela,
+        quantidade_parcelas: qtdParcelas,
         observacao: obsFinal || null,
         ...parentIds
       })
