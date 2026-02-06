@@ -5,6 +5,7 @@ import { User } from '@supabase/supabase-js'
 import ModalPagarAvancado from './ModalPagarAvancado'
 import { useEffect, useState, useMemo } from 'react'
 import { useDadosFinanceiros, CentroCusto, LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
+import { useFilters } from '@/context/FilterContext'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
 import FiltrosCasa from './FiltrosCasa'
@@ -130,22 +131,30 @@ const validarFormulario = (form: FormLancamento): boolean => {
 
 export default function CasaModulo() {
   const { dados, recarregarDados, carregando: carregandoContexto } = useDadosFinanceiros()
+  const { filtersCasa, setFiltersCasa } = useFilters()
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([])
   const [loading, setLoading] = useState(false)
   const [carregandoInicial, setCarregandoInicial] = useState(true)
   
-  // Estados de filtros
-  const [filtroDataInicio, setFiltroDataInicio] = useState('')
-  const [filtroDataFim, setFiltroDataFim] = useState('')
-  const [filtroMes, setFiltroMes] = useState('')
-  const [filtroDescricao, setFiltroDescricao] = useState('')
-  const [filtroCDC, setFiltroCDC] = useState('')
-  const [filtroStatus, setFiltroStatus] = useState('')
+  // Atalhos para os filtros do contexto
+  const filtroDataInicio = filtersCasa.dataInicio
+  const setFiltroDataInicio = (v: string) => setFiltersCasa(prev => ({ ...prev, dataInicio: v }))
+  const filtroDataFim = filtersCasa.dataFim
+  const setFiltroDataFim = (v: string) => setFiltersCasa(prev => ({ ...prev, dataFim: v }))
+  const filtroMes = filtersCasa.mes
+  const setFiltroMes = (v: string) => setFiltersCasa(prev => ({ ...prev, mes: v }))
+  const filtroDescricao = filtersCasa.descricao
+  const setFiltroDescricao = (v: string) => setFiltersCasa(prev => ({ ...prev, descricao: v }))
+  const filtroCDC = filtersCasa.cdc
+  const setFiltroCDC = (v: string) => setFiltersCasa(prev => ({ ...prev, cdc: v }))
+  const filtroStatus = filtersCasa.status
+  const setFiltroStatus = (v: string) => setFiltersCasa(prev => ({ ...prev, status: v }))
+  const mostrarTodos = filtersCasa.mostrarTodos
+  const setMostrarTodos = (v: boolean) => setFiltersCasa(prev => ({ ...prev, mostrarTodos: v }))
   
   const [abaLancamentos, setAbaLancamentos] = useState<'padrao' | 'recorrente'>('padrao')
   const [formularioAberto, setFormularioAberto] = useState(false)
   const [user, setUser] = useState<User | null>(null)
-  const [mostrarTodos, setMostrarTodos] = useState(false)
   
   const [modalPagar, setModalPagar] = useState<{ 
     aberto: boolean; 
@@ -279,7 +288,9 @@ export default function CasaModulo() {
 
           if (error) throw error
         } else {
-          const valorParcela = valorNumerico / form.parcelas
+          const valorBase = Math.floor((valorNumerico / form.parcelas) * 100) / 100
+          const valorUltima = Number((valorNumerico - (valorBase * (form.parcelas - 1))).toFixed(2))
+
           const lancamentosParcelados = []
 
           for (let i = 1; i <= form.parcelas; i++) {
@@ -289,10 +300,12 @@ export default function CasaModulo() {
               dataParcela = calcularDataPorPrazo(dataAnterior, form.prazoParcelas)
             }
 
+            const valorFinalParcela = i === form.parcelas ? valorUltima : valorBase
+
             lancamentosParcelados.push({
               user_id: user.id,
               descricao: `${descricaoMaiuscula} (${i}/${form.parcelas})`,
-              valor: valorParcela,
+              valor: valorFinalParcela,
               tipo: form.tipo,
               centro_custo_id: form.centroCustoId || null,
               data_lancamento: dataParcela,
@@ -401,15 +414,17 @@ export default function CasaModulo() {
       }
 
       // 1. Atualizar o lançamento atual para 'realizado' com o valor realmente pago
+      // ✅ CORREÇÃO: Usar dataPagamento também em data_prevista para que a lista mostre a data correta da quitação
       const { error: errorUpdate } = await supabase
         .from('lancamentos_financeiros')
-        .update([{
+        .update({
           status: 'realizado',
           valor: valorPagoFinal,
           data_lancamento: dataPagamento,
+          data_prevista: dataPagamento,
           descricao: novaDescricaoOriginal,
           parcelamento: novoParcelamento
-        }])
+        })
         .eq('id', lancamento.id)
 
       if (errorUpdate) throw errorUpdate
@@ -688,13 +703,15 @@ export default function CasaModulo() {
   }, [dados.todosLancamentosCasa, filtroDataInicio, filtroDataFim, filtroMes, filtroDescricao, filtroCDC, filtroStatus, mostrarTodos, carregandoInicial])
 
   const limparFiltros = () => {
-    setFiltroDataInicio('')
-    setFiltroDataFim('')
-    setFiltroMes('')
-    setFiltroDescricao('')
-    setFiltroCDC('')
-    setFiltroStatus('')
-    setMostrarTodos(false)
+    setFiltersCasa({
+      dataInicio: '',
+      dataFim: '',
+      mes: '',
+      descricao: '',
+      cdc: '',
+      status: '',
+      mostrarTodos: false,
+    })
   }
   
   const gerarPDF = () => {

@@ -9,6 +9,7 @@ import ModalPagarTransacao from './ModalPagarTransacao'
 import ModalEstornarTransacao from './ModalEstornarTransacao'
 import FormularioLancamentoLoja from './FormularioLancamentoLoja'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
+import { useFilters } from '@/context/FilterContext'
 import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 interface Transacao {
@@ -64,21 +65,31 @@ const CACHE_TEMPO_VIDA = 30000
 
 export default function LojaPaginaFinanceiro() {
   const { versaoRefresh } = useDadosFinanceiros()
+  const { filtersLojaFinanceiro, setFiltersLojaFinanceiro } = useFilters()
   const [transacoes, setTransacoes] = useState<Transacao[]>(cacheGlobalTransacoes)
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<Transacao[]>([])
   const [loading, setLoading] = useState(false)
-  const [verTodas, setVerTodas] = useState(false)
   
   const ultimaBuscaRef = useRef<number>(cacheGlobalUltimaAtualizacao)
   const buscaEmAndamentoRef = useRef<boolean>(false)
 
-  const [filtroDataInicio, setFiltroDataInicio] = useState('')
-  const [filtroDataFim, setFiltroDataFim] = useState('')
-  const [filtroMes, setFiltroMes] = useState('')
-  const [filtroNumeroTransacao, setFiltroNumeroTransacao] = useState('')
-  const [filtroDescricao, setFiltroDescricao] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('todos')
-  const [filtroStatus, setFiltroStatus] = useState('todos')
+  // Atalhos para os filtros do contexto
+  const verTodas = filtersLojaFinanceiro.verTodas
+  const setVerTodas = (v: boolean) => setFiltersLojaFinanceiro(prev => ({ ...prev, verTodas: v }))
+  const filtroDataInicio = filtersLojaFinanceiro.dataInicio
+  const setFiltroDataInicio = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, dataInicio: v }))
+  const filtroDataFim = filtersLojaFinanceiro.dataFim
+  const setFiltroDataFim = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, dataFim: v }))
+  const filtroMes = filtersLojaFinanceiro.mes
+  const setFiltroMes = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, mes: v }))
+  const filtroNumeroTransacao = filtersLojaFinanceiro.numeroTransacao
+  const setFiltroNumeroTransacao = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, numeroTransacao: v }))
+  const filtroDescricao = filtersLojaFinanceiro.descricao
+  const setFiltroDescricao = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, descricao: v }))
+  const filtroTipo = filtersLojaFinanceiro.tipo
+  const setFiltroTipo = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, tipo: v }))
+  const filtroStatus = filtersLojaFinanceiro.status
+  const setFiltroStatus = (v: string) => setFiltersLojaFinanceiro(prev => ({ ...prev, status: v }))
 
   const [modalPagarTransacao, setModalPagarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
   const [modalEstornarTransacao, setModalEstornarTransacao] = useState<{ aberto: boolean, transacao: Transacao | null }>({ aberto: false, transacao: null })
@@ -338,15 +349,17 @@ export default function LojaPaginaFinanceiro() {
   }
 
   const limparFiltros = useCallback(() => {
-    setFiltroDataInicio('')
-    setFiltroDataFim('')
-    setFiltroMes('')
-    setFiltroNumeroTransacao('')
-    setFiltroDescricao('')
-    setFiltroTipo('todos')
-    setFiltroStatus('todos')
-    setVerTodas(false)
-  }, [])
+    setFiltersLojaFinanceiro({
+      dataInicio: '',
+      dataFim: '',
+      mes: '',
+      numeroTransacao: '',
+      descricao: '',
+      tipo: 'todos',
+      status: 'todos',
+      verTodas: false,
+    })
+  }, [setFiltersLojaFinanceiro])
 
   const getStatusColor = useCallback((status: string | null) => {
     if (!status) return 'bg-gray-100 text-gray-800'

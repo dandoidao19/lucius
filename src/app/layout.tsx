@@ -7,6 +7,7 @@ import CabecalhoSistema from "@/components/CabecalhoSistema";
 import AtalhosGlobais from "@/components/AtalhosGlobais";
 import { DadosFinanceirosProvider } from "@/context/DadosFinanceirosContext";
 import { FormDraftProvider } from "@/context/FormDraftContext";
+import { FilterProvider } from "@/context/FilterContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,6 +36,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <DadosFinanceirosProvider>
+            <FilterProvider>
             <FormDraftProvider>
             <RealtimeSubscriber />
             {/* Cabeçalho do Sistema LUCIUS com Logos */}
@@ -46,6 +48,7 @@ export default function RootLayout({
             {/* Atalhos Globais (Balões Flutuantes) */}
             <AtalhosGlobais />
             </FormDraftProvider>
+            </FilterProvider>
           </DadosFinanceirosProvider>
         </QueryProvider>
       </body>

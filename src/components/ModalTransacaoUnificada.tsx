@@ -317,7 +317,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const valorParcela = total / qtdParcelas
+    const valorBase = Math.floor((total / qtdParcelas) * 100) / 100
+    const valorUltima = Number((total - (valorBase * (qtdParcelas - 1))).toFixed(2))
+
     const transacoes = []
 
     const obsFinal = isPedidoFinanceiro
@@ -341,12 +343,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       const prefixo = tipoFinanceiro === 'entrada' ? 'Venda' : 'Compra'
       const descricao = `${prefixo} ${entidadeNome} (${i}/${qtdParcelas})`
+      const valorFinalParcela = i === qtdParcelas ? valorUltima : valorBase
 
       transacoes.push({
         user_id: user.id,
         numero_transacao: numeroTransacaoBase,
         descricao: descricao,
-        total: valorParcela,
+        total: valorFinalParcela,
         tipo: tipoFinanceiro,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: statusParcela,
@@ -659,6 +662,20 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             console.log(`📦 DEBUG ESTOQUE: Atualizando (Entrada) Produto ${prodId}, Qtd: ${item.quantidade}`)
             const { error: errorRPC } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade) })
             if (errorRPC) console.error('📦 ERRO RPC ESTOQUE (Compra):', formatarErro(errorRPC))
+
+            // ✅ ATUALIZAR VALORES DO PRODUTO E DATA DA ÚLTIMA COMPRA
+            const { error: errorProdUpd } = await supabase
+              .from('produtos')
+              .update({
+                preco_custo: item.preco_custo,
+                valor_repasse: item.valor_repasse,
+                preco_venda: item.preco_venda,
+                categoria: item.categoria,
+                data_ultima_compra: prepararDataParaInsert(data)
+              })
+              .eq('id', prodId)
+
+            if (errorProdUpd) console.error('📦 ERRO AO ATUALIZAR VALORES DO PRODUTO (Compra):', errorProdUpd)
 
             const dbItem = {
               compra_id: transacaoPrincipalId,

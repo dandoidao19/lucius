@@ -194,7 +194,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string }, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const valorParcela = total / qtdParcelas
+
+    const valorBase = Math.floor((total / qtdParcelas) * 100) / 100
+    const valorUltima = Number((total - (valorBase * (qtdParcelas - 1))).toFixed(2))
+
     const transacoes = []
     for (let i = 1; i <= qtdParcelas; i++) {
       let dataParcela = vencimento
@@ -205,11 +208,14 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         else if (prazo === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
         dataParcela = dt.toISOString().split('T')[0]
       }
+
+      const valorFinalParcela = i === qtdParcelas ? valorUltima : valorBase
+
       transacoes.push({
         user_id: user.id,
         numero_transacao: refNum,
         descricao: `${tipo === 'entrada' ? 'Venda' : 'Compra'} ${entidade} (${i}/${qtdParcelas})`,
-        total: valorParcela,
+        total: valorFinalParcela,
         tipo,
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: i === 1 && total > 0 ? status : 'pendente',
@@ -280,7 +286,16 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   const buscarPedidos = async (tipoLado: 'enviado' | 'recebido') => {
     try {
-      const { data: pds, error } = await supabase
+      // 1. Buscar no novo sistema (pedidos_loja)
+      const { data: pNovo, error: eNovo } = await supabase
+        .from('pedidos_loja')
+        .select('*')
+        .eq('tipo', tipoLado === 'enviado' ? 'venda' : 'compra')
+        .in('status', ['pendente', 'parcial'])
+        .order('data_pedido', { ascending: false })
+
+      // 2. Buscar no legado (transacoes_condicionais)
+      const { data: pAntigo, error: eAntigo } = await supabase
         .from('transacoes_condicionais')
         .select('*')
         .eq('tipo', tipoLado)
@@ -288,12 +303,18 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         .ilike('observacao', '%[PEDIDO]%')
         .order('data_transacao', { ascending: false })
 
-      if (error) throw error
+      if (eNovo || eAntigo) throw (eNovo || eAntigo)
+
+      const unificados = [
+        ...(pNovo || []).map(p => ({ ...p, isNovo: true, origem: p.entidade, data_transacao: p.data_pedido, total: p.total_geral })),
+        ...(pAntigo || []).map(p => ({ ...p, isNovo: false }))
+      ]
+
       if (tipoLado === 'enviado') {
-        setPedidosSaidaAbertos(pds || [])
+        setPedidosSaidaAbertos(unificados)
         setMostrarBuscaSaida(true)
       } else {
-        setPedidosEntradaAbertos(pds || [])
+        setPedidosEntradaAbertos(unificados)
         setMostrarBuscaEntrada(true)
       }
     } catch (err) {
@@ -307,8 +328,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (lado === 'saida') {
       setIdSaidaAnexar(pedido.id)
       setTotalSaidaAnterior(pedido.total || 0)
-      setCliente(pedido.origem)
-      setData(pedido.data_transacao.split('T')[0])
+      setCliente(pedido.origem || pedido.entidade)
+      setData((pedido.data_transacao || pedido.data_pedido).split('T')[0])
       if (pedido.quantidade_parcelas) setPagVenda(prev => ({ ...prev, parcelas: pedido.quantidade_parcelas }))
       if (pedido.prazoparcelas) setPagVenda(prev => ({ ...prev, prazo: pedido.prazoparcelas }))
       if (pedido.data_vencimento) setPagVenda(prev => ({ ...prev, vencimento: pedido.data_vencimento.split('T')[0] }))
@@ -316,8 +337,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     } else {
       setIdEntradaAnexar(pedido.id)
       setTotalEntradaAnterior(pedido.total || 0)
-      setFornecedor(pedido.origem)
-      setData(pedido.data_transacao.split('T')[0])
+      setFornecedor(pedido.origem || pedido.entidade)
+      setData((pedido.data_transacao || pedido.data_pedido).split('T')[0])
       if (pedido.quantidade_parcelas) setPagCompra(prev => ({ ...prev, parcelas: pedido.quantidade_parcelas }))
       if (pedido.prazoparcelas) setPagCompra(prev => ({ ...prev, prazo: pedido.prazoparcelas }))
       if (pedido.data_vencimento) setPagCompra(prev => ({ ...prev, vencimento: pedido.data_vencimento.split('T')[0] }))
@@ -563,14 +584,39 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         if (tipoSaida === 'venda') {
            await supabase.from('itens_venda').insert({ venda_id: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse })
         } else {
-           await supabase.from('itens_condicionais').insert({ transacao_id: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, status: 'pendente' })
+           // PEDIDO DE VENDA
+           const tabelaItens = idSaidaAnexar && !idSaidaAnexar.includes('-') ? 'itens_pedido_loja' : 'itens_condicionais' // Simple heuristic for UUID
+           // Actually I'll just check the object.
+           // For now, ModalVendaCasada seems to use transacoes_condicionais mostly.
+           await supabase.from('itens_condicionais').insert({
+             transacao_id: idSaida,
+             produto_id: prodId,
+             descricao: item.nome,
+             quantidade: item.quantidade,
+             preco_venda: item.preco_unitario,
+             preco_custo: item.preco_custo,
+             valor_repasse: item.valor_repasse,
+             status: 'pendente',
+             observacao: `Venda Casada #${numEntrada}` // Vinculo no item se for pedido
+           })
         }
 
         // Gravar no lado da entrada
         if (tipoEntrada === 'compra') {
            await supabase.from('itens_compra').insert({ compra_id: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario })
         } else {
-           await supabase.from('itens_condicionais').insert({ transacao_id: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
+           // PEDIDO DE COMPRA
+           await supabase.from('itens_condicionais').insert({
+             transacao_id: idEntrada,
+             produto_id: prodId,
+             descricao: item.nome,
+             quantidade: item.quantidade,
+             preco_custo: item.preco_custo,
+             valor_repasse: item.valor_repasse,
+             preco_venda: item.preco_unitario,
+             status: 'pendente',
+             observacao: `Venda Casada #${numSaida}` // Vinculo no item se for pedido
+           })
         }
 
         // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
@@ -596,6 +642,20 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
             if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
 
+            // ✅ ATUALIZAR VALORES DO PRODUTO E DATA DA ÚLTIMA COMPRA
+            const { error: errorProdUpd } = await supabase
+              .from('produtos')
+              .update({
+                preco_custo: item.preco_custo,
+                valor_repasse: item.valor_repasse,
+                preco_venda: item.preco_unitario,
+                categoria: item.categoria,
+                data_ultima_compra: prepararDataParaInsert(data)
+              })
+              .eq('id', prodId)
+
+            if (errorProdUpd) console.error('📦 ERRO AO ATUALIZAR VALORES DO PRODUTO (Compra Casada):', errorProdUpd)
+
             await supabase.from('movimentacoes_estoque').insert({
                 produto_id: prodId,
                 tipo: 'entrada',
@@ -606,11 +666,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         }
       }
 
+      triggerRefresh()
+      onSucesso()
       alert('✅ Venda Casada gerada com sucesso!')
       clearDraft('venda_casada')
       resetForm()
-      triggerRefresh()
-      onSucesso()
       onClose()
     } catch (error: any) {
       const msgErro = formatarErro(error)

@@ -137,32 +137,47 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
     try {
       // 1. Reverter Estoque
       for (const item of itens) {
-        const { data: prod } = await supabase
-          .from('produtos')
-          .select('id')
-          .ilike('descricao', item.descricao)
-          .single()
+        let prodId = item.produto_id
 
-        if (prod) {
-          const multiplicador = tipo === 'vendas' ? 1 : -1 // Venda: devolve pro estoque. Compra: retira do estoque.
-          await supabase.rpc('atualizar_estoque', {
-            produto_id_param: prod.id,
-            quantidade_param: item.quantidade * multiplicador
-          })
+        if (!prodId) {
+          const { data: prod } = await supabase
+            .from('produtos')
+            .select('id')
+            .ilike('descricao', item.descricao)
+            .limit(1)
+            .maybeSingle()
+          if (prod) prodId = prod.id
+        }
 
-          await supabase.from('movimentacoes_estoque').insert({
-            produto_id: prod.id,
-            tipo: tipo === 'vendas' ? 'entrada' : 'saida',
-            quantidade: item.quantidade,
-            observacao: `EXTORNO/EXCLUSÃO: #${dadosResumo.numero} (${tipo})`
-          })
+        if (prodId) {
+          // Inverter impacto: Venda (saída) -> vira entrada (+). Compra (entrada) -> vira saída (-).
+          // Condicional Enviado (saída) -> vira entrada (+). Condicional Recebido (entrada) -> vira saída (-).
+
+          let multiplicador = 1
+          if (tipo === 'vendas' || (tipo === 'transacoes_condicionais' && transacaoFull?.tipo === 'enviado')) {
+             multiplicador = 1 // Devolve pro estoque
+          } else if (tipo === 'compras' || (tipo === 'transacoes_condicionais' && transacaoFull?.tipo === 'recebido')) {
+             multiplicador = -1 // Retira do estoque
+          } else if (tipo === 'pedidos_loja') {
+             multiplicador = 0 // Pedido não impacta estoque diretamente (v4.9)
+          }
+
+          if (multiplicador !== 0) {
+            await supabase.rpc('atualizar_estoque', {
+              produto_id_param: prodId,
+              quantidade_param: item.quantidade * multiplicador
+            })
+
+            await supabase.from('movimentacoes_estoque').insert({
+              produto_id: prodId,
+              tipo: multiplicador === 1 ? 'entrada' : 'saida',
+              quantidade: item.quantidade,
+              observacao: `EXTORNO/EXCLUSÃO: #${dadosResumo.numero} (${tipo})`
+            })
+          }
         }
       }
 
-      // 2. Deletar Financeiro (transacoes_loja)
-      // Buscamos pelo prefixo e numero na descricao ou algo mais seguro
-      // Infelizmente não temos o ID da transação vinculado diretamente em cada parcela de forma fácil sem uma coluna extra.
-      // Mas podemos usar a lógica de busca que já usamos no buscarParcelas.
       // 2. Deletar Financeiro (transacoes_loja)
       let queryDel = supabase.from('transacoes_loja').delete()
       if (tipo === 'vendas') queryDel = queryDel.eq('id_venda', transacaoId)
@@ -172,20 +187,19 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
       const { error: errorDel } = await queryDel
 
-      // Fallback para registros antigos (sem a coluna de ID)
-      if (!errorDel) {
-        const prefixo = tipo === 'vendas' ? 'Venda' : 'Compra'
-        if (tipo !== 'transacoes_condicionais' && tipo !== 'pedidos_loja') {
-          const { data: parcelasLoja } = await supabase
-            .from('transacoes_loja')
-            .select('id')
-            .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
-            .eq('numero_transacao', dadosResumo.numero)
-
-          if (parcelasLoja && parcelasLoja.length > 0) {
-            await supabase.from('transacoes_loja').delete().in('id', parcelasLoja.map(p => p.id))
-          }
-        }
+      // Fallback agressivo para garantir que nada sobrou
+      const prefixo = tipo === 'vendas' ? 'Venda' : (tipo === 'compras' ? 'Compra' : '')
+      if (prefixo) {
+        await supabase.from('transacoes_loja')
+          .delete()
+          .eq('numero_transacao', dadosResumo.numero)
+          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+      } else {
+        // Para pedidos e condicionais, buscar pela observação que contém o vínculo
+        await supabase.from('transacoes_loja')
+          .delete()
+          .eq('numero_transacao', dadosResumo.numero)
+          .ilike('observacao', `%Ref. #${dadosResumo.numero}%`)
       }
 
       // 3. Deletar a Transação Principal e Itens

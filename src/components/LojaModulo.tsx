@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LojaPaginaFinanceiro from './LojaPaginaFinanceiro'
 import LojaPaginaEstoque from './LojaPaginaEstoque'
 import LojaPaginaTransacoes from './LojaPaginaTransacoes'
@@ -9,6 +9,19 @@ type AbaLoja = 'financeiro' | 'transacoes' | 'estoque'
 
 export default function LojaModulo() {
   const [abaAtiva, setAbaAtiva] = useState<AbaLoja>('financeiro')
+
+  // ✅ PERSISTÊNCIA DA ABA ATIVA
+  useEffect(() => {
+    const salva = localStorage.getItem('lucius_aba_ativa_loja')
+    if (salva && (salva === 'financeiro' || salva === 'transacoes' || salva === 'estoque')) {
+      setAbaAtiva(salva as AbaLoja)
+    }
+  }, [])
+
+  const trocarAba = (novaAba: AbaLoja) => {
+    setAbaAtiva(novaAba)
+    localStorage.setItem('lucius_aba_ativa_loja', novaAba)
+  }
 
   const abas: { id: AbaLoja; titulo: string; icone: string; corAtiva: string }[] = [
     { id: 'financeiro', titulo: 'Financeiro', icone: '💳', corAtiva: 'bg-purple-600 text-white shadow-md' },
@@ -37,7 +50,7 @@ export default function LojaModulo() {
           {abas.map((aba) => (
             <button
               key={aba.id}
-              onClick={() => setAbaAtiva(aba.id)}
+              onClick={() => trocarAba(aba.id)}
               className={`flex-1 min-w-max px-4 py-1 text-sm font-semibold transition-all rounded flex items-center justify-center ${
                 abaAtiva === aba.id
                   ? aba.corAtiva

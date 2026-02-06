@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
+import { useFilters } from '@/context/FilterContext'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalDetalhesTransacao from './ModalDetalhesTransacao'
 import FiltrosTransacoes from './FiltrosTransacoes'
@@ -29,6 +30,7 @@ interface TransacaoUnificada {
 
 export default function LojaPaginaTransacoes() {
   const { versaoRefresh, triggerRefresh } = useDadosFinanceiros()
+  const { filtersLojaTransacoes, setFiltersLojaTransacoes } = useFilters()
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoUnificada[]>([])
   const [loading, setLoading] = useState(true)
@@ -38,13 +40,19 @@ export default function LojaPaginaTransacoes() {
     transacao: null
   })
 
-  // Estados de Filtro
-  const [filtroDataInicio, setFiltroDataInicio] = useState('')
-  const [filtroDataFim, setFiltroDataFim] = useState('')
-  const [filtroNumero, setFiltroNumero] = useState('')
-  const [filtroEntidade, setFiltroEntidade] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('todos')
-  const [filtroStatus, setFiltroStatus] = useState('todos')
+  // Atalhos para os filtros do contexto
+  const filtroDataInicio = filtersLojaTransacoes.dataInicio
+  const setFiltroDataInicio = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, dataInicio: v }))
+  const filtroDataFim = filtersLojaTransacoes.dataFim
+  const setFiltroDataFim = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, dataFim: v }))
+  const filtroNumero = filtersLojaTransacoes.numero
+  const setFiltroNumero = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, numero: v }))
+  const filtroEntidade = filtersLojaTransacoes.entidade
+  const setFiltroEntidade = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, entidade: v }))
+  const filtroTipo = filtersLojaTransacoes.tipo
+  const setFiltroTipo = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, tipo: v }))
+  const filtroStatus = filtersLojaTransacoes.status
+  const setFiltroStatus = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, status: v }))
 
   const carregarTransacoes = useCallback(async () => {
     setLoading(true)
@@ -198,12 +206,14 @@ export default function LojaPaginaTransacoes() {
   }, [aplicarFiltros])
 
   const limparFiltros = () => {
-    setFiltroDataInicio('')
-    setFiltroDataFim('')
-    setFiltroNumero('')
-    setFiltroEntidade('')
-    setFiltroTipo('todos')
-    setFiltroStatus('todos')
+    setFiltersLojaTransacoes({
+      dataInicio: '',
+      dataFim: '',
+      numero: '',
+      entidade: '',
+      tipo: 'todos',
+      status: 'todos',
+    })
   }
 
   const gerarPDF = () => {
