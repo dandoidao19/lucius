@@ -35,12 +35,22 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
   const [processando, setProcessando] = useState(false)
   const [erro, setErro] = useState('')
 
+  // Opções de Pagamento Editáveis
+  const [quantidadeParcelas, setQuantidadeParcelas] = useState(1)
+  const [prazoParcelas, setPrazoParcelas] = useState('mensal')
+  const [dataVencimento, setDataVencimento] = useState(getDataAtualBrasil())
+
   const carregarDados = useCallback(async () => {
     setLoading(true)
     try {
       const { data: ped, error: errP } = await supabase.from('pedidos_loja').select('*').eq('id', pedidoId).single()
       if (errP) throw errP
       setPedido(ped)
+
+      // Pre-encher opções de pagamento do pedido
+      if (ped.quantidade_parcelas) setQuantidadeParcelas(ped.quantidade_parcelas)
+      if (ped.prazoparcelas) setPrazoParcelas(ped.prazoparcelas)
+      if (ped.data_vencimento) setDataVencimento(ped.data_vencimento)
 
       const { data: its, error: errI } = await supabase
         .from('itens_pedido_loja')
@@ -99,8 +109,8 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
           total: totalFaturado,
           quantidade_itens: itensEfetuar.length,
           status_pagamento: 'pendente',
-          quantidade_parcelas: pedido.quantidade_parcelas,
-          prazoparcelas: pedido.prazoparcelas,
+          quantidade_parcelas: quantidadeParcelas,
+          prazoparcelas: prazoParcelas,
           observacao: `Faturado do Pedido #${numTransacaoBase}`,
           pedido_origem_id: pedido.id
         }
@@ -158,25 +168,25 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         }
 
         // Financeiro da nova Transação
-        const valorParc = totalFaturado / pedido.quantidade_parcelas
-        for (let i = 1; i <= pedido.quantidade_parcelas; i++) {
-            let dataParc = pedido.data_vencimento || getDataAtualBrasil()
+        const valorParc = totalFaturado / quantidadeParcelas
+        for (let i = 1; i <= quantidadeParcelas; i++) {
+            let dataParc = dataVencimento || getDataAtualBrasil()
             if (i > 1) {
                 const dt = new Date(dataParc + 'T12:00:00')
-                if (pedido.prazoparcelas === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-                else if (pedido.prazoparcelas === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-                else if (pedido.prazoparcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
+                if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + (i - 1))
+                else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
+                else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
                 dataParc = dt.toISOString().split('T')[0]
             }
             await supabase.from('transacoes_loja').insert({
                 user_id: user.id,
                 numero_transacao: numFaturamento,
-                descricao: `${pedido.tipo === 'venda' ? 'Venda' : 'Compra'} ${pedido.entidade} (${i}/${pedido.quantidade_parcelas})`,
+                descricao: `${pedido.tipo === 'venda' ? 'Venda' : 'Compra'} ${pedido.entidade} (${i}/${quantidadeParcelas})`,
                 total: valorParc,
                 tipo: pedido.tipo === 'venda' ? 'entrada' : 'saida',
                 data: prepararDataParaInsert(dataParc),
                 status_pagamento: 'pendente',
-                quantidade_parcelas: pedido.quantidade_parcelas,
+                quantidade_parcelas: quantidadeParcelas,
                 [pedido.tipo === 'venda' ? 'id_venda' : 'id_compra']: transacaoPrincipalId
             })
         }
@@ -331,8 +341,48 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                     R$ {itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0).toFixed(2)}
                   </span>
                 </div>
-                <div className="text-xs text-gray-500 italic">
+                <div className="text-xs text-gray-500 italic text-center md:text-right">
                   * Novos lançamentos de {pedido?.tipo} e estoque serão gerados para os itens marcados como EFETUAR.
+                </div>
+              </div>
+
+              {/* Informações de Pagamento Editáveis */}
+              <div className="bg-purple-50 p-4 rounded border border-purple-100">
+                <h3 className="font-bold text-purple-700 text-xs mb-3 uppercase tracking-tight flex items-center gap-2">
+                  💳 Condições de Pagamento do Faturamento
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Data Vencimento (1ª Parc)</label>
+                    <input
+                      type="date"
+                      value={dataVencimento}
+                      onChange={(e) => setDataVencimento(e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs border border-purple-200 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Quantidade Parcelas</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={quantidadeParcelas}
+                      onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)}
+                      className="w-full px-2 py-1.5 text-xs border border-purple-200 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Prazo entre Parcelas</label>
+                    <select
+                      value={prazoParcelas}
+                      onChange={(e) => setPrazoParcelas(e.target.value)}
+                      className="w-full px-2 py-1.5 text-xs border border-purple-200 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white"
+                    >
+                      <option value="diaria">Diária</option>
+                      <option value="semanal">Semanal</option>
+                      <option value="mensal">Mensal</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>

@@ -16,6 +16,7 @@ interface ItemDetalhe {
   valor_repasse: number
   categoria?: string
   observacao?: string
+  status?: string
 }
 
 interface ParcelaDetalhe {
@@ -86,16 +87,17 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
       if (error) throw error
 
-      const itensFormatados = (data || []).map((item: Record<string, unknown>) => ({
-        id: (item.id as string),
-        produto_id: (item.produto_id as string | null),
-        descricao: (item.descricao as string) || '',
-        quantidade: (item.quantidade as number) || 0,
-        preco_venda: (item.preco_venda as number) || 0,
-        preco_custo: (item.preco_custo as number) || 0,
-        valor_repasse: (item.valor_repasse as number) || 0,
-        categoria: (item.categoria as string),
-        observacao: (item.observacao as string) || ''
+      const itensFormatados = (data || []).map((item: any) => ({
+        id: item.id,
+        produto_id: item.produto_id,
+        descricao: item.descricao || '',
+        quantidade: item.quantidade || 0,
+        preco_venda: item.preco_venda || 0,
+        preco_custo: item.preco_custo || 0,
+        valor_repasse: item.valor_repasse || 0,
+        categoria: item.categoria,
+        observacao: item.observacao || item.observacao_item || '',
+        status: item.status || 'pendente'
       }))
 
       setItens(itensFormatados)
@@ -392,24 +394,37 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center">Qtd</th>
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right">Unitário</th>
                     <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right">Subtotal</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center">Status</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase">Obs. Item</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y bg-white">
                   {loading ? (
-                    <tr><td colSpan={5} className="px-2 py-4 text-center text-gray-400 italic">Buscando...</td></tr>
+                    <tr><td colSpan={7} className="px-2 py-4 text-center text-gray-400 italic">Buscando...</td></tr>
                   ) : itens.length === 0 ? (
-                    <tr><td colSpan={5} className="px-2 py-4 text-center text-gray-400 italic">Vazio</td></tr>
+                    <tr><td colSpan={7} className="px-2 py-4 text-center text-gray-400 italic">Vazio</td></tr>
                   ) : (
                     itens.map(item => (
                       <tr key={item.id} className="hover:bg-gray-50">
                         <td className="px-2 py-1">
                           <div className="font-medium text-gray-800">{item.descricao}</div>
-                          {item.observacao && <div className="text-[10px] text-gray-400 italic leading-tight">{item.observacao}</div>}
                         </td>
                         <td className="px-2 py-1 text-gray-600">{item.categoria || '—'}</td>
                         <td className="px-2 py-1 text-center">{item.quantidade}</td>
                         <td className="px-2 py-1 text-right">R$ {(tipo === 'vendas' ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
                         <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {(item.quantidade * (tipo === 'vendas' ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-center">
+                           <span className={`inline-block px-1 rounded text-[10px] font-bold uppercase ${
+                             item.status === 'efetuado' ? 'bg-green-100 text-green-700' :
+                             item.status === 'cancelado' ? 'bg-red-100 text-red-700' :
+                             'bg-yellow-100 text-yellow-700'
+                           }`}>
+                             {item.status}
+                           </span>
+                        </td>
+                        <td className="px-2 py-1 text-gray-500 italic truncate max-w-[200px]" title={item.observacao}>
+                          {item.observacao || '—'}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -419,6 +434,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                     <tr>
                       <td colSpan={4} className="px-2 py-1 text-right uppercase">Total Itens:</td>
                       <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + (i.quantidade * (tipo === 'vendas' ? i.preco_venda : i.valor_repasse)), 0).toFixed(2)}</td>
+                      <td colSpan={2}></td>
                     </tr>
                   </tfoot>
                 )}
