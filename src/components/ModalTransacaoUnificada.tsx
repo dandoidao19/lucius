@@ -519,7 +519,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId }, numTransacao, false)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -622,7 +622,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId }, numTransacao, false)
+        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -721,11 +721,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
       }
 
+      triggerRefresh()
+      onSucesso()
       alert('✅ Transação gerada com sucesso!')
       clearDraft('loja')
       resetForm()
-      triggerRefresh()
-      onSucesso()
       onClose()
     } catch (err: any) {
       const msgErro = formatarErro(err)
@@ -814,7 +814,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
 
         await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
-        await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId }, numTransacao, true)
+        await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -845,8 +845,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           })
         }
       } else {
-        const isPedidoTipo = tipo === 'pedido_venda' || tipo === 'pedido_compra'
-        const prefixoPedido = isPedidoTipo ? '[PEDIDO] ' : ''
+        const isPedidoTipo = false // Legados não usam mais este fluxo para novos pedidos
+        const prefixoPedido = ''
 
         if (transacaoId) {
           if (idPedidoAnexar) {
@@ -889,7 +889,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         if (isPedidoTipo) {
           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
-          await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId }, numTransacao, true)
+          await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
         }
 
         for (const item of itensValidos) {
@@ -934,11 +934,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
       }
 
+      triggerRefresh()
+      onSucesso()
       alert('✅ Pedido/Condicional gerado com sucesso!')
       clearDraft('loja')
       resetForm()
-      triggerRefresh()
-      onSucesso()
       onClose()
     } catch (err: any) {
       const msgErro = formatarErro(err)
@@ -1456,9 +1456,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                </div>
 
                {/* Informações de Pagamento (Apenas para Transações e se não for anexo) */}
-               <div className={`border-t pt-2 border-gray-100 ${(idPedidoAnexar || transacaoInicial) ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+               <div className={`border-t pt-2 border-gray-100 ${idPedidoAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
                  <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
-                   Pagamento / Condições {(idPedidoAnexar || transacaoInicial) && '(Já definido no pedido original)'}
+                   Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
                  </h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
@@ -1466,9 +1466,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                      <input
                        type="date"
                        value={dataVencimento || ''}
-                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setDataVencimento(e.target.value)}
+                       onChange={(e) => !idPedidoAnexar && setDataVencimento(e.target.value)}
                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                       readOnly={!!idPedidoAnexar || !!transacaoInicial}
+                       readOnly={!!idPedidoAnexar}
                      />
                    </div>
                    <div>
@@ -1477,18 +1477,18 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                        type="number"
                        min="1"
                        value={quantidadeParcelas ?? 1}
-                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setQuantidadeParcelas(parseInt(e.target.value) || 1)}
+                       onChange={(e) => !idPedidoAnexar && setQuantidadeParcelas(parseInt(e.target.value) || 1)}
                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                       readOnly={!!idPedidoAnexar || !!transacaoInicial}
+                       readOnly={!!idPedidoAnexar}
                      />
                    </div>
                    <div>
                      <label className="block text-xs text-gray-600">Prazo</label>
                      <select
                        value={prazoParcelas || 'mensal'}
-                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setPrazoParcelas(e.target.value)}
+                       onChange={(e) => !idPedidoAnexar && setPrazoParcelas(e.target.value)}
                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                       disabled={!!idPedidoAnexar || !!transacaoInicial}
+                       disabled={!!idPedidoAnexar}
                      >
                        <option value="diaria">Diária</option>
                        <option value="semanal">Semanal</option>
@@ -1499,9 +1499,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                      <label className="block text-xs text-gray-600">Status</label>
                      <select
                        value={statusPagamento || 'pendente'}
-                       onChange={(e) => !idPedidoAnexar && !transacaoInicial && setStatusPagamento(e.target.value)}
+                       onChange={(e) => !idPedidoAnexar && setStatusPagamento(e.target.value)}
                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
-                       disabled={!!idPedidoAnexar || !!transacaoInicial}
+                       disabled={!!idPedidoAnexar}
                      >
                        <option value="pendente">Pendente</option>
                        <option value="pago">Pago</option>

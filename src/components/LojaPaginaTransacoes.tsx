@@ -48,38 +48,42 @@ export default function LojaPaginaTransacoes() {
 
   const carregarTransacoes = useCallback(async () => {
     setLoading(true)
+    console.log('🔄 Buscando transações unificadas (v4.9)...')
     try {
       // 1. Buscar Vendas
-      const { data: vendas } = await supabase
+      const { data: vendas, error: errV } = await supabase
         .from('vendas')
         .select('*')
         .order('data_venda', { ascending: false })
+      if (errV) console.error('Erro ao buscar vendas:', errV)
 
       // 2. Buscar Compras
-      const { data: compras } = await supabase
+      const { data: compras, error: errC } = await supabase
         .from('compras')
         .select('*')
         .order('data_compra', { ascending: false })
+      if (errC) console.error('Erro ao buscar compras:', errC)
 
       // 3. Buscar Condicionais com contagem de itens
-      const { data: condicionais } = await supabase
+      const { data: condicionais, error: errCn } = await supabase
         .from('transacoes_condicionais')
         .select(`
           *,
           itens_condicionais (count)
         `)
-        .not('observacao', 'ilike', '%[PEDIDO]%') // Excluir legados que agora vão pro novo sistema? Ou manter?
-        // O usuário quer separar os módulos. Vou manter os legados mas focar no novo sistema para novos.
+        .not('observacao', 'ilike', '%[PEDIDO]%')
         .order('data_transacao', { ascending: false })
+      if (errCn) console.error('Erro ao buscar condicionais:', errCn)
 
       // 4. Buscar Novos Pedidos
-      const { data: pedidos } = await supabase
+      const { data: pedidos, error: errP } = await supabase
         .from('pedidos_loja')
         .select(`
           *,
           itens_pedido_loja (count)
         `)
         .order('data_pedido', { ascending: false })
+      if (errP) console.error('Erro ao buscar pedidos_loja:', errP)
 
       const unificadas: TransacaoUnificada[] = []
 
@@ -163,10 +167,10 @@ export default function LojaPaginaTransacoes() {
       // Ordenar por data decrescente
       unificadas.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime())
 
+      console.log(`✅ ${unificadas.length} transações unificadas carregadas.`)
       setTransacoes(unificadas)
-      setTransacoesFiltradas(unificadas)
     } catch (err) {
-      console.error('Erro ao carregar transações unificadas:', err)
+      console.error('Erro crítico ao carregar transações unificadas:', err)
     } finally {
       setLoading(false)
     }
@@ -342,14 +346,14 @@ export default function LojaPaginaTransacoes() {
       <ModalTransacaoUnificada
         aberto={modalAberto}
         onClose={() => setModalAberto(false)}
-        onSucesso={() => { carregarTransacoes(); triggerRefresh(); }}
+        onSucesso={() => triggerRefresh()}
       />
 
       {modalDetalhes.transacao && (
         <ModalDetalhesTransacao
           aberto={modalDetalhes.aberto}
           onClose={() => setModalDetalhes({ aberto: false, transacao: null })}
-          onSucesso={() => { carregarTransacoes(); triggerRefresh(); }}
+          onSucesso={() => triggerRefresh()}
           transacaoId={modalDetalhes.transacao.id}
           tipo={modalDetalhes.transacao.tabela}
           dadosResumo={{

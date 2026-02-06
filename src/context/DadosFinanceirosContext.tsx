@@ -117,9 +117,10 @@ export function DadosFinanceirosProvider({ children }: { children: ReactNode }) 
   }, [queryClient])
 
   const triggerRefresh = useCallback(() => {
+    console.log('⚡ triggerRefresh() chamado. Nova versão:', versaoRefresh + 1)
     setVersaoRefresh(v => v + 1)
     recarregarDados()
-  }, [recarregarDados])
+  }, [recarregarDados, versaoRefresh])
 
   return (
     <DadosFinanceirosContext.Provider value={{ dados, carregando, recarregarDados, versaoRefresh, triggerRefresh }}>

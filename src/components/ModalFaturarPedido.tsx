@@ -237,9 +237,9 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         }
       }
 
-      alert('✅ Faturamento processado com sucesso!')
       triggerRefresh()
       onSucesso()
+      alert('✅ Faturamento processado com sucesso!')
       onClose()
     } catch (err: any) {
       console.error('Erro no faturamento:', err)

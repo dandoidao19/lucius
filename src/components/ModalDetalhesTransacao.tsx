@@ -311,6 +311,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
         valor_repasse: i.valor_repasse,
         preco_venda: i.preco_venda,
         observacao_item: i.observacao,
+        codigo: '',
         estoque_atual: 0,
         minimizado: true,
         isNovoCadastro: false
@@ -443,7 +444,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           </div>
 
           {/* Financeiro (Abaixo) */}
-          {(tipo !== 'transacoes_condicionais' || (dadosResumo.observacao?.includes('[PEDIDO]')) || tipo === 'pedidos_loja') && (
+          {(tipo !== 'transacoes_condicionais' || (dadosResumo.observacao?.includes('[PEDIDO]'))) && (
             <div className="space-y-1 pt-2 border-t">
               <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1">
                 💳 Financeiro / Parcelas ({parcelas.length})
