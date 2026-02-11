@@ -8,9 +8,10 @@ interface SeletorEntidadeProps {
   onChange: (valor: string) => void
   tipo: 'cliente' | 'fornecedor' | 'ambos'
   placeholder?: string
+  disabled?: boolean
 }
 
-export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: SeletorEntidadeProps) {
+export default function SeletorEntidade({ valor, onChange, tipo, placeholder, disabled }: SeletorEntidadeProps) {
   const [sugestoes, setSugestoes] = useState<string[]>([])
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
 
@@ -90,7 +91,8 @@ export default function SeletorEntidade({ valor, onChange, tipo, placeholder }: 
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => valor.length > 1 && sugestoes.length > 0 && setMostrarSugestoes(true)}
         placeholder={placeholder}
-        className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+        disabled={disabled}
+        className={`w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500' : 'bg-white'}`}
       />
       {mostrarSugestoes && (
         <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded shadow-lg z-[60] mt-1 max-h-40 overflow-y-auto">

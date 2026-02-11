@@ -91,7 +91,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [mostrarBuscaPedido, setMostrarBuscaPedido] = useState(false)
   const [idPedidoOrigem, setIdPedidoOrigem] = useState<string | null>(null)
   const [idPedidoAnexar, setIdPedidoAnexar] = useState<string | null>(null)
+  const [idPedidoAnexarIsNovo, setIdPedidoAnexarIsNovo] = useState(false)
   const [totalPedidoAnterior, setTotalPedidoAnterior] = useState(0)
+  const [totalFinanceiroAnterior, setTotalFinanceiroAnterior] = useState(0)
 
   useEffect(() => {
     if (aberto) {
@@ -154,7 +156,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setObservacao('')
     setErro('')
     setIdPedidoAnexar(null)
+    setIdPedidoAnexarIsNovo(false)
     setTotalPedidoAnterior(0)
+    setTotalFinanceiroAnterior(0)
   }, [])
 
   if (!aberto) return null
@@ -793,24 +797,60 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       let transacaoId = transacaoInicial?.id || idPedidoAnexar
       let totalFinal = totalNovosItens
+      let totalFinanceiroFinal = totalNovosItens
 
       if (isPedidoNovoSistema) {
         if (transacaoId) {
           if (idPedidoAnexar) {
-            const { data: pOld } = await supabase.from('pedidos_loja').select('total_geral').eq('id', idPedidoAnexar).single()
-            totalFinal = (pOld?.total_geral || 0) + totalNovosItens
+             if (idPedidoAnexarIsNovo) {
+                const { data: pOld } = await supabase.from('pedidos_loja').select('total_geral, total_financeiro').eq('id', idPedidoAnexar).single()
+                totalFinal = (pOld?.total_geral || 0) + totalNovosItens
+                totalFinanceiroFinal = (pOld?.total_financeiro || 0) + totalNovosItens
+
+                await supabase.from('pedidos_loja').update({
+                  tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
+                  entidade,
+                  data_pedido: prepararDataParaInsert(data),
+                  observacao: (observacao || '').trim() || null,
+                  total_geral: totalFinal,
+                  total_financeiro: totalFinanceiroFinal,
+                  quantidade_parcelas: quantidadeParcelas,
+                  prazoparcelas: prazoParcelas,
+                  data_vencimento: prepararDataParaInsert(dataVencimento)
+                }).eq('id', idPedidoAnexar)
+             } else {
+                // Anexando a pedido legado, mas no modo NOVO sistema.
+                // Deveríamos atualizar a tabela legada transacoes_condicionais
+                const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
+                totalFinal = (pOld?.total || 0) + totalNovosItens
+                totalFinanceiroFinal = totalFinal // Legado não tem saldo financeiro separado
+
+                await supabase.from('transacoes_condicionais').update({
+                   origem: entidade,
+                   data_transacao: prepararDataParaInsert(data),
+                   total: totalFinal,
+                   observacao: `[PEDIDO] ${observacao}`.trim(),
+                   quantidade_parcelas: quantidadeParcelas,
+                   prazoparcelas: prazoParcelas,
+                   data_vencimento: prepararDataParaInsert(dataVencimento)
+                }).eq('id', idPedidoAnexar)
+             }
+          } else {
+             // Apenas edição normal (sem anexar)
+             totalFinal = totalNovosItens
+             totalFinanceiroFinal = totalNovosItens
+             await supabase.from('pedidos_loja').update({
+                tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
+                entidade,
+                data_pedido: prepararDataParaInsert(data),
+                observacao: (observacao || '').trim() || null,
+                total_geral: totalFinal,
+                total_financeiro: totalFinanceiroFinal,
+                quantidade_parcelas: quantidadeParcelas,
+                prazoparcelas: prazoParcelas,
+                data_vencimento: prepararDataParaInsert(dataVencimento)
+              }).eq('id', transacaoId)
           }
-          await supabase.from('pedidos_loja').update({
-            tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
-            entidade,
-            data_pedido: prepararDataParaInsert(data),
-            observacao: (observacao || '').trim() || null,
-            total_geral: totalFinal,
-            total_financeiro: totalFinal,
-            quantidade_parcelas: quantidadeParcelas,
-            prazoparcelas: prazoParcelas,
-            data_vencimento: prepararDataParaInsert(dataVencimento)
-          }).eq('id', transacaoId)
         } else {
           const { data: pedido, error: errP } = await supabase.from('pedidos_loja').insert({
             numero_transacao: numTransacao,
@@ -830,8 +870,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoId = pedido.id
         }
 
-        await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
-        await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
+        if (idPedidoAnexarIsNovo || !idPedidoAnexar) {
+           await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
+           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
+        } else {
+           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
+           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
+        }
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -1029,14 +1074,19 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     if (isModoAnexar) {
        if (!window.confirm(`Deseja ADICIONAR os novos itens ao Pedido #${pedido.numero_transacao} existente?`)) return
        setIdPedidoAnexar(pedido.id)
+       setIdPedidoAnexarIsNovo(pedido.isNovo)
        setTotalPedidoAnterior((pedido.total_geral || pedido.total || 0))
+       setTotalFinanceiroAnterior((pedido.total_financeiro || pedido.total || 0))
+
        setEntidade(pedido.entidade || pedido.origem)
        setData((pedido.data_pedido || pedido.data_transacao).split('T')[0])
        setObservacao((pedido.observacao || '').replace('[PEDIDO]', '').trim())
 
        if (pedido.quantidade_parcelas) setQuantidadeParcelas(pedido.quantidade_parcelas)
        if (pedido.prazoparcelas) setPrazoParcelas(pedido.prazoparcelas)
-       if (pedido.data_vencimento) setDataVencimento(pedido.data_vencimento.split('T')[0])
+       if (pedido.data_vencimento) {
+         setDataVencimento(pedido.data_vencimento.includes('T') ? pedido.data_vencimento.split('T')[0] : pedido.data_vencimento)
+       }
 
        setMostrarBuscaPedido(false)
        return
@@ -1244,7 +1294,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                      readOnly={!!idPedidoAnexar || !!transacaoInicial}
                    />
                  </div>
-                 <div className={idPedidoAnexar ? 'opacity-60 pointer-events-none' : ''}>
+                 <div>
                    <label className="block text-xs font-medium text-gray-700 mb-1">
                      {(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'Fornecedor' : 'Cliente'} *
                    </label>
@@ -1253,6 +1303,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                      onChange={(val) => setEntidade(val)}
                      tipo={(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'fornecedor' : 'cliente'}
                      placeholder={`Nome do ${(tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor') ? 'fornecedor' : 'cliente'}`}
+                     disabled={!!idPedidoAnexar}
                    />
                  </div>
                </div>
@@ -1542,10 +1593,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
                <div className="bg-purple-100 p-3 rounded flex flex-col gap-1 border border-purple-200 shadow-sm">
                   {idPedidoAnexar && (
-                    <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
-                      <span>Total Anterior:</span>
-                      <span>R$ {totalPedidoAnterior.toFixed(2)}</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
+                        <span>Total Geral Anterior:</span>
+                        <span>R$ {totalPedidoAnterior.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] text-green-800 font-bold uppercase">
+                        <span>Saldo Financeiro Anterior:</span>
+                        <span>R$ {totalFinanceiroAnterior.toFixed(2)}</span>
+                      </div>
+                    </>
                   )}
                   <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
                       <span>Novos Itens:</span>
@@ -1553,9 +1610,15 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                   </div>
                   <div className="h-[1px] bg-purple-300 my-0.5"></div>
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-purple-900 uppercase text-xs">TOTAL FINAL:</span>
+                    <span className="font-bold text-purple-900 uppercase text-xs">{idPedidoAnexar ? 'NOVO TOTAL GERAL:' : 'TOTAL FINAL:'}</span>
                     <span className="text-xl font-black text-purple-700">R$ {(totalPedidoAnterior + calcularTotal()).toFixed(2)}</span>
                   </div>
+                  {idPedidoAnexar && (
+                    <div className="flex justify-between items-center border-t border-purple-300 pt-1 mt-1">
+                      <span className="font-bold text-green-900 uppercase text-xs">NOVO SALDO FINANCEIRO:</span>
+                      <span className="text-xl font-black text-green-700">R$ {(totalFinanceiroAnterior + calcularTotal()).toFixed(2)}</span>
+                    </div>
+                  )}
                </div>
             </div>
           )}
