@@ -12,6 +12,7 @@ const ResumoCaixas = dynamic(() => import('@/components/ResumoCaixas'), { ssr: f
 const CasaModulo = dynamic(() => import('@/components/CasaModulo'), { ssr: false })
 const ModuloConfiguracoes = dynamic(() => import('@/components/ModuloConfiguracoes'), { ssr: false })
 const LojaModulo = dynamic(() => import('@/components/LojaModulo'), { ssr: false })
+const ModalNotasAtualizacao = dynamic(() => import('@/components/ModalNotasAtualizacao'), { ssr: false })
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
@@ -95,6 +96,7 @@ export default function Dashboard() {
 
   return (
     <DadosFinanceirosProvider>
+      <ModalNotasAtualizacao />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
         <div className="container mx-auto px-3 py-2">
           {/* Header com Usuário e Logout - COMPACTADO */}
