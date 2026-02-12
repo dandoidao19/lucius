@@ -22,6 +22,7 @@ interface ModalPagarTransacaoProps {
     id_venda?: string
     id_compra?: string
     id_condicional?: string
+    id_pedido?: string
   } | null
   onClose: () => void
   onPagamentoRealizado: () => void
@@ -156,7 +157,8 @@ export default function ModalPagarTransacao({
             status_pagamento: 'pendente',
             id_venda: transacao.id_venda,
             id_compra: transacao.id_compra,
-            id_condicional: transacao.id_condicional
+            id_condicional: transacao.id_condicional,
+            id_pedido: transacao.id_pedido
           }
 
           const { error: errorInsert } = await supabase

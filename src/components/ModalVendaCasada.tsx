@@ -31,7 +31,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.8 - MODAL VENDA CASADA CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS V4.9 - MODAL VENDA CASADA CARREGADO')
   }, [aberto])
 
   const { triggerRefresh } = useDadosFinanceiros()
@@ -53,6 +53,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const [mostrarBuscaEntrada, setMostrarBuscaEntrada] = useState(false)
   const [idSaidaAnexar, setIdSaidaAnexar] = useState<string | null>(null)
   const [idEntradaAnexar, setIdEntradaAnexar] = useState<string | null>(null)
+  const [idSaidaAnexarIsNovo, setIdSaidaAnexarIsNovo] = useState(false)
+  const [idEntradaAnexarIsNovo, setIdEntradaAnexarIsNovo] = useState(false)
   const [totalSaidaAnterior, setTotalSaidaAnterior] = useState(0)
   const [totalEntradaAnterior, setTotalEntradaAnterior] = useState(0)
 
@@ -169,8 +171,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (!err) return 'Erro desconhecido'
     if (typeof err === 'string') return err
 
-    if (err.code === 'PGRST204' || err.code === '23505') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR) PARA ATIVAR O CONTADOR SEQUENCIAL.`
+    if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23503') {
+      return `ERRO DE SCHEMA OU VÍNCULO: ${err.message}. Detalhes: ${err.details || ''}.`
     }
 
     let mensagem = err.message || 'Erro interno'
@@ -178,20 +180,12 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (err.code) mensagem += ` [Código: ${err.code}]`
     if (err.hint) mensagem += ` - Dica: ${err.hint}`
 
-    if (mensagem === 'Erro interno' && typeof err === 'object') {
-      try {
-        const str = JSON.stringify(err)
-        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
-      } catch {
-        return 'Erro ao processar objeto de erro'
-      }
-    }
     return mensagem
   }
 
   if (!aberto) return null
 
-  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string }, isPedido: boolean = false) => {
+  const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: { id_venda?: string; id_compra?: string; id_condicional?: string; id_pedido?: string }, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
@@ -220,6 +214,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         data: prepararDataParaInsert(dataParcela),
         status_pagamento: i === 1 && total > 0 ? status : 'pendente',
         observacao: isPedido ? `[PEDIDO] Ref. #${refNum}` : `Ref. #${refNum}`,
+        quantidade_parcelas: qtdParcelas,
         ...parentIds
       })
     }
@@ -249,8 +244,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
     try {
       setTotalSaidaAnterior(venda.total || 0)
-      // Tentar encontrar a compra vinculada via observação
-      // A observação padrão é: "VENDA CASADA (Simultânea com Compra #123)"
       const match = venda.observacao.match(/Compra #(\d+)/)
       let compraEncontrada = null
 
@@ -327,6 +320,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
     if (lado === 'saida') {
       setIdSaidaAnexar(pedido.id)
+      setIdSaidaAnexarIsNovo(!!pedido.isNovo)
       setTotalSaidaAnterior(pedido.total || 0)
       setCliente(pedido.origem || pedido.entidade)
       setData((pedido.data_transacao || pedido.data_pedido).split('T')[0])
@@ -336,6 +330,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       setMostrarBuscaSaida(false)
     } else {
       setIdEntradaAnexar(pedido.id)
+      setIdEntradaAnexarIsNovo(!!pedido.isNovo)
       setTotalEntradaAnterior(pedido.total || 0)
       setFornecedor(pedido.origem || pedido.entidade)
       setData((pedido.data_transacao || pedido.data_pedido).split('T')[0])
@@ -357,6 +352,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     setCompraAnexar(null)
     setIdSaidaAnexar(null)
     setIdEntradaAnexar(null)
+    setIdSaidaAnexarIsNovo(false)
+    setIdEntradaAnexarIsNovo(false)
     setTotalSaidaAnterior(0)
     setTotalEntradaAnterior(0)
   }
@@ -368,11 +365,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
     setLoading(true)
     try {
-      console.log('DEBUG: Iniciando processamento de Venda Casada V3.7:', { cliente, fornecedor, totalVenda, totalCompra, tipoSaida, tipoEntrada })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
-      // Obter Números de Transação para o PAR
       let numSaida = 0
       let numEntrada = 0
 
@@ -380,28 +375,25 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         numSaida = vendaAnexar.numero_transacao
         numEntrada = compraAnexar?.numero_transacao || numSaida
       } else if (idSaidaAnexar) {
-        const { data: p } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idSaidaAnexar).single()
+        const table = idSaidaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
+        const { data: p } = await supabase.from(table).select('numero_transacao').eq('id', idSaidaAnexar).single()
         numSaida = p?.numero_transacao || 0
-        // Se anexando a pedido existente, gerar NOVO número para o outro lado para evitar conflito
         const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
         if (e) throw e
         numEntrada = n
       } else if (idEntradaAnexar) {
-        const { data: p } = await supabase.from('transacoes_condicionais').select('numero_transacao').eq('id', idEntradaAnexar).single()
+        const table = idEntradaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
+        const { data: p } = await supabase.from(table).select('numero_transacao').eq('id', idEntradaAnexar).single()
         numEntrada = p?.numero_transacao || 0
-        // Se anexando a pedido existente, gerar NOVO número para o outro lado para evitar conflito
         const { data: n, error: e } = await supabase.rpc('obter_proximo_numero_transacao')
         if (e) throw e
         numSaida = n
       }
 
-      // Se for um novo lançamento (totalmente novo), buscar novos números sequenciais
-      // Chamamos o RPC duas vezes para garantir que cada um pegue um valor único da SEQUENCE no Postgres
       if (numSaida === 0 && numEntrada === 0) {
         const { data: n1, error: e1 } = await supabase.rpc('obter_proximo_numero_transacao')
         if (e1) throw e1
         numSaida = n1
-
         const { data: n2, error: e2 } = await supabase.rpc('obter_proximo_numero_transacao')
         if (e2) throw e2
         numEntrada = n2
@@ -414,65 +406,47 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         if (vendaAnexar) {
           idSaida = vendaAnexar.id
           const novoTotalVenda = (vendaAnexar.total || 0) + totalVenda
-          const novaQtdVenda = (vendaAnexar.quantidade_itens || 0) + itensValidos.length
-          const { error: evUpd } = await supabase.from('vendas').update({
-            total: novoTotalVenda,
-            quantidade_itens: novaQtdVenda
-          }).eq('id', idSaida)
-          if (evUpd) throw evUpd
-
-          // Recalcular Financeiro
+          await supabase.from('vendas').update({ total: novoTotalVenda, quantidade_itens: (vendaAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
           await criarFinanceiro(novoTotalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida }, false)
         } else {
           const { data: v, error: ev } = await supabase.from('vendas').insert({
-            cliente,
-            data_venda: prepararDataParaInsert(data),
-            total: totalVenda,
-            status_pagamento: pagVenda.status,
-            user_id: user.id,
-            numero_transacao: numSaida,
-            observacao: `VENDA CASADA (Simultânea com Compra #${numEntrada})`,
-            quantidade_parcelas: pagVenda.parcelas,
-            prazoparcelas: pagVenda.prazo,
-            quantidade_itens: itensValidos.length
+            cliente, data_venda: prepararDataParaInsert(data), total: totalVenda, status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida,
+            observacao: `VENDA CASADA (Simultânea com Compra #${numEntrada})`, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, quantidade_itens: itensValidos.length
           }).select().single()
           if (ev) throw ev
           idSaida = v.id
           await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida }, false)
         }
       } else {
-        // Pedido Venda
+        // Pedido Saída
         if (idSaidaAnexar) {
           idSaida = idSaidaAnexar
-          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idSaida).single()
-          const novoTotalSaida = (pOld?.total || 0) + totalVenda
-          const { error: epUpd } = await supabase.from('transacoes_condicionais').update({ total: novoTotalSaida }).eq('id', idSaida)
-          if (epUpd) throw epUpd
+          const table = idSaidaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
+          const colTotal = idSaidaAnexarIsNovo ? 'total_geral' : 'total'
+          const { data: pOld } = await supabase.from(table).select(colTotal).eq('id', idSaida).single()
+          const novoTotalSaida = ((pOld as any)?.[colTotal] || 0) + totalVenda
 
-          // Recalcular Financeiro Pedido
-          await supabase.from('transacoes_loja').delete().eq('id_condicional', idSaida)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
-          await criarFinanceiro(novoTotalSaida, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_condicional: idSaida }, true)
-
-          await supabase.from('transacoes_condicionais').update({
-            total: novoTotalSaida,
+          await supabase.from(table).update({
+            [colTotal]: novoTotalSaida,
+            [idSaidaAnexarIsNovo ? 'total_financeiro' : 'total']: novoTotalSaida,
             quantidade_parcelas: pagVenda.parcelas,
             prazoparcelas: pagVenda.prazo,
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
           }).eq('id', idSaida)
+
+          await supabase.from('transacoes_loja').delete().eq(idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idSaida)
+          await criarFinanceiro(novoTotalSaida, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { [idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idSaida }, true)
         } else {
-          const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
-            origem: cliente, data_transacao: prepararDataParaInsert(data), tipo: 'enviado', status: 'pendente', numero_transacao: numSaida, total: totalVenda,
-            observacao: `[PEDIDO] VENDA CASADA (Simultânea com Compra #${numEntrada})`,
-            quantidade_parcelas: pagVenda.parcelas,
-            prazoparcelas: pagVenda.prazo,
-            data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
+          // Novo Pedido Saída (Novo Sistema v4.9)
+          const { data: p, error: ep } = await supabase.from('pedidos_loja').insert({
+            entidade: cliente, data_pedido: prepararDataParaInsert(data), tipo: 'venda', status: 'pendente', numero_transacao: numSaida, total_geral: totalVenda, total_financeiro: totalVenda,
+            observacao: `VENDA CASADA (Simultânea com Compra #${numEntrada})`, user_id: user.id,
+            quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
           }).select().single()
           if (ep) throw ep
           idSaida = p.id
-          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_condicional: idSaida }, true)
+          await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_pedido: idSaida }, true)
         }
       }
 
@@ -483,185 +457,86 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         if (compraAnexar) {
           idEntrada = compraAnexar.id
           const novoTotalCompra = (compraAnexar.total || 0) + totalCompra
-          const novaQtdCompra = (compraAnexar.quantidade_itens || 0) + itensValidos.length
-          const { error: ecUpd } = await supabase.from('compras').update({
-            total: novoTotalCompra,
-            quantidade_itens: novaQtdCompra
-          }).eq('id', idEntrada)
-          if (ecUpd) throw ecUpd
-
-          // Recalcular Financeiro
+          await supabase.from('compras').update({ total: novoTotalCompra, quantidade_itens: (compraAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
           await criarFinanceiro(novoTotalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada }, false)
         } else {
           const { data: c, error: ec } = await supabase.from('compras').insert({
-            fornecedor,
-            data_compra: prepararDataParaInsert(data),
-            total: totalCompra,
-            status_pagamento: pagCompra.status,
-            user_id: user.id,
-            numero_transacao: numEntrada,
-            observacao: `VENDA CASADA (Simultânea com Venda #${numSaida})`,
-            quantidade_parcelas: pagCompra.parcelas,
-            prazoparcelas: pagCompra.prazo,
-            quantidade_itens: itensValidos.length
+            fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompra, status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada,
+            observacao: `VENDA CASADA (Simultânea com Venda #${numSaida})`, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, quantidade_itens: itensValidos.length
           }).select().single()
           if (ec) throw ec
           idEntrada = c.id
           await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada }, false)
         }
       } else {
-        // Pedido Compra
+        // Pedido Entrada
         if (idEntradaAnexar) {
           idEntrada = idEntradaAnexar
-          const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idEntrada).single()
-          const novoTotalEntrada = (pOld?.total || 0) + totalCompra
-          const { error: epcUpd } = await supabase.from('transacoes_condicionais').update({ total: novoTotalEntrada }).eq('id', idEntrada)
-          if (epcUpd) throw epcUpd
+          const table = idEntradaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
+          const colTotal = idEntradaAnexarIsNovo ? 'total_geral' : 'total'
+          const { data: pOld } = await supabase.from(table).select(colTotal).eq('id', idEntrada).single()
+          const novoTotalEntrada = ((pOld as any)?.[colTotal] || 0) + totalCompra
 
-          // Recalcular Financeiro Pedido
-          await supabase.from('transacoes_loja').delete().eq('id_condicional', idEntrada)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
-          await criarFinanceiro(novoTotalEntrada, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_condicional: idEntrada }, true)
-
-          await supabase.from('transacoes_condicionais').update({
-            total: novoTotalEntrada,
+          await supabase.from(table).update({
+            [colTotal]: novoTotalEntrada,
+            [idEntradaAnexarIsNovo ? 'total_financeiro' : 'total']: novoTotalEntrada,
             quantidade_parcelas: pagCompra.parcelas,
             prazoparcelas: pagCompra.prazo,
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
           }).eq('id', idEntrada)
+
+          await supabase.from('transacoes_loja').delete().eq(idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idEntrada)
+          await criarFinanceiro(novoTotalEntrada, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { [idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idEntrada }, true)
         } else {
-          const { data: p, error: ep } = await supabase.from('transacoes_condicionais').insert({
-            origem: fornecedor, data_transacao: prepararDataParaInsert(data), tipo: 'recebido', status: 'pendente', numero_transacao: numEntrada, total: totalCompra,
-            observacao: `[PEDIDO] VENDA CASADA (Simultânea com Venda #${numSaida})`,
-            quantidade_parcelas: pagCompra.parcelas,
-            prazoparcelas: pagCompra.prazo,
-            data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
+          // Novo Pedido Entrada (Novo Sistema v4.9)
+          const { data: p, error: ep } = await supabase.from('pedidos_loja').insert({
+            entidade: fornecedor, data_pedido: prepararDataParaInsert(data), tipo: 'compra', status: 'pendente', numero_transacao: numEntrada, total_geral: totalCompra, total_financeiro: totalCompra,
+            observacao: `VENDA CASADA (Simultânea com Venda #${numSaida})`, user_id: user.id,
+            quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
           }).select().single()
           if (ep) throw ep
           idEntrada = p.id
-          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_condicional: idEntrada }, true)
+          await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_pedido: idEntrada }, true)
         }
       }
 
-      // 3. Processar Itens
+      // Processar Itens
       for (const item of itensValidos) {
         let prodId = item.id_produto
-
-        // Se for novo cadastro, cria o produto primeiro
         if (item.isNovoCadastro && !prodId) {
-          const codigoLimpo = (item.codigo || '').trim()
-
-          const payloadProduto: any = {
-            descricao: (item.nome || '').toUpperCase(),
-            categoria: item.categoria,
-            preco_custo: item.preco_custo,
-            valor_repasse: item.valor_repasse,
-            preco_venda: item.preco_unitario,
-            quantidade: 0,
-            user_id: user.id
-          }
-
-          if (codigoLimpo) {
-            payloadProduto.codigo = codigoLimpo.toUpperCase()
-          }
-
-          const { data: novoProd, error: erroNovoProd } = await supabase
-            .from('produtos')
-            .insert(payloadProduto)
-            .select()
-            .single()
-
-          if (erroNovoProd) {
-            console.error('Erro ao criar novo produto na venda casada:', erroNovoProd)
-            throw erroNovoProd
-          }
-          prodId = novoProd.id
+          const { data: nP, error: eNP } = await supabase.from('produtos').insert({
+            descricao: (item.nome || '').toUpperCase(), categoria: item.categoria, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, quantidade: 0, user_id: user.id
+          }).select().single()
+          if (eNP) throw eNP
+          prodId = nP.id
         }
 
-        // Gravar no lado da saída
+        // Lado Saída
         if (tipoSaida === 'venda') {
            await supabase.from('itens_venda').insert({ venda_id: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse })
         } else {
-           // PEDIDO DE VENDA
-           const tabelaItens = idSaidaAnexar && !idSaidaAnexar.includes('-') ? 'itens_pedido_loja' : 'itens_condicionais' // Simple heuristic for UUID
-           // Actually I'll just check the object.
-           // For now, ModalVendaCasada seems to use transacoes_condicionais mostly.
-           await supabase.from('itens_condicionais').insert({
-             transacao_id: idSaida,
-             produto_id: prodId,
-             descricao: item.nome,
-             quantidade: item.quantidade,
-             preco_venda: item.preco_unitario,
-             preco_custo: item.preco_custo,
-             valor_repasse: item.valor_repasse,
-             status: 'pendente',
-             observacao: `Venda Casada #${numEntrada}` // Vinculo no item se for pedido
-           })
+           const tableItens = (idSaidaAnexarIsNovo || (!idSaidaAnexar && tipoSaida === 'pedido_venda')) ? 'itens_pedido_loja' : 'itens_condicionais'
+           await supabase.from(tableItens).insert({ [tableItens === 'itens_pedido_loja' ? 'pedido_id' : 'transacao_id']: idSaida, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_venda: item.preco_unitario, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, status: 'pendente' })
         }
 
-        // Gravar no lado da entrada
+        // Lado Entrada
         if (tipoEntrada === 'compra') {
            await supabase.from('itens_compra').insert({ compra_id: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario })
         } else {
-           // PEDIDO DE COMPRA
-           await supabase.from('itens_condicionais').insert({
-             transacao_id: idEntrada,
-             produto_id: prodId,
-             descricao: item.nome,
-             quantidade: item.quantidade,
-             preco_custo: item.preco_custo,
-             valor_repasse: item.valor_repasse,
-             preco_venda: item.preco_unitario,
-             status: 'pendente',
-             observacao: `Venda Casada #${numSaida}` // Vinculo no item se for pedido
-           })
+           const tableItens = (idEntradaAnexarIsNovo || (!idEntradaAnexar && tipoEntrada === 'pedido_compra')) ? 'itens_pedido_loja' : 'itens_condicionais'
+           await supabase.from(tableItens).insert({ [tableItens === 'itens_pedido_loja' ? 'pedido_id' : 'transacao_id']: idEntrada, produto_id: prodId, descricao: item.nome, quantidade: item.quantidade, preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, status: 'pendente' })
         }
 
-        // Movimentação de Estoque (Impactar ambos os lados para rastreabilidade)
-
         if (prodId) {
-          // Saída (Apenas se NÃO for Pedido)
           if (tipoSaida !== 'pedido_venda') {
-            console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Saída) Produto ${prodId}, Qtd: -${item.quantidade}`)
-            const { error: errorRPCOut } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -item.quantidade })
-            if (errorRPCOut) console.error('📦 ERRO RPC ESTOQUE (Casada Saída):', errorRPCOut)
-
-            await supabase.from('movimentacoes_estoque').insert({
-                produto_id: prodId,
-                tipo: 'saida',
-                quantidade: item.quantidade,
-                observacao: `Venda Casada #${numSaida}`
-            })
+            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: -Math.round(item.quantidade) })
+            await supabase.from('movimentacoes_estoque').insert({ produto_id: prodId, tipo: 'saida', quantidade: item.quantidade, observacao: `Venda Casada #${numSaida}` })
           }
-
-          // Entrada (Apenas se NÃO for Pedido)
           if (tipoEntrada !== 'pedido_compra') {
-            console.log(`📦 DEBUG ESTOQUE CASADA: Atualizando (Entrada) Produto ${prodId}, Qtd: ${item.quantidade}`)
-            const { error: errorRPCIn } = await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: item.quantidade })
-            if (errorRPCIn) console.error('📦 ERRO RPC ESTOQUE (Casada Entrada):', errorRPCIn)
-
-            // ✅ ATUALIZAR VALORES DO PRODUTO E DATA DA ÚLTIMA COMPRA
-            const { error: errorProdUpd } = await supabase
-              .from('produtos')
-              .update({
-                preco_custo: item.preco_custo,
-                valor_repasse: item.valor_repasse,
-                preco_venda: item.preco_unitario,
-                categoria: item.categoria,
-                data_ultima_compra: prepararDataParaInsert(data)
-              })
-              .eq('id', prodId)
-
-            if (errorProdUpd) console.error('📦 ERRO AO ATUALIZAR VALORES DO PRODUTO (Compra Casada):', errorProdUpd)
-
-            await supabase.from('movimentacoes_estoque').insert({
-                produto_id: prodId,
-                tipo: 'entrada',
-                quantidade: item.quantidade,
-                observacao: `Compra Casada #${numEntrada}`
-            })
+            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade) })
+            await supabase.from('produtos').update({ preco_custo: item.preco_custo, valor_repasse: item.valor_repasse, preco_venda: item.preco_unitario, categoria: item.categoria, data_ultima_compra: prepararDataParaInsert(data) }).eq('id', prodId)
+            await supabase.from('movimentacoes_estoque').insert({ produto_id: prodId, tipo: 'entrada', quantidade: item.quantidade, observacao: `Compra Casada #${numEntrada}` })
           }
         }
       }
@@ -673,16 +548,14 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       resetForm()
       onClose()
     } catch (error: any) {
-      const msgErro = formatarErro(error)
-      console.error('Erro detalhado (Venda Casada):', error, msgErro)
-      alert('Erro: ' + msgErro)
+      alert('Erro: ' + formatarErro(error))
     } finally {
       setLoading(false)
     }
   }
 
   const handleCancelar = () => {
-    if (window.confirm('Deseja realmente cancelar o lançamento de Venda Casada? Todos os dados serão perdidos.')) {
+    if (window.confirm('Deseja realmente cancelar?')) {
       clearDraft('venda_casada')
       resetForm()
       onClose()
@@ -692,7 +565,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-2 sm:p-4 overflow-y-auto pt-4 pb-20">
       <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl flex flex-col h-fit my-auto overflow-visible min-h-[600px]">
-        {/* Header - Mais compacto */}
+        {/* Header */}
         <div className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
           <h2 className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest">
             <ShoppingBag className="text-pink-400" size={18} />
@@ -746,11 +619,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                    </button>
                  ))}
                </div>
-               <button onClick={() => setMostrarBuscaCasada(false)} className="text-[10px] text-slate-500 hover:underline w-full text-center">Fechar busca</button>
             </div>
           )}
 
-          {/* Seleção de Tipos - NOVO V3.7 */}
           {!vendaAnexar && (
             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-2 rounded border border-slate-200 shadow-sm">
                <div className="space-y-2">
@@ -823,12 +694,11 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       onClick={() => selecionarPedidoLado(p, 'saida')}
                       className="flex justify-between items-center p-2 bg-white border border-yellow-200 hover:bg-yellow-100 text-left rounded"
                     >
-                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
+                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem || p.entidade}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
                       <span className="text-[10px] bg-yellow-200 px-1 rounded">Vincular</span>
                     </button>
                   ))}
                </div>
-               <button onClick={() => setMostrarBuscaSaida(false)} className="text-[9px] text-slate-400 w-full text-center">Cancelar busca</button>
             </div>
           )}
 
@@ -842,51 +712,33 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       onClick={() => selecionarPedidoLado(p, 'entrada')}
                       className="flex justify-between items-center p-2 bg-white border border-orange-200 hover:bg-orange-100 text-left rounded"
                     >
-                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
+                      <div><p className="font-bold text-xs">#{p.numero_transacao} - {p.origem || p.entidade}</p><p className="text-[9px] truncate italic">{p.observacao}</p></div>
                       <span className="text-[10px] bg-orange-200 px-1 rounded text-orange-700">Vincular</span>
                     </button>
                   ))}
                </div>
-               <button onClick={() => setMostrarBuscaEntrada(false)} className="text-[9px] text-slate-400 w-full text-center">Cancelar busca</button>
             </div>
           )}
 
-          {/* Dados Gerais - Ultra Compacto */}
           <div className={`grid grid-cols-1 md:grid-cols-3 gap-3 ${ (vendaAnexar || idSaidaAnexar || idEntradaAnexar) ? 'bg-slate-50 p-1 rounded border border-slate-100' : ''}`}>
             <div className="flex flex-col">
               <label className="text-[11px] font-semibold text-pink-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <ShoppingBag size={10} /> Cliente
               </label>
-              <SeletorEntidade
-                valor={cliente || ''}
-                onChange={setCliente}
-                tipo="cliente"
-                placeholder="Nome do cliente..."
-              />
+              <SeletorEntidade valor={cliente} onChange={setCliente} tipo="cliente" placeholder="Nome do cliente..." />
             </div>
             <div className="flex flex-col">
               <label className="text-[11px] font-semibold text-blue-600 uppercase mb-0.5 ml-1 flex items-center gap-1">
                 <Truck size={10} /> Fornecedor
               </label>
-              <SeletorEntidade
-                valor={fornecedor || ''}
-                onChange={setFornecedor}
-                tipo="fornecedor"
-                placeholder="Nome do fornecedor..."
-              />
+              <SeletorEntidade valor={fornecedor} onChange={setFornecedor} tipo="fornecedor" placeholder="Nome do fornecedor..." />
             </div>
             <div className="flex flex-col">
               <label className="text-[11px] font-semibold text-slate-500 uppercase mb-0.5 ml-1">Data</label>
-              <input
-                type="date"
-                value={data || ''}
-                onChange={e => setData(e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-blue-500 outline-none h-[32px]"
-              />
+              <input type="date" value={data} onChange={e => setData(e.target.value)} className="w-full border rounded px-2 py-1 text-xs h-[32px]" />
             </div>
           </div>
 
-          {/* Lista Única de Itens - Expansão Vertical Total */}
           <div className="border border-slate-200 rounded-lg shadow-sm bg-white overflow-visible">
             <div className="bg-slate-50 px-3 py-1.5 flex justify-between items-center border-b border-slate-200">
               <h3 className="text-[11px] font-semibold text-slate-700 uppercase tracking-widest">Produtos Vinculados</h3>
@@ -913,117 +765,32 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                        <div className="flex justify-between items-center">
                           <span className="text-[11px] font-black text-pink-700 uppercase">Item {idx + 1}</span>
                           <label className="flex items-center gap-1.5 cursor-pointer bg-white px-2 py-0.5 rounded border border-slate-200 shadow-sm">
-                            <input
-                              type="checkbox"
-                              checked={item.isNovoCadastro || false}
-                              onChange={() => toggleNovoCadastro(item.id)}
-                              className="w-3.5 h-3.5 accent-pink-600"
-                            />
+                            <input type="checkbox" checked={item.isNovoCadastro || false} onChange={() => toggleNovoCadastro(item.id)} className="w-3.5 h-3.5 accent-pink-600" />
                             <span className="text-[10px] font-bold text-slate-600 uppercase">Novo Cadastro</span>
                           </label>
                        </div>
-
                        {!item.isNovoCadastro ? (
-                         <SeletorProduto
-                           key={`sel-casada-${resetSeletorKey}-${item.id}`}
-                           onSelecionarProduto={(p) => selecionarProduto(p, item.id)}
-                           placeholder="Buscar produto..."
-                           descricaoPreenchida={item.nome || ''}
-                         />
+                         <SeletorProduto key={`sel-casada-${resetSeletorKey}-${item.id}`} onSelecionarProduto={(p) => selecionarProduto(p, item.id)} placeholder="Buscar produto..." descricaoPreenchida={item.nome || ''} />
                        ) : (
                          <div className="space-y-2">
                             <div className="grid grid-cols-3 gap-2">
-                               <div className="col-span-1">
-                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código (Auto)</label>
-                                 <input
-                                   type="text"
-                                   value={item.codigo || ''}
-                                   onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)}
-                                   placeholder="Ex: REF001"
-                                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500 uppercase font-mono"
-                                 />
-                               </div>
-                               <div className="col-span-2">
-                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição *</label>
-                                 <input
-                                   type="text"
-                                   value={item.nome || ''}
-                                   onChange={(e) => atualizarItem(item.id, 'nome', e.target.value)}
-                                   placeholder="Descrição do novo produto..."
-                                   className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded outline-none focus:ring-1 focus:ring-pink-500"
-                                 />
-                               </div>
+                               <div className="col-span-1"><label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Código (Auto)</label><input type="text" value={item.codigo || ''} onChange={(e) => atualizarItem(item.id, 'codigo', e.target.value)} className="w-full px-2 py-1.5 text-xs border rounded font-mono" /></div>
+                               <div className="col-span-2"><label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição *</label><input type="text" value={item.nome || ''} onChange={(e) => atualizarItem(item.id, 'nome', e.target.value)} className="w-full px-2 py-1.5 text-xs border rounded" /></div>
                             </div>
                             <div className="grid grid-cols-2 gap-2">
-                               <div>
-                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria *</label>
-                                 <select
-                                   value={item.categoria || ''}
-                                   onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)}
-                                   className="w-full px-2 py-1 text-xs border border-slate-300 rounded bg-white"
-                                 >
-                                   <option value="">Escolha...</option>
-                                   {categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
-                                 </select>
-                               </div>
-                               <div>
-                                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Qtd *</label>
-                                 <input
-                                   type="number"
-                                   value={item.quantidade}
-                                   onChange={(e) => atualizarItem(item.id, 'quantidade', Number(e.target.value))}
-                                   className="w-full px-2 py-1 text-xs border border-slate-300 rounded"
-                                 />
-                               </div>
+                               <div><label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Categoria *</label><select value={item.categoria || ''} onChange={(e) => atualizarItem(item.id, 'categoria', e.target.value)} className="w-full px-2 py-1 text-xs border rounded bg-white">{categorias.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}</select></div>
+                               <div><label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Qtd *</label><input type="number" value={item.quantidade} onChange={(e) => atualizarItem(item.id, 'quantidade', Number(e.target.value))} className="w-full px-2 py-1 text-xs border rounded" /></div>
                             </div>
                          </div>
                        )}
-
                        <div className="grid grid-cols-3 gap-2">
-                          <div>
-                            <label className="block text-[10px] font-bold text-red-600 uppercase mb-1">Preço Custo *</label>
-                            <div className="relative">
-                              <span className="absolute left-1.5 top-1 text-[9px] text-red-400 font-bold">R$</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.preco_custo}
-                                onChange={(e) => atualizarItem(item.id, 'preco_custo', Number(e.target.value))}
-                                className="w-full pl-6 pr-1 py-1 text-xs border border-red-200 rounded font-semibold text-red-700 bg-white"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-orange-600 uppercase mb-1">Valor Repasse</label>
-                            <div className="relative">
-                              <span className="absolute left-1.5 top-1 text-[9px] text-orange-400 font-bold">R$</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.valor_repasse}
-                                onChange={(e) => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))}
-                                className="w-full pl-6 pr-1 py-1 text-xs border border-orange-200 rounded font-semibold text-orange-700 bg-orange-50/30"
-                              />
-                            </div>
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-green-600 uppercase mb-1">Preço Venda *</label>
-                            <div className="relative">
-                              <span className="absolute left-1.5 top-1 text-[9px] text-green-400 font-bold">R$</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={item.preco_unitario}
-                                onChange={(e) => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))}
-                                className="w-full pl-6 pr-1 py-1 text-xs border border-green-200 rounded font-semibold text-green-700 bg-white"
-                              />
-                            </div>
-                          </div>
+                          <div><label className="block text-[10px] font-bold text-red-600 uppercase mb-1">Preço Custo *</label><input type="number" step="0.01" value={item.preco_custo} onChange={(e) => atualizarItem(item.id, 'preco_custo', Number(e.target.value))} className="w-full px-2 py-1 text-xs border border-red-200 rounded" /></div>
+                          <div><label className="block text-[10px] font-bold text-orange-600 uppercase mb-1">Valor Repasse</label><input type="number" step="0.01" value={item.valor_repasse} onChange={(e) => atualizarItem(item.id, 'valor_repasse', Number(e.target.value))} className="w-full px-2 py-1 text-xs border border-orange-200 rounded" /></div>
+                          <div><label className="block text-[10px] font-bold text-green-600 uppercase mb-1">Preço Venda *</label><input type="number" step="0.01" value={item.preco_unitario} onChange={(e) => atualizarItem(item.id, 'preco_unitario', Number(e.target.value))} className="w-full px-2 py-1 text-xs border border-green-200 rounded" /></div>
                        </div>
-
                        <div className="flex justify-end gap-2 pt-1 border-t border-pink-100">
-                          <button onClick={() => atualizarItem(item.id, 'minimizado', true)} className="text-[10px] font-bold text-slate-400 hover:text-slate-600 uppercase">Minimizar</button>
-                          <button onClick={() => removerItem(item.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase">Remover</button>
+                          <button onClick={() => atualizarItem(item.id, 'minimizado', true)} className="text-[10px] font-bold text-slate-400 uppercase">Minimizar</button>
+                          <button onClick={() => removerItem(item.id)} className="text-[10px] font-bold text-red-400 uppercase">Remover</button>
                        </div>
                     </div>
                   )}
@@ -1032,153 +799,39 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             </div>
           </div>
 
-          {/* Financeiro e Pagamentos - Ocultar apenas se ambos os lados já existirem e estiverem sendo anexados */}
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${(vendaAnexar || (idSaidaAnexar && idEntradaAnexar)) ? 'hidden' : ''}`}>
             {/* Pagamento Venda */}
             <div className={`bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3 ${idSaidaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-              <div className="flex justify-between items-center border-b border-pink-100 pb-1.5">
-                <h4 className="text-[11px] font-semibold text-pink-700 uppercase tracking-widest flex items-center gap-1">
-                  <ShoppingBag size={12} /> Pagamento Venda
-                </h4>
-                <span className="text-sm font-semibold text-pink-700">R$ {totalVenda.toFixed(2)}</span>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Status</label>
-                  <select
-                    value={pagVenda.status || 'pendente'}
-                    onChange={e => setPagVenda({...pagVenda, status: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="pago">Pago</option>
-                  </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
-                  <input
-                    type="number"
-                    value={pagVenda.parcelas ?? 1}
-                    onChange={e => setPagVenda({...pagVenda, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
-                  />
-                </div>
-                <div className="flex flex-col lg:col-span-1">
-                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
-                  <input
-                    type="date"
-                    value={pagVenda.vencimento || ''}
-                    onChange={e => setPagVenda({...pagVenda, vencimento: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-pink-500 h-[28px]"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-pink-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
-                  <select
-                    value={pagVenda.prazo || 'mensal'}
-                    onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})}
-                    className="w-full bg-white border border-pink-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-pink-500"
-                  >
-                    <option value="mensal">Mensal</option>
-                    <option value="semanal">Semanal</option>
-                    <option value="diaria">Diária</option>
-                  </select>
-                </div>
+              <div className="flex justify-between items-center border-b border-pink-100 pb-1.5"><h4 className="text-[11px] font-semibold text-pink-700 uppercase tracking-widest">Pagamento Venda</h4><span className="text-sm font-semibold text-pink-700">R$ {totalVenda.toFixed(2)}</span></div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase">Status</label><select value={pagVenda.status} onChange={e => setPagVenda({...pagVenda, status: e.target.value})} className="border rounded px-2 py-1 text-xs"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase">Parc.</label><input type="number" value={pagVenda.parcelas} onChange={e => setPagVenda({...pagVenda, parcelas: Math.max(1, Number(e.target.value))})} className="border rounded px-2 py-1 text-xs" /></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase">Vencimento</label><input type="date" value={pagVenda.vencimento} onChange={e => setPagVenda({...pagVenda, vencimento: e.target.value})} className="border rounded px-1 py-1 text-[10px]" /></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase">Prazo</label><select value={pagVenda.prazo} onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})} className="border rounded px-2 py-1 text-xs"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária</option></select></div>
               </div>
             </div>
-
             {/* Pagamento Compra */}
             <div className={`bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3 ${idEntradaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
-              <div className="flex justify-between items-center border-b border-blue-100 pb-1.5">
-                <h4 className="text-[11px] font-semibold text-blue-700 uppercase tracking-widest flex items-center gap-1">
-                  <Truck size={12} /> Pagamento Compra
-                </h4>
-                <span className="text-sm font-semibold text-blue-700">R$ {totalCompra.toFixed(2)}</span>
-              </div>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Status</label>
-                  <select
-                    value={pagCompra.status || 'pendente'}
-                    onChange={e => setPagCompra({...pagCompra, status: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="pendente">Pendente</option>
-                    <option value="pago">Pago</option>
-                  </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Parc.</label>
-                  <input
-                    type="number"
-                    value={pagCompra.parcelas ?? 1}
-                    onChange={e => setPagCompra({...pagCompra, parcelas: Math.max(1, Number(e.target.value))})}
-                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
-                  />
-                </div>
-                <div className="flex flex-col lg:col-span-1">
-                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Vencimento</label>
-                  <input
-                    type="date"
-                    value={pagCompra.vencimento || ''}
-                    onChange={e => setPagCompra({...pagCompra, vencimento: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-1.5 py-1 text-[11px] outline-none focus:ring-1 focus:ring-blue-500 h-[28px]"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="text-[10px] font-semibold text-blue-600 uppercase mb-0.5 tracking-tighter">Prazo</label>
-                  <select
-                    value={pagCompra.prazo || 'mensal'}
-                    onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})}
-                    className="w-full bg-white border border-blue-200 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-blue-500"
-                  >
-                    <option value="mensal">Mensal</option>
-                    <option value="semanal">Semanal</option>
-                    <option value="diaria">Diária</option>
-                  </select>
-                </div>
+              <div className="flex justify-between items-center border-b border-blue-100 pb-1.5"><h4 className="text-[11px] font-semibold text-blue-700 uppercase tracking-widest">Pagamento Compra</h4><span className="text-sm font-semibold text-blue-700">R$ {totalCompra.toFixed(2)}</span></div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase">Status</label><select value={pagCompra.status} onChange={e => setPagCompra({...pagCompra, status: e.target.value})} className="border rounded px-2 py-1 text-xs"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase">Parc.</label><input type="number" value={pagCompra.parcelas} onChange={e => setPagCompra({...pagCompra, parcelas: Math.max(1, Number(e.target.value))})} className="border rounded px-2 py-1 text-xs" /></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase">Vencimento</label><input type="date" value={pagCompra.vencimento} onChange={e => setPagCompra({...pagCompra, vencimento: e.target.value})} className="border rounded px-1 py-1 text-[10px]" /></div>
+                <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase">Prazo</label><select value={pagCompra.prazo} onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})} className="border rounded px-2 py-1 text-xs"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária</option></select></div>
               </div>
             </div>
           </div>
 
-          {/* Resumo Final - Ultra Otimizado */}
           <div className="bg-slate-900 p-3 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-2 border-t border-pink-500 relative">
-            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.8
-            </div>
+            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v4.9</div>
             <div className="flex gap-4 items-center">
-              <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda (Final)</p>
-                <p className="text-sm font-semibold font-mono">R$ {(totalSaidaAnterior + totalVenda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              </div>
-              <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
-              <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-semibold text-blue-400">Total Compra (Final)</p>
-                <p className="text-sm font-semibold font-mono">R$ {(totalEntradaAnterior + totalCompra).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              </div>
-              <div className="h-6 w-[1px] bg-white/10 hidden md:block"></div>
-              <div className="text-center md:text-left">
-                <p className="text-[8px] uppercase font-semibold text-green-400">Diferença</p>
-                <p className={`text-sm font-semibold font-mono ${diferenca >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  R$ {Math.abs(diferenca).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
+              <div><p className="text-[8px] uppercase font-semibold text-pink-400">Total Venda</p><p className="text-sm font-mono">R$ {(totalSaidaAnterior + totalVenda).toFixed(2)}</p></div>
+              <div><p className="text-[8px] uppercase font-semibold text-blue-400">Total Compra</p><p className="text-sm font-mono">R$ {(totalEntradaAnterior + totalCompra).toFixed(2)}</p></div>
+              <div><p className="text-[8px] uppercase font-semibold text-green-400">Diferença</p><p className="text-sm font-mono text-green-400">R$ {diferenca.toFixed(2)}</p></div>
             </div>
-
             <div className="flex gap-3">
-              <button
-                onClick={handleCancelar}
-                className="bg-slate-700 hover:bg-red-700 text-white px-8 py-2.5 rounded-lg font-bold transition-all uppercase tracking-tight text-[11px] shadow-lg active:scale-95 border border-slate-600"
-              >
-                Cancelar Lançamento
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !cliente || !fornecedor || !itens.some(i => i.id_produto)}
-                className="bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white px-10 py-2.5 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase tracking-tight text-[11px]"
-              >
-                {loading ? 'Processando...' : '💰 Finalizar Venda Casada'}
-              </button>
+              <button onClick={handleCancelar} className="bg-slate-700 hover:bg-red-700 text-white px-8 py-2 rounded font-bold uppercase text-[10px]">Cancelar</button>
+              <button onClick={handleSubmit} disabled={loading} className="bg-green-600 hover:bg-green-500 text-white px-10 py-2 rounded font-black uppercase text-[10px]">{loading ? '...' : '💰 Finalizar'}</button>
             </div>
           </div>
         </div>
