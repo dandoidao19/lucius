@@ -186,6 +186,13 @@ export default function LojaPaginaFinanceiro() {
       const transacoesFormatadas = await processarTransacoes(transacoesLoja)
       
       console.log(`✅ ${transacoesFormatadas.length} transações processadas`)
+
+      // Ordenação: Por data de pagamento, se não houver, por data de vencimento
+      transacoesFormatadas.sort((a, b) => {
+        const dataA = a.data_pagamento || a.data
+        const dataB = b.data_pagamento || b.data
+        return new Date(dataA).getTime() - new Date(dataB).getTime()
+      })
       
       setTransacoes(transacoesFormatadas)
       cacheGlobalTransacoes = transacoesFormatadas

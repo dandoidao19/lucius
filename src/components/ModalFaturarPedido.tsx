@@ -168,7 +168,9 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         }
 
         // Financeiro da nova Transação
-        const valorParc = totalFaturado / quantidadeParcelas
+        const valorBase = Math.floor((totalFaturado / quantidadeParcelas) * 100) / 100
+        const valorUltima = Number((totalFaturado - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
+
         for (let i = 1; i <= quantidadeParcelas; i++) {
             let dataParc = dataVencimento || getDataAtualBrasil()
             if (i > 1) {
@@ -178,11 +180,14 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                 else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
                 dataParc = dt.toISOString().split('T')[0]
             }
+
+            const valorFinalParcela = i === quantidadeParcelas ? valorUltima : valorBase
+
             await supabase.from('transacoes_loja').insert({
                 user_id: user.id,
                 numero_transacao: numFaturamento,
                 descricao: `${pedido.tipo === 'venda' ? 'Venda' : 'Compra'} ${pedido.entidade} (${i}/${quantidadeParcelas})`,
-                total: valorParc,
+                total: valorFinalParcela,
                 tipo: pedido.tipo === 'venda' ? 'entrada' : 'saida',
                 data: prepararDataParaInsert(dataParc),
                 status_pagamento: 'pendente',
@@ -223,11 +228,16 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
       if (parcelasPendentes && parcelasPendentes.length > 0) {
         if (novoTotalFinanceiro > 0) {
-          const valorPorParcela = novoTotalFinanceiro / parcelasPendentes.length
-          await supabase
-            .from('transacoes_loja')
-            .update({ total: valorPorParcela })
-            .in('id', parcelasPendentes.map(p => p.id))
+          const valorBase = Math.floor((novoTotalFinanceiro / parcelasPendentes.length) * 100) / 100
+          const valorUltima = Number((novoTotalFinanceiro - (valorBase * (parcelasPendentes.length - 1))).toFixed(2))
+
+          for (let i = 0; i < parcelasPendentes.length; i++) {
+            const valorFinalParcela = i === (parcelasPendentes.length - 1) ? valorUltima : valorBase
+            await supabase
+              .from('transacoes_loja')
+              .update({ total: valorFinalParcela })
+              .eq('id', parcelasPendentes[i].id)
+          }
         } else {
           // Se não há mais saldo pendente, deleta as parcelas pendentes
           await supabase

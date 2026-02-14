@@ -186,6 +186,19 @@ export default function LojaPaginaTransacoes() {
 
   useEffect(() => {
     carregarTransacoes()
+
+    const canais = ['vendas', 'compras', 'transacoes_condicionais', 'pedidos_loja'].map(tabela =>
+      supabase.channel(`public:${tabela}-changes`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
+          console.log(`🔄 Mudança detectada na tabela ${tabela}, recarregando...`)
+          carregarTransacoes()
+        })
+        .subscribe()
+    )
+
+    return () => {
+      canais.forEach(canal => supabase.removeChannel(canal))
+    }
   }, [carregarTransacoes, versaoRefresh])
 
   const aplicarFiltros = useCallback(() => {

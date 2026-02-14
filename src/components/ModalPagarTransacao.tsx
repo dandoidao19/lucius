@@ -116,10 +116,10 @@ export default function ModalPagarTransacao({
 
       const dataPagamentoFormatada = prepararDataParaInsert(dataPagamento)
       const valorOriginal = transacao.valor
-      const valorRestante = valorOriginal - valorPago
+      const valorRestante = Number((valorOriginal - valorPago).toFixed(2))
       
       // Se for criar nova parcela, o juros/desconto do pagamento atual é 0
-      const jurosDescontosFinal = criarNovaParcela ? 0 : (valorPago - valorOriginal)
+      const jurosDescontosFinal = Number((criarNovaParcela ? 0 : (valorPago - valorOriginal)).toFixed(2))
       
       const statusPagamento = 'pago'
 
@@ -128,13 +128,13 @@ export default function ModalPagarTransacao({
         const updateData: Record<string, string | number | null> = {
           status_pagamento: statusPagamento,
           data_pagamento: dataPagamentoFormatada,
-          valor_pago: valorPago,
+          valor_pago: Number(valorPago.toFixed(2)),
           juros_descontos: jurosDescontosFinal
         }
 
         // Se for criar nova parcela, ajustar o valor da atual para o que foi pago
         if (criarNovaParcela) {
-          updateData.total = valorPago
+          updateData.total = Number(valorPago.toFixed(2))
         }
 
         const { error: errorTransacaoLoja } = await supabase
