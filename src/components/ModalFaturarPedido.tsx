@@ -156,14 +156,14 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
               produto_id: it.produto_id,
               tipo: mult === -1 ? 'saida' : 'entrada',
               quantidade: it.quantidade,
-              observacao: `Faturamento Pedido #${numTransacaoBase} -> ${pedido.tipo === 'venda' ? 'Venda' : 'Compra'} #${numFaturamento}`
+              observacao: `Faturamento Pedido #${numTransacaoBase} -> Transação #${numFaturamento}`
             })
           }
 
           // Atualizar Item no Pedido
           await supabase.from('itens_pedido_loja').update({
             status: 'efetuado',
-            observacao_item: `Efetivado na ${pedido.tipo === 'venda' ? 'Venda' : 'Compra'} #${numFaturamento}`
+            observacao_item: `Efetivado na Transação #${numFaturamento}`
           }).eq('id', it.id)
         }
 

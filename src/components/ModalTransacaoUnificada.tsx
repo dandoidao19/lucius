@@ -583,7 +583,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               produto_id: prodId,
               tipo: 'saida',
               quantidade: item.quantidade,
-              observacao: `Venda #${numTransacao}`
+              observacao: `Transação #${numTransacao}`
             })
           }
         }
@@ -700,7 +700,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               produto_id: prodId,
               tipo: 'entrada',
               quantidade: item.quantidade,
-              observacao: `Compra #${numTransacao}`
+              observacao: `Transação #${numTransacao}`
             })
           }
         }
@@ -735,7 +735,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           if (pedInfoP) {
              await supabase.from('pedidos_loja').update({ status: 'faturado' }).eq('id', idPedidoOrigem)
              await supabase.from('itens_pedido_loja')
-               .update({ status: 'efetuado', observacao_item: `Faturado na ${isVenda ? 'Venda' : 'Compra'} #${numTransacao}` })
+               .update({ status: 'efetuado', observacao_item: `Faturado na Transação #${numTransacao}` })
                .eq('pedido_id', idPedidoOrigem)
                .eq('status', 'pendente')
           }

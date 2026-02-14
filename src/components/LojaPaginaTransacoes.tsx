@@ -34,6 +34,7 @@ export default function LojaPaginaTransacoes() {
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoUnificada[]>([])
   const [loading, setLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [modalAberto, setModalAberto] = useState(false)
   const [modalDetalhes, setModalDetalhes] = useState<{ aberto: boolean; transacao: TransacaoUnificada | null }>({
     aberto: false,
@@ -54,8 +55,10 @@ export default function LojaPaginaTransacoes() {
   const filtroStatus = filtersLojaTransacoes.status
   const setFiltroStatus = (v: string) => setFiltersLojaTransacoes(prev => ({ ...prev, status: v }))
 
-  const carregarTransacoes = useCallback(async () => {
-    setLoading(true)
+  const carregarTransacoes = useCallback(async (isFirstLoad = false) => {
+    if (isFirstLoad) setLoading(true)
+    else setIsRefreshing(true)
+
     console.log('🔄 Buscando transações unificadas (v4.9)...')
     try {
       // 1. Buscar Vendas
@@ -181,17 +184,24 @@ export default function LojaPaginaTransacoes() {
       console.error('Erro crítico ao carregar transações unificadas:', err)
     } finally {
       setLoading(false)
+      setIsRefreshing(false)
     }
   }, [])
 
+  // Efeito para carregar dados iniciais e quando versaoRefresh mudar
   useEffect(() => {
-    carregarTransacoes()
+    console.log('⚡ LojaPaginaTransacoes: useEffect disparado (versaoRefresh:', versaoRefresh, ')')
+    carregarTransacoes(versaoRefresh === 0)
+  }, [carregarTransacoes, versaoRefresh])
 
+  // Efeito separado para Realtime para evitar resubscriptions desnecessárias
+  useEffect(() => {
     const canais = ['vendas', 'compras', 'transacoes_condicionais', 'pedidos_loja'].map(tabela =>
-      supabase.channel(`public:${tabela}-changes`)
-        .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, () => {
-          console.log(`🔄 Mudança detectada na tabela ${tabela}, recarregando...`)
-          carregarTransacoes()
+      supabase.channel(`realtime:${tabela}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
+          console.log(`🔄 [Realtime] Mudança em ${tabela}:`, payload.eventType)
+          // Pequeno delay para garantir que a transação foi finalizada no DB
+          setTimeout(() => carregarTransacoes(), 300)
         })
         .subscribe()
     )
@@ -199,7 +209,7 @@ export default function LojaPaginaTransacoes() {
     return () => {
       canais.forEach(canal => supabase.removeChannel(canal))
     }
-  }, [carregarTransacoes, versaoRefresh])
+  }, [carregarTransacoes])
 
   const aplicarFiltros = useCallback(() => {
     let result = [...transacoes]
@@ -280,7 +290,10 @@ export default function LojaPaginaTransacoes() {
       />
 
       <div className="flex justify-between items-center bg-pink-700 px-3 py-1 rounded shadow-sm border border-pink-800 text-white">
-        <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">Transações Unificadas ({transacoesFiltradas.length})</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center gap-2">
+          Transações Unificadas ({transacoesFiltradas.length})
+          {isRefreshing && <span className="animate-spin text-[10px]">⌛</span>}
+        </h2>
         <button
           onClick={() => setModalAberto(true)}
           className="bg-white text-pink-700 hover:bg-pink-50 px-3 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center gap-1"
