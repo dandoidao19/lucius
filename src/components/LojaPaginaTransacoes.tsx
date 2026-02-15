@@ -29,7 +29,7 @@ interface TransacaoUnificada {
 }
 
 export default function LojaPaginaTransacoes() {
-  const { versaoRefresh, triggerRefresh } = useDadosFinanceiros()
+  const { versaoRefresh, triggerRefresh, recarregarDados } = useDadosFinanceiros()
   const { filtersLojaTransacoes, setFiltersLojaTransacoes } = useFilters()
   const [transacoes, setTransacoes] = useState<TransacaoUnificada[]>([])
   const [transacoesFiltradas, setTransacoesFiltradas] = useState<TransacaoUnificada[]>([])
@@ -190,18 +190,18 @@ export default function LojaPaginaTransacoes() {
 
   // Efeito para carregar dados iniciais e quando versaoRefresh mudar
   useEffect(() => {
-    console.log('⚡ LojaPaginaTransacoes: useEffect disparado (versaoRefresh:', versaoRefresh, ')')
+    console.log('⚡ LojaPaginaTransacoes: Refreshing data (version:', versaoRefresh, ')')
     carregarTransacoes(versaoRefresh === 0)
   }, [carregarTransacoes, versaoRefresh])
 
-  // Efeito separado para Realtime para evitar resubscriptions desnecessárias
+  // Efeito Realtime
   useEffect(() => {
     const canais = ['vendas', 'compras', 'transacoes_condicionais', 'pedidos_loja'].map(tabela =>
-      supabase.channel(`realtime:${tabela}`)
+      supabase.channel(`loja-transacoes-${tabela}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
-          console.log(`🔄 [Realtime] Mudança em ${tabela}:`, payload.eventType)
-          // Pequeno delay para garantir que a transação foi finalizada no DB
-          setTimeout(() => carregarTransacoes(), 300)
+          console.log(`🔄 [Realtime] Data change in ${tabela}:`, payload.eventType)
+          // Usamos triggerRefresh para que todos os componentes fiquem em sincronia
+          triggerRefresh()
         })
         .subscribe()
     )
@@ -209,7 +209,7 @@ export default function LojaPaginaTransacoes() {
     return () => {
       canais.forEach(canal => supabase.removeChannel(canal))
     }
-  }, [carregarTransacoes])
+  }, [triggerRefresh])
 
   const aplicarFiltros = useCallback(() => {
     let result = [...transacoes]
