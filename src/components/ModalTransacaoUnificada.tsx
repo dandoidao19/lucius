@@ -744,7 +744,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       triggerRefresh()
       onSucesso()
-      alert('✅ Transação gerada com sucesso!')
+      // Pequeno delay para garantir que o refresh do contexto começou antes do alert bloquear
+      setTimeout(() => alert('✅ Transação gerada com sucesso!'), 100)
       clearDraft('loja')
       resetForm()
       onClose()
@@ -998,7 +999,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
       triggerRefresh()
       onSucesso()
-      alert('✅ Pedido/Condicional gerado com sucesso!')
+      setTimeout(() => alert('✅ Pedido/Condicional gerado com sucesso!'), 100)
       clearDraft('loja')
       resetForm()
       onClose()

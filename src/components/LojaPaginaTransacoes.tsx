@@ -196,18 +196,26 @@ export default function LojaPaginaTransacoes() {
 
   // Efeito Realtime
   useEffect(() => {
-    const canais = ['vendas', 'compras', 'transacoes_condicionais', 'pedidos_loja'].map(tabela =>
+    // Monitoramos as tabelas principais E transacoes_loja para capturar qualquer mudança financeira
+    const tabelas = ['vendas', 'compras', 'transacoes_condicionais', 'pedidos_loja', 'transacoes_loja']
+
+    const canais = tabelas.map(tabela =>
       supabase.channel(`loja-transacoes-${tabela}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
-          console.log(`🔄 [Realtime] Data change in ${tabela}:`, payload.eventType)
-          // Usamos triggerRefresh para que todos os componentes fiquem em sincronia
+          console.log(`🔄 [Realtime] Change detected in ${tabela}:`, payload.eventType)
+          // Forçamos o refresh global
           triggerRefresh()
         })
-        .subscribe()
+        .subscribe((status) => {
+          console.log(`📡 [Realtime] Subscription status for ${tabela}:`, status)
+        })
     )
 
     return () => {
-      canais.forEach(canal => supabase.removeChannel(canal))
+      console.log('🔌 [Realtime] Unsubscribing from all transaction channels')
+      canais.forEach(canal => {
+        supabase.removeChannel(canal)
+      })
     }
   }, [triggerRefresh])
 
