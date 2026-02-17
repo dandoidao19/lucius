@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalFaturarPedido from './ModalFaturarPedido'
 
@@ -107,26 +108,6 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       setLoading(false)
     }
   }, [transacaoId, tipo])
-
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    if (err.hint) mensagem += ` - Dica: ${err.hint}`
-
-    if (mensagem === 'Erro interno' && typeof err === 'object') {
-      try {
-        const str = JSON.stringify(err)
-        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
-      } catch {
-        return 'Erro ao processar objeto de erro'
-      }
-    }
-    return mensagem
-  }
 
   const handleExcluir = async () => {
     if (!window.confirm(`⚠️ TEM CERTEZA? Esta ação irá EXCLUIR permanentemente esta transação e REVERTER todos os impactos no ESTOQUE e FINANCEIRO.`)) {

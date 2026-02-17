@@ -8,6 +8,7 @@ import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 
 interface ItemVendaCasada {
   id: string
@@ -184,15 +185,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const totalVenda = itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
   const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
   const diferenca = totalVenda - totalCompra
-
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    return mensagem
-  }
 
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: any, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
