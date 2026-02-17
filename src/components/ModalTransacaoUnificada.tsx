@@ -46,6 +46,9 @@ interface ModalTransacaoUnificadaProps {
     status_pagamento: string
     quantidade_parcelas: number
     prazoparcelas: string
+    data_vencimento?: string
+    acrescimo?: number
+    desconto?: number
     observacao: string
     numero_transacao: number
     itens: ItemTransacao[]
@@ -82,7 +85,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [quantidadeParcelas, setQuantidadeParcelas] = useState(transacaoInicial?.quantidade_parcelas || 1)
   const [prazoParcelas, setPrazoParcelas] = useState(transacaoInicial?.prazoparcelas || 'mensal')
   const [statusPagamento, setStatusPagamento] = useState(transacaoInicial?.status_pagamento || 'pendente')
-  const [dataVencimento, setDataVencimento] = useState(transacaoInicial?.data || getDataAtualBrasil())
+  const [dataVencimento, setDataVencimento] = useState(transacaoInicial?.data_vencimento || transacaoInicial?.data || getDataAtualBrasil())
+  const [acrescimo, setAcrescimo] = useState(transacaoInicial?.acrescimo || 0)
+  const [desconto, setDesconto] = useState(transacaoInicial?.desconto || 0)
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
   const [observacao, setObservacao] = useState(transacaoInicial?.observacao?.replace('[PEDIDO]', '').trim() || '')
@@ -115,6 +120,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         setPrazoParcelas(draft.prazoParcelas || 'mensal')
         setStatusPagamento(draft.statusPagamento || 'pendente')
         setDataVencimento(draft.dataVencimento || getDataAtualBrasil())
+        setAcrescimo(draft.acrescimo || 0)
+        setDesconto(draft.desconto || 0)
         setObservacao(draft.observacao || '')
       }
     }
@@ -125,10 +132,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   useEffect(() => {
     if (aberto && !transacaoInicial && tipo) {
       setDraft('loja', {
-        tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, observacao
+        tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, acrescimo, desconto, observacao
       })
     }
-  }, [aberto, transacaoInicial, tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, observacao, setDraft])
+  }, [aberto, transacaoInicial, tipo, data, entidade, itens, quantidadeParcelas, prazoParcelas, statusPagamento, dataVencimento, acrescimo, desconto, observacao, setDraft])
 
   const resetForm = useCallback(() => {
     setTipo('')
@@ -154,6 +161,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setPrazoParcelas('mensal')
     setStatusPagamento('pendente')
     setDataVencimento(getDataAtualBrasil())
+    setAcrescimo(0)
+    setDesconto(0)
     setObservacao('')
     setErro('')
     setIdPedidoAnexar(null)
@@ -178,13 +187,17 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     }
   }
 
-  const calcularTotal = () => {
+  const calcularTotalItens = () => {
     return itens.reduce((total, item) => {
       const preco = (tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor')
         ? item.valor_repasse
         : item.preco_venda
       return total + item.quantidade * (preco || 0)
     }, 0)
+  }
+
+  const calcularTotalFinal = () => {
+    return calcularTotalItens() + acrescimo - desconto
   }
 
   const adicionarNovoItem = () => {
@@ -434,7 +447,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
-      const totalFinal = calcularTotal()
+      const totalFinal = calcularTotalFinal()
       console.log('DEBUG: Payload Transação principal:', {
         tipo, data, entidade, total: totalFinal, statusPagamento, quantidadeParcelas, prazoParcelas, observacao
       })
@@ -456,7 +469,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         if (pedOrig) numTransacao = pedOrig.numero_transacao
       }
 
-      const total = calcularTotal()
+      const total = totalFinal
       // APENAS venda ou compra finalizada entra aqui. Condicionais e Pedidos devem ir para handleGerarPedido.
       const isVenda = tipo === 'venda' || tipo === 'pedido_venda'
 
@@ -468,6 +481,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_venda: prepararDataParaInsert(data),
             cliente: entidade,
             total,
+            acrescimo,
+            desconto,
+            data_vencimento: prepararDataParaInsert(dataVencimento),
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
@@ -482,6 +498,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               data_venda: prepararDataParaInsert(data),
               cliente: entidade,
               total,
+              acrescimo,
+              desconto,
+              data_vencimento: prepararDataParaInsert(dataVencimento),
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
@@ -571,6 +590,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_compra: prepararDataParaInsert(data),
             fornecedor: entidade,
             total,
+            acrescimo,
+            desconto,
+            data_vencimento: prepararDataParaInsert(dataVencimento),
             quantidade_itens: itensValidos.length,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
@@ -585,6 +607,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               data_compra: prepararDataParaInsert(data),
               fornecedor: entidade,
               total,
+              acrescimo,
+              desconto,
+              data_vencimento: prepararDataParaInsert(dataVencimento),
               quantidade_itens: itensValidos.length,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
@@ -751,7 +776,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     setErro('')
 
     try {
-      const totalNovosItens = calcularTotal()
+      const totalNovosItens = calcularTotalItens()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -792,6 +817,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                   observacao: (observacao || '').trim() || null,
                   total_geral: totalFinal,
                   total_financeiro: totalFinanceiroFinal,
+                  acrescimo,
+                  desconto,
                   quantidade_parcelas: quantidadeParcelas,
                   prazoparcelas: prazoParcelas,
                   data_vencimento: prepararDataParaInsert(dataVencimento)
@@ -824,6 +851,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 observacao: (observacao || '').trim() || null,
                 total_geral: totalFinal,
                 total_financeiro: totalFinanceiroFinal,
+                acrescimo,
+                desconto,
                 quantidade_parcelas: quantidadeParcelas,
                 prazoparcelas: prazoParcelas,
                 data_vencimento: prepararDataParaInsert(dataVencimento)
@@ -838,6 +867,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             observacao: (observacao || '').trim() || null,
             total_geral: totalFinal,
             total_financeiro: totalFinal,
+            acrescimo,
+            desconto,
             status: 'pendente',
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
@@ -901,6 +932,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             observacao: (prefixoPedido + (observacao || '')).trim() || null,
             status: 'pendente',
             total: totalFinal,
+            acrescimo,
+            desconto,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             data_vencimento: prepararDataParaInsert(dataVencimento)
@@ -916,6 +949,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               observacao: (prefixoPedido + (observacao || '')).trim() || null,
               status: 'pendente',
               total: totalFinal,
+              acrescimo,
+              desconto,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
               data_vencimento: prepararDataParaInsert(dataVencimento)
@@ -1557,6 +1592,70 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                  </div>
                </div>
 
+               {/* Acréscimos e Descontos */}
+               <div className="border-t pt-2 border-gray-100">
+                 <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
+                   Ajustes de Valor
+                 </h3>
+                 <div className="grid grid-cols-2 gap-3">
+                   <div>
+                     <label className="block text-xs text-gray-600">Acréscimo (Interesse/Taxas)</label>
+                     <input
+                       type="number"
+                       step="0.01"
+                       value={acrescimo}
+                       onChange={(e) => setAcrescimo(parseFloat(e.target.value) || 0)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-red-500"
+                       placeholder="R$ 0.00"
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-xs text-gray-600">Desconto</label>
+                     <input
+                       type="number"
+                       step="0.01"
+                       value={desconto}
+                       onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
+                       className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:ring-1 focus:ring-green-500"
+                       placeholder="R$ 0.00"
+                     />
+                   </div>
+                 </div>
+               </div>
+
+               {/* Prévia do Parcelamento */}
+               {quantidadeParcelas > 0 && (
+                 <div className="border-t pt-2 border-gray-100 bg-gray-50/50 p-2 rounded">
+                    <h3 className="font-bold text-gray-700 text-[10px] mb-2 uppercase tracking-tight flex items-center gap-1">
+                      🗓️ Prévia do Parcelamento ({quantidadeParcelas}x)
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                       {Array.from({ length: quantidadeParcelas }).map((_, i) => {
+                          const valorBase = Math.floor((calcularTotalFinal() / quantidadeParcelas) * 100) / 100
+                          const valorUltima = Number((calcularTotalFinal() - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
+                          const valorFinal = (i === quantidadeParcelas - 1) ? valorUltima : valorBase
+
+                          let dataParcela = dataVencimento || getDataAtualBrasil()
+                          if (i > 0) {
+                            const dt = new Date(dataParcela + 'T12:00:00')
+                            if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                            else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                            else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                            dataParcela = dt.toISOString().split('T')[0]
+                          }
+
+                          return (
+                            <div key={i} className="bg-white border rounded p-1 text-center shadow-sm">
+                               <p className="text-[9px] font-bold text-purple-600">{i + 1}ª Parcela</p>
+                               <p className="text-[10px] font-black text-gray-800">R$ {valorFinal.toFixed(2)}</p>
+                               <p className="text-[8px] text-gray-500">{dataParcela.split('-').reverse().join('/')}</p>
+                            </div>
+                          )
+                       })}
+                    </div>
+                 </div>
+               )}
+
                {/* Observações */}
                <div>
                  <label className="block text-xs font-medium text-gray-700 mb-1">Observações</label>
@@ -1583,18 +1682,26 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                     </>
                   )}
                   <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
-                      <span>Novos Itens:</span>
-                      <span>R$ {calcularTotal().toFixed(2)}</span>
+                      <span>Total em Itens:</span>
+                      <span>R$ {calcularTotalItens().toFixed(2)}</span>
                   </div>
+                  {(acrescimo > 0 || desconto > 0) && (
+                    <div className="flex justify-between items-center text-[10px] font-bold uppercase">
+                       <span className="text-red-700">Ajustes (+{acrescimo.toFixed(2)} | -{desconto.toFixed(2)}):</span>
+                       <span className={acrescimo >= desconto ? 'text-red-700' : 'text-green-700'}>
+                         R$ {(acrescimo - desconto).toFixed(2)}
+                       </span>
+                    </div>
+                  )}
                   <div className="h-[1px] bg-purple-300 my-0.5"></div>
                   <div className="flex justify-between items-center">
                     <span className="font-bold text-purple-900 uppercase text-xs">{idPedidoAnexar ? 'NOVO TOTAL GERAL:' : 'TOTAL FINAL:'}</span>
-                    <span className="text-xl font-black text-purple-700">R$ {(totalPedidoAnterior + calcularTotal()).toFixed(2)}</span>
+                    <span className="text-xl font-black text-purple-700">R$ {(totalPedidoAnterior + calcularTotalFinal()).toFixed(2)}</span>
                   </div>
                   {idPedidoAnexar && (
                     <div className="flex justify-between items-center border-t border-purple-300 pt-1 mt-1">
                       <span className="font-bold text-green-900 uppercase text-xs">NOVO SALDO FINANCEIRO:</span>
-                      <span className="text-xl font-black text-green-700">R$ {(totalFinanceiroAnterior + calcularTotal()).toFixed(2)}</span>
+                      <span className="text-xl font-black text-green-700">R$ {(totalFinanceiroAnterior + calcularTotalFinal()).toFixed(2)}</span>
                     </div>
                   )}
                </div>
@@ -1606,7 +1713,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.9
+              CORE ENGINE v5.0
             </div>
             <button
               onClick={handleCancelar}

@@ -294,6 +294,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       status_pagamento: (transacaoFull.status_pagamento || transacaoFull.status || 'pendente') as string,
       quantidade_parcelas: (transacaoFull.quantidade_parcelas as number) || 1,
       prazoparcelas: (transacaoFull.prazoparcelas as string) || 'mensal',
+      data_vencimento: (transacaoFull.data_vencimento || (parcelas.length > 0 ? parcelas[0].data : null)) as string,
+      acrescimo: (transacaoFull.acrescimo as number) || 0,
+      desconto: (transacaoFull.desconto as number) || 0,
       observacao: (transacaoFull.observacao as string) || '',
       numero_transacao: transacaoFull.numero_transacao as number,
       itens: itens.map(i => ({

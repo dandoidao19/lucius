@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '4.9'
+  const VERSAO_ATUAL = '5.0'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,25 +47,25 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Pedidos */}
+            {/* 1. Acréscimos e Descontos */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
                 <Package size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Pedidos & Faturamento</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Acréscimos & Descontos</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Módulo independente de pedidos com faturamento item a item. Controle reservas sem impactar o estoque até a quitação real.
+                Novo controle de taxas e descontos diretamente no total da transação, sem alterar o preço unitário dos itens. Transparência total!
               </p>
             </div>
 
-            {/* 2. Financeiro */}
+            {/* 2. Prévia do Parcelamento */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
                 <CreditCard size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Precisão Financeira</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Prévia do Parcelamento</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Fim das dízimas em parcelamentos! Ajuste automático de centavos na última parcela e registro fiel de datas em pagamentos parciais.
+                Visualize datas e valores de todas as parcelas antes mesmo de salvar. Maior controle sobre o fluxo de caixa planejado.
               </p>
             </div>
 

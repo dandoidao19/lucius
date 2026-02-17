@@ -1,6 +1,6 @@
 /**
  * Utilitário para formatação de erros do Supabase e erros genéricos.
- * Padronizado para a versão v4.9 do sistema LUCIUS.
+ * Padronizado para a versão v5.0 do sistema LUCIUS.
  */
 export const formatarErro = (err: any): string => {
   if (!err) return 'Erro desconhecido'

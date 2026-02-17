@@ -33,7 +33,7 @@ export default function CabecalhoSistema() {
         <div className="text-center">
           <h1 className="text-2xl font-black tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative">
             LUCIUS
-            <span className="absolute -top-1 -right-8 text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v4.9</span>
+            <span className="absolute -top-1 -right-8 text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v5.0</span>
           </h1>
         </div>
 
