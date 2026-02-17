@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.0'
+  const VERSAO_ATUAL = '5.1'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -102,14 +102,14 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 6. Venda Casada */}
+            {/* 6. Refinamento de UI */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-pink-300 transition-all group">
               <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 mb-3 group-hover:scale-110 transition-transform">
                 <RefreshCw size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Venda Casada 2.0</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Refinamento de UI</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Vínculos automáticos entre transações e integração total com o novo sistema de pedidos e faturamento.
+                Melhor visualização das parcelas e novos botões de cancelamento em fluxos rápidos para uma navegação mais segura e intuitiva.
               </p>
             </div>
 

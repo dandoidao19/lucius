@@ -1625,11 +1625,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
                {/* Prévia do Parcelamento */}
                {quantidadeParcelas > 0 && (
-                 <div className="border-t pt-2 border-gray-100 bg-gray-50/50 p-2 rounded">
-                    <h3 className="font-bold text-gray-700 text-[10px] mb-2 uppercase tracking-tight flex items-center gap-1">
+                 <div className="border-t pt-2 border-gray-100 bg-slate-50 p-2 rounded-lg">
+                    <h3 className="font-bold text-gray-700 text-xs mb-2 uppercase tracking-tight flex items-center gap-1">
                       🗓️ Prévia do Parcelamento ({quantidadeParcelas}x)
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                        {Array.from({ length: quantidadeParcelas }).map((_, i) => {
                           const valorBase = Math.floor((calcularTotalFinal() / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((calcularTotalFinal() - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
@@ -1645,10 +1645,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                           }
 
                           return (
-                            <div key={i} className="bg-white border rounded p-1 text-center shadow-sm">
-                               <p className="text-[9px] font-bold text-purple-600">{i + 1}ª Parcela</p>
-                               <p className="text-[10px] font-black text-gray-800">R$ {valorFinal.toFixed(2)}</p>
-                               <p className="text-[8px] text-gray-500">{dataParcela.split('-').reverse().join('/')}</p>
+                            <div key={i} className="bg-white border border-slate-200 rounded p-1.5 flex flex-col items-center justify-center shadow-sm transition-all hover:border-purple-300">
+                               <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-tighter">{i + 1}ª Parcela</p>
+                               <p className="text-xs font-black text-slate-800 my-0.5">R$ {valorFinal.toFixed(2)}</p>
+                               <p className="text-[10px] text-slate-500 font-medium">{dataParcela.split('-').reverse().join('/')}</p>
                             </div>
                           )
                        })}

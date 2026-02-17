@@ -277,18 +277,18 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
 
         {/* Prévia do Parcelamento (Apenas se houver valor) */}
         {(valor > 0 || acrescimo > 0 || desconto > 0) && (
-          <div className="bg-purple-50 border border-purple-200 p-2 rounded">
-             <p className="text-[10px] font-bold text-purple-700 uppercase mb-1 flex items-center gap-1">
+          <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg">
+             <p className="text-xs font-bold text-purple-700 uppercase mb-1 flex items-center gap-1">
                🗓️ Detalhamento do Lançamento
              </p>
-             <div className="bg-white border rounded p-1.5 flex justify-between items-center shadow-sm">
-                <div>
-                   <p className="text-[9px] font-bold text-gray-500 uppercase leading-none">Vencimento</p>
-                   <p className="text-xs font-bold text-gray-800">{data.split('-').reverse().join('/')}</p>
+             <div className="bg-white border border-slate-100 rounded-md p-2 flex justify-between items-center shadow-sm">
+                <div className="flex flex-col">
+                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-tighter">Vencimento</span>
+                   <span className="text-xs font-bold text-slate-800">{data.split('-').reverse().join('/')}</span>
                 </div>
-                <div className="text-right">
-                   <p className="text-[9px] font-bold text-gray-500 uppercase leading-none">Valor Final</p>
-                   <p className="text-sm font-black text-purple-700">R$ {(valor + acrescimo - desconto).toFixed(2)}</p>
+                <div className="text-right flex flex-col">
+                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-tighter">Valor Final</span>
+                   <span className="text-sm font-black text-purple-700">R$ {(valor + acrescimo - desconto).toFixed(2)}</span>
                 </div>
              </div>
           </div>

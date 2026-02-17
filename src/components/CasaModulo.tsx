@@ -965,19 +965,17 @@ export default function CasaModulo() {
               )}
 
               <div className="flex space-x-2 pt-1">
-                {editandoLancamento && (
-                  <button
-                    type="button"
-                    onClick={cancelarEdicao}
-                    className="flex-1 bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 text-xs"
-                  >
-                    Cancelar
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={editandoLancamento ? cancelarEdicao : () => setFormularioAberto(false)}
+                  className="flex-1 bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 text-xs font-semibold uppercase tracking-wider"
+                >
+                  Cancelar
+                </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`${editandoLancamento ? 'flex-1' : 'w-full'} bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 disabled:opacity-50 text-xs`}
+                  className="flex-1 bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 disabled:opacity-50 text-xs font-semibold uppercase tracking-wider"
                 >
                   {loading ? 'Salvando...' : editandoLancamento ? 'Salvar' : 'Adicionar'}
                 </button>

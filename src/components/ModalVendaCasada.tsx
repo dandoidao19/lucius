@@ -585,7 +585,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <div className="flex flex-col"><label className="text-[9px] font-bold text-pink-600 uppercase">Desconto (-)</label><input type="number" step="0.01" value={pagVenda.desconto} onChange={e => setPagVenda({...pagVenda, desconto: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
               </div>
               {/* Preview Venda */}
-              <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
+              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
                  {Array.from({ length: pagVenda.parcelas }).map((_, i) => {
                     let dtP = pagVenda.vencimento || getDataAtualBrasil()
                     if (i > 0) {
@@ -596,10 +596,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       dtP = dt.toISOString().split('T')[0]
                     }
                     return (
-                      <div key={i} className="min-w-[65px] bg-white border border-pink-100 rounded p-1 text-center shadow-sm">
-                         <p className="text-[7px] font-bold text-pink-500">{i+1}ª P</p>
-                         <p className="text-[9px] font-black text-slate-700">R$ {(totalVendaFinal / pagVenda.parcelas).toFixed(2)}</p>
-                         <p className="text-[7px] text-gray-400">{dtP.split('-').reverse().join('/')}</p>
+                      <div key={i} className="min-w-[75px] bg-white border border-slate-200 rounded-md p-1.5 flex flex-col items-center justify-center shadow-sm">
+                         <span className="text-[8px] font-bold text-pink-600 uppercase leading-none">{i+1}ª Parc.</span>
+                         <span className="text-[10px] font-black text-slate-800 my-0.5">R$ {(totalVendaFinal / pagVenda.parcelas).toFixed(2)}</span>
+                         <span className="text-[8px] text-slate-500 font-medium">{dtP.split('-').reverse().join('/')}</span>
                       </div>
                     )
                  })}
@@ -618,7 +618,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <div className="flex flex-col"><label className="text-[9px] font-bold text-blue-600 uppercase">Desconto (-)</label><input type="number" step="0.01" value={pagCompra.desconto} onChange={e => setPagCompra({...pagCompra, desconto: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
               </div>
               {/* Preview Compra */}
-              <div className="mt-2 flex gap-1 overflow-x-auto pb-1">
+              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
                  {Array.from({ length: pagCompra.parcelas }).map((_, i) => {
                     let dtP = pagCompra.vencimento || getDataAtualBrasil()
                     if (i > 0) {
@@ -629,10 +629,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       dtP = dt.toISOString().split('T')[0]
                     }
                     return (
-                      <div key={i} className="min-w-[65px] bg-white border border-blue-100 rounded p-1 text-center shadow-sm">
-                         <p className="text-[7px] font-bold text-blue-500">{i+1}ª P</p>
-                         <p className="text-[9px] font-black text-slate-700">R$ {(totalCompraFinal / pagCompra.parcelas).toFixed(2)}</p>
-                         <p className="text-[7px] text-gray-400">{dtP.split('-').reverse().join('/')}</p>
+                      <div key={i} className="min-w-[75px] bg-white border border-slate-200 rounded-md p-1.5 flex flex-col items-center justify-center shadow-sm">
+                         <span className="text-[8px] font-bold text-blue-600 uppercase leading-none">{i+1}ª Parc.</span>
+                         <span className="text-[10px] font-black text-slate-800 my-0.5">R$ {(totalCompraFinal / pagCompra.parcelas).toFixed(2)}</span>
+                         <span className="text-[8px] text-slate-500 font-medium">{dtP.split('-').reverse().join('/')}</span>
                       </div>
                     )
                  })}

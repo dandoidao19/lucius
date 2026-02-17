@@ -8,7 +8,7 @@ export const formatarErro = (err: any): string => {
 
   // Erros específicos de schema ou restrições do banco de dados (v4.8+)
   if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23502') {
-    return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR).`
+    return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V5.0 NO SEU SUPABASE (SQL EDITOR).`
   }
 
   let mensagem = err.message || 'Erro interno'
