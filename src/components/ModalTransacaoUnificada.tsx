@@ -1541,7 +1541,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                  <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
                    Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
                  </h3>
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
                    <div>
                      <label className="block text-xs text-gray-600">Vencimento</label>
                      <input
@@ -1629,7 +1629,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                     <h3 className="font-bold text-gray-700 text-xs mb-2 uppercase tracking-tight flex items-center gap-1">
                       🗓️ Prévia do Parcelamento ({quantidadeParcelas}x)
                     </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-2">
                        {Array.from({ length: quantidadeParcelas }).map((_, i) => {
                           const valorBase = Math.floor((calcularTotalFinal() / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((calcularTotalFinal() - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
