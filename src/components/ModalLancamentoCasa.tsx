@@ -189,22 +189,13 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
               <option value="mensal">Mensal</option>
             </select>
           </div>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 bg-gray-500 text-white py-1.5 rounded font-bold hover:bg-gray-600 text-xs uppercase"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-2 bg-blue-600 text-white py-1.5 rounded font-bold hover:bg-blue-700 disabled:bg-gray-400 text-xs uppercase"
-            >
-              {loading ? 'Salvando...' : 'Adicionar Lançamento'}
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-1.5 rounded font-bold hover:bg-blue-700 disabled:bg-gray-400 text-xs uppercase"
+          >
+            {loading ? 'Salvando...' : 'Adicionar Lançamento'}
+          </button>
         </form>
       </div>
     </div>

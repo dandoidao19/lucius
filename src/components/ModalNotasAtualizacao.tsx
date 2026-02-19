@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.4'
+  const VERSAO_ATUAL = '4.9'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,25 +47,25 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Acréscimos e Descontos */}
+            {/* 1. Pedidos */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
                 <Package size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Acréscimos & Descontos</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Pedidos & Faturamento</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Novo controle de taxas e descontos diretamente no total da transação, sem alterar o preço unitário dos itens. Transparência total!
+                Módulo independente de pedidos com faturamento item a item. Controle reservas sem impactar o estoque até a quitação real.
               </p>
             </div>
 
-            {/* 2. Prévia do Parcelamento */}
+            {/* 2. Financeiro */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
                 <CreditCard size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Prévia do Parcelamento</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Precisão Financeira</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Visualize datas e valores de todas as parcelas antes mesmo de salvar. Maior controle sobre o fluxo de caixa planejado.
+                Fim das dízimas em parcelamentos! Ajuste automático de centavos na última parcela e registro fiel de datas em pagamentos parciais.
               </p>
             </div>
 
@@ -102,29 +102,21 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 6. Gestão Avançada de Banco de Dados */}
+            {/* 6. Venda Casada */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-pink-300 transition-all group">
               <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 mb-3 group-hover:scale-110 transition-transform">
                 <RefreshCw size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Visão Unificada (Supabase)</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Venda Casada 2.0</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Adicionadas Views de Banco de Dados para facilitar a visualização de Transações e seus respectivos itens em uma única tela diretamente no Supabase.
+                Vínculos automáticos entre transações e integração total com o novo sistema de pedidos e faturamento.
               </p>
             </div>
 
           </div>
 
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
-            <h4 className="text-xs font-bold text-blue-700 uppercase mb-1">💡 Dica Técnica para Administradores:</h4>
-            <p className="text-blue-800 text-[10px] leading-tight">
-              Para visualizar transações com itens no Supabase Dashboard, use as novas <b>Views</b> (view_vendas_detalhadas, etc.).
-              Alterações diretas no banco são possíveis nas tabelas originais, mas lembre-se de manter a consistência entre os totais da transação principal e a soma dos seus itens.
-            </p>
-          </div>
-
-          <div className="bg-slate-100 border border-slate-200 p-4 rounded-xl text-center">
-            <p className="text-slate-600 text-xs italic">
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
+            <p className="text-blue-800 text-sm italic">
               "Continuamos trabalhando para tornar o Lucius a ferramenta definitiva para o seu negócio."
             </p>
           </div>

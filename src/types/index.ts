@@ -91,21 +91,3 @@ export interface TransacaoLoja {
   valor_pago?: number;
   data_pagamento?: string;
 }
-
-export interface TransacaoUnificada {
-  id: string;
-  tipo_exibicao: string;
-  tipo_slug: string;
-  tipo_original: string;
-  numero: number;
-  data: string;
-  entidade: string;
-  total: number;
-  status: string;
-  quantidade_parcelas: number;
-  quantidade_itens: number;
-  observacao: string;
-  cor: string;
-  tabela: 'vendas' | 'compras' | 'transacoes_condicionais' | 'pedidos_loja';
-  total_financeiro?: number;
-}

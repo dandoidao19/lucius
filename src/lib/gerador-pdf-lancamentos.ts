@@ -1,7 +1,5 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
-import { LancamentoFinanceiro, CentroCusto, Venda, Compra, TransacaoUnificada } from '@/types'
-import { formatarDataParaExibicao } from './dateUtils'
 
 export class GeradorPDFLancamentos {
   private doc: jsPDF
@@ -10,14 +8,22 @@ export class GeradorPDFLancamentos {
     this.doc = new jsPDF()
   }
 
-  // Função auxiliar para formatar data usando o utilitário padrão do sistema
+  // Função auxiliar para formatar data
   private formatarData(dataStr: string | undefined): string {
     if (!dataStr) return 'N/A'
-    return formatarDataParaExibicao(dataStr) || 'N/A'
+
+    try {
+      // Remove 'T' e pega apenas a data
+      const dataParte = dataStr.includes('T') ? dataStr.split('T')[0] : dataStr
+      const [ano, mes, dia] = dataParte.split('-')
+      return `${dia}/${mes}/${ano}`
+    } catch {
+      return dataStr
+    }
   }
 
   // Gerar PDF de lançamentos da casa
-  gerarPDFLancamentosCasa(lancamentos: LancamentoFinanceiro[], centrosCusto: CentroCusto[]) {
+  gerarPDFLancamentosCasa(lancamentos: any[], centrosCusto: any[]) {
     this.doc = new jsPDF()
     
     // Cabeçalho
@@ -76,7 +82,7 @@ export class GeradorPDFLancamentos {
   }
 
   // Gerar PDF de vendas
-  gerarPDFVendas(vendas: Venda[]) {
+  gerarPDFVendas(vendas: any[]) {
     this.doc = new jsPDF()
     
     this.doc.setFontSize(16)
@@ -114,7 +120,7 @@ export class GeradorPDFLancamentos {
   }
 
   // Gerar PDF de compras
-  gerarPDFCompras(compras: Compra[]) {
+  gerarPDFCompras(compras: any[]) {
     this.doc = new jsPDF()
     
     this.doc.setFontSize(16)
@@ -164,11 +170,11 @@ export class GeradorPDFLancamentos {
     
     // Calcular totais
     const totalEntradas = transacoes
-      .filter((t: any) => t.tipo === 'entrada' || t.tipo === 'venda' || t.tipo_slug === 'venda' || t.tipo_slug === 'pedido_venda')
+      .filter(t => t.tipo === 'entrada' || t.tipo === 'venda')
       .reduce((sum: number, t: any) => sum + (t.valor || t.total || 0), 0)
     
     const totalSaidas = transacoes
-      .filter((t: any) => t.tipo === 'saida' || t.tipo === 'compra' || t.tipo_slug === 'compra' || t.tipo_slug === 'pedido_compra')
+      .filter(t => t.tipo === 'saida' || t.tipo === 'compra')
       .reduce((sum: number, t: any) => sum + (t.valor || t.total || 0), 0)
     
     const saldo = totalEntradas - totalSaidas
@@ -184,25 +190,19 @@ export class GeradorPDFLancamentos {
     this.doc.text(`Saldo: R$ ${saldo.toFixed(2)}`, 14, 46)
     
     // Tabela de transações - CORRIGIDO COM VALIDAÇÃO
-    const dados = transacoes.map((trans: any) => {
+    const dados = transacoes.map(trans => {
       // Validação segura da data
       const dataFormatada = this.formatarData(
-        trans.data_venda || trans.data_compra || trans.data || trans.data_pedido || trans.data_transacao
+        trans.data_venda || trans.data_compra || trans.data || trans.descricao
       )
       
-      const entidade = trans.cliente || trans.fornecedor || trans.entidade || trans.origem || trans.cliente_fornecedor || '-'
-      const numero = trans.numero_transacao || trans.numero || '-'
-      const tipoExibicao = trans.tipo_exibicao || (trans.tipo === 'venda' || trans.tipo === 'entrada' ? 'Venda' : 'Compra')
-      const total = trans.total || trans.valor || trans.total_geral || 0
-      const status = trans.status_pagamento || trans.status || 'pendente'
-
       return [
         dataFormatada,
-        String(entidade).substring(0, 25),
-        numero,
-        tipoExibicao,
-        `R$ ${Number(total).toFixed(2)}`,
-        String(status).toUpperCase()
+        (trans.cliente || trans.fornecedor || trans.cliente_fornecedor || '-').substring(0, 25),
+        trans.numero_transacao || '-',
+        trans.tipo === 'venda' || trans.tipo === 'entrada' ? 'Venda' : 'Compra',
+        `R$ ${(trans.total || trans.valor || 0).toFixed(2)}`,
+        trans.status_pagamento || trans.status || 'pendente'
       ]
     })
 

@@ -455,16 +455,16 @@ export default function LojaPaginaEstoque() {
             <table className="w-full text-xs">
               <thead className="bg-red-700 text-white border-b border-red-800">
                 <tr>
-                <th className="px-1.5 py-1 text-left font-semibold uppercase hidden sm:table-cell">Código</th>
+                <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
                 <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase hidden md:table-cell">Categoria</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase hidden sm:table-cell">Status</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase hidden lg:table-cell">Qtd Cond.</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Categoria</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Status</th>
+                <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Cond.</th>
                 <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Efet.</th>
-                <th className="px-1.5 py-1 text-right font-semibold uppercase hidden lg:table-cell">Custo</th>
-                <th className="px-1.5 py-1 text-right font-semibold uppercase hidden md:table-cell">Repasse</th>
+                <th className="px-1.5 py-1 text-right font-semibold uppercase">Custo</th>
+                <th className="px-1.5 py-1 text-right font-semibold uppercase">Repasse</th>
                 <th className="px-1.5 py-1 text-right font-semibold uppercase">Venda</th>
-                <th className="px-1.5 py-1 text-left font-semibold uppercase hidden lg:table-cell">Ult. Compra</th>
+                <th className="px-1.5 py-1 text-left font-semibold uppercase">Ult. Compra</th>
                 <th className="px-1.5 py-1 text-center font-semibold uppercase">Ações</th>
                 </tr>
               </thead>
@@ -481,14 +481,14 @@ export default function LojaPaginaEstoque() {
                         temEstoqueNegativo ? 'bg-red-50' : (produto.status_item || 'resolvido') === 'condicional' ? 'bg-yellow-50' : ''
                       }`}
                     >
-                      <td className="px-1.5 py-1 text-gray-800 font-medium text-xs hidden sm:table-cell">{produto.codigo}</td>
-                      <td className="px-1.5 py-1 text-gray-800 text-xs truncate max-w-[120px]">{produto.descricao}</td>
-                      <td className="px-1.5 py-1 text-center text-xs hidden md:table-cell">
+                      <td className="px-1.5 py-1 text-gray-800 font-medium text-xs">{produto.codigo}</td>
+                      <td className="px-1.5 py-1 text-gray-800 text-xs">{produto.descricao}</td>
+                      <td className="px-1.5 py-1 text-center text-xs">
                         <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-medium">
-                          {produto.categoria || '—'}
+                          {produto.categoria || 'Sem categoria'}
                         </span>
                       </td>
-                      <td className="px-1.5 py-1 text-center hidden sm:table-cell">
+                      <td className="px-1.5 py-1 text-center">
                         <span className={`inline-block px-1 py-0.5 rounded-full font-medium ${
                           (produto.status_item || 'resolvido') === 'resolvido' 
                             ? 'bg-green-100 text-green-800' 
@@ -497,7 +497,7 @@ export default function LojaPaginaEstoque() {
                           {(produto.status_item || 'resolvido') === 'resolvido' ? '✓ Res.' : '⏳ Cond.'}
                         </span>
                       </td>
-                      <td className={`px-1.5 py-1 text-center font-semibold text-xs hidden lg:table-cell ${
+                      <td className={`px-1.5 py-1 text-center font-semibold text-xs ${
                         qtdCondicional > 0 ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'
                       }`}>
                         {qtdCondicional}
@@ -507,16 +507,16 @@ export default function LojaPaginaEstoque() {
                       }`}>
                         {qtdEfetiva}
                       </td>
-                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs hidden lg:table-cell">
+                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs">
                         R$ {produto.preco_custo.toFixed(2)}
                       </td>
-                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs hidden md:table-cell">
+                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs">
                         R$ {(Number(produto.valor_repasse) || 0).toFixed(2)}
                       </td>
                       <td className="px-1.5 py-1 text-right text-gray-700 font-semibold text-xs">
                         R$ {(Number(produto.preco_venda) || 0).toFixed(2)}
                       </td>
-                      <td className="px-1.5 py-1 text-gray-600 text-xs hidden lg:table-cell">
+                      <td className="px-1.5 py-1 text-gray-600 text-xs">
                         {formatarDataParaExibicao(produto.data_ultima_compra)}
                       </td>
                       <td className="px-1.5 py-1 text-center">

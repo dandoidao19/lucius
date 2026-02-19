@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
-import { formatarErro } from '@/lib/errorUtils'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorEntidade from './SeletorEntidade'
 
@@ -32,13 +31,35 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   const [data, setData] = useState(getDataAtualBrasil())
   const [tipo, setTipo] = useState('saida')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
-  const [acrescimo, setAcrescimo] = useState(0)
-  const [desconto, setDesconto] = useState(0)
   const [observacao, setObservacao] = useState('')
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
 
   const isEditMode = !!lancamentoInicial
+
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+
+    if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23502') {
+      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR).`
+    }
+
+    let mensagem = err.message || 'Erro interno'
+    if (err.details) mensagem += ` (Detalhes: ${err.details})`
+    if (err.code) mensagem += ` [Código: ${err.code}]`
+    if (err.hint) mensagem += ` - Dica: ${err.hint}`
+
+    if (mensagem === 'Erro interno' && typeof err === 'object') {
+      try {
+        const str = JSON.stringify(err)
+        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
+      } catch {
+        return 'Erro ao processar objeto de erro'
+      }
+    }
+    return mensagem
+  }
 
   useEffect(() => {
     if (isEditMode && lancamentoInicial) {
@@ -47,8 +68,6 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       setData(lancamentoInicial.data)
       setTipo(lancamentoInicial.tipo)
       setStatusPagamento(lancamentoInicial.status_pagamento || 'pendente')
-      setAcrescimo((lancamentoInicial as any).acrescimo || 0)
-      setDesconto((lancamentoInicial as any).desconto || 0)
       setObservacao(lancamentoInicial.observacao || '')
     } else {
       const draft = getDraft('financeiro')
@@ -58,8 +77,6 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         setData(draft.data)
         setTipo(draft.tipo)
         setStatusPagamento(draft.statusPagamento)
-        setAcrescimo(draft.acrescimo || 0)
-        setDesconto(draft.desconto || 0)
         setObservacao(draft.observacao)
       } else {
         setClienteFornecedor('')
@@ -67,8 +84,6 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         setData(getDataAtualBrasil())
         setTipo('saida')
         setStatusPagamento('pendente')
-        setAcrescimo(0)
-        setDesconto(0)
         setObservacao('')
       }
     }
@@ -83,12 +98,10 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         data,
         tipo,
         statusPagamento,
-        acrescimo,
-        desconto,
         observacao
       })
     }
-  }, [isEditMode, clienteFornecedor, valor, data, tipo, statusPagamento, acrescimo, desconto, observacao, setDraft])
+  }, [isEditMode, clienteFornecedor, valor, data, tipo, statusPagamento, observacao, setDraft])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -108,14 +121,12 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
     try {
       const dadosBase = {
         descricao: clienteFornecedor.trim(),
-        total: valor + acrescimo - desconto,
-        acrescimo: acrescimo,
-        desconto: desconto,
+        total: valor,
         tipo: tipo,
         data: prepararDataParaInsert(data),
         status_pagamento: statusPagamento,
         data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
-        valor_pago: statusPagamento === 'pago' ? (valor + acrescimo - desconto) : null,
+        valor_pago: statusPagamento === 'pago' ? valor : null,
         observacao: observacao.trim() || null,
       }
 
@@ -245,54 +256,6 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
             </select>
           </div>
         </div>
-
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Acréscimo (+)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={acrescimo}
-              onChange={(e) => setAcrescimo(parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-              placeholder="0.00"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Desconto (-)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              value={desconto}
-              onChange={(e) => setDesconto(parseFloat(e.target.value) || 0)}
-              className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
-        {/* Prévia do Parcelamento (Apenas se houver valor) */}
-        {(valor > 0 || acrescimo > 0 || desconto > 0) && (
-          <div className="bg-slate-50 border border-slate-200 p-2 rounded-lg">
-             <p className="text-xs font-bold text-purple-700 uppercase mb-1 flex items-center gap-1">
-               🗓️ Detalhamento do Lançamento
-             </p>
-             <div className="bg-white border border-slate-100 rounded-md p-2 flex justify-between items-center shadow-sm">
-                <div className="flex flex-col">
-                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-tighter">Vencimento</span>
-                   <span className="text-xs font-bold text-slate-800">{data.split('-').reverse().join('/')}</span>
-                </div>
-                <div className="text-right flex flex-col">
-                   <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-tighter">Valor Final</span>
-                   <span className="text-sm font-black text-purple-700">R$ {(valor + acrescimo - desconto).toFixed(2)}</span>
-                </div>
-             </div>
-          </div>
-        )}
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">

@@ -23,8 +23,6 @@ interface ModalPagarTransacaoProps {
     id_compra?: string
     id_condicional?: string
     id_pedido?: string
-    parcela_numero?: number
-    parcela_total?: number
   } | null
   onClose: () => void
   onPagamentoRealizado: () => void
@@ -126,38 +124,17 @@ export default function ModalPagarTransacao({
       const statusPagamento = 'pago'
 
       if (transacao.origem_id) {
-        // Lógica de descrição para parcelamento parcial
-        const parcelaAtual = transacao.parcela_numero || 1
-        const totalParcelas = transacao.parcela_total || 1
-        const descricaoBase = transacao.descricao.replace(/\s*\(\d+\/\d+\)\s*$/, '').trim()
-
-        let novaDescricaoAtual = transacao.descricao
-        let novaDescricaoRestante = transacao.descricao
-        let novoTotalParcelas = totalParcelas
-
-        if (criarNovaParcela && valorRestante > 0.01) {
-          novoTotalParcelas = totalParcelas + 1
-          novaDescricaoAtual = `${descricaoBase} (${parcelaAtual}/${novoTotalParcelas})`
-          novaDescricaoRestante = `${descricaoBase} (${parcelaAtual + 1}/${novoTotalParcelas})`
-
-          // Se houver mais parcelas depois desta no sistema original, elas deveriam ser renumeradas?
-          // Para evitar complexidade extrema, vamos apenas garantir que o par atual/restante faça sentido.
-          // O usuário solicitou que "salve nas parcelas a informação de parcelamento".
-        }
-
         // 1. ATUALIZAR TRANSAÇÃO ATUAL
-        const updateData: any = {
+        const updateData: Record<string, string | number | null> = {
           status_pagamento: statusPagamento,
           data_pagamento: dataPagamentoFormatada,
           valor_pago: Number(valorPago.toFixed(2)),
           juros_descontos: jurosDescontosFinal
         }
 
-        // Se for criar nova parcela, ajustar o valor e descrição da atual
+        // Se for criar nova parcela, ajustar o valor da atual para o que foi pago
         if (criarNovaParcela) {
           updateData.total = Number(valorPago.toFixed(2))
-          updateData.descricao = novaDescricaoAtual
-          updateData.quantidade_parcelas = novoTotalParcelas
         }
 
         const { error: errorTransacaoLoja } = await supabase
@@ -173,12 +150,11 @@ export default function ModalPagarTransacao({
           const novaParcela = {
             user_id: user.id,
             numero_transacao: transacao.numero_transacao,
-            descricao: novaDescricaoRestante,
+            descricao: transacao.descricao,
             total: valorRestante,
             tipo: transacao.tipo,
             data: prepararDataParaInsert(novaDataVencimento),
             status_pagamento: 'pendente',
-            quantidade_parcelas: novoTotalParcelas,
             id_venda: transacao.id_venda,
             id_compra: transacao.id_compra,
             id_condicional: transacao.id_condicional,

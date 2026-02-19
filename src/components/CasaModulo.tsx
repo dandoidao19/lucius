@@ -965,17 +965,19 @@ export default function CasaModulo() {
               )}
 
               <div className="flex space-x-2 pt-1">
-                <button
-                  type="button"
-                  onClick={editandoLancamento ? cancelarEdicao : () => setFormularioAberto(false)}
-                  className="flex-1 bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 text-xs font-semibold uppercase tracking-wider"
-                >
-                  Cancelar
-                </button>
+                {editandoLancamento && (
+                  <button
+                    type="button"
+                    onClick={cancelarEdicao}
+                    className="flex-1 bg-gray-500 text-white py-1 px-3 rounded-md hover:bg-gray-600 text-xs"
+                  >
+                    Cancelar
+                  </button>
+                )}
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 disabled:opacity-50 text-xs font-semibold uppercase tracking-wider"
+                  className={`${editandoLancamento ? 'flex-1' : 'w-full'} bg-blue-500 text-white py-1 px-3 rounded-md hover:bg-blue-600 disabled:opacity-50 text-xs`}
                 >
                   {loading ? 'Salvando...' : editandoLancamento ? 'Salvar' : 'Adicionar'}
                 </button>
@@ -1032,12 +1034,12 @@ export default function CasaModulo() {
                 <table className="min-w-full table-fixed text-xs">
                   <thead className="bg-blue-600 text-white border-b border-blue-500">
                     <tr>
-                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs">Data</th>
-                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs hidden sm:table-cell">Status</th>
-                      <th className="w-2/12 px-1 py-1 text-right font-semibold uppercase text-[10px] sm:text-xs">Valor</th>
-                      <th className="w-4/12 px-1 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs">Descrição</th>
-                      <th className="w-2/12 px-1 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs hidden md:table-cell">CDC</th>
-                      <th className="w-2/12 px-1 py-1 text-center font-semibold uppercase text-[10px] sm:text-xs">Ações</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Data</th>
+                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Status</th>
+                      <th className="w-2/12 px-1 py-1 text-right font-semibold uppercase text-xs">Valor</th>
+                      <th className="w-4/12 px-1 py-1 text-left font-semibold uppercase text-xs">Descrição</th>
+                      <th className="w-2/12 px-1 py-1 text-left font-semibold uppercase text-xs">CDC</th>
+                      <th className="w-2/12 px-1 py-1 text-center font-semibold uppercase text-xs">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1049,13 +1051,13 @@ export default function CasaModulo() {
                         <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
                           {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}
                         </td>
-                        <td className="px-1 py-1 hidden sm:table-cell">
+                        <td className="px-1 py-1">
                           {lancamento.status === 'realizado' ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[12px] font-bold text-white bg-green-600">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-bold text-white bg-green-600">
                               ✓ Pago
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] sm:text-[12px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
                               Previsto
                             </span>
                           )}
@@ -1071,10 +1073,10 @@ export default function CasaModulo() {
                         }`}>
                           {lancamento.tipo === 'entrada' ? '+' : '-'} R$ {lancamento.valor.toFixed(2)}
                         </td>
-                        <td className="px-1 py-1 text-xs text-gray-700 truncate max-w-[120px]" title={lancamento.descricao}>
+                        <td className="px-1 py-1 text-xs text-gray-700 truncate">
                           {lancamento.descricao}
                         </td>
-                        <td className="px-1 py-1 text-xs text-gray-600 truncate hidden md:table-cell">
+                        <td className="px-1 py-1 text-xs text-gray-600 truncate">
                           {lancamento.centros_de_custo?.nome || '-'}
                         </td>
                         <td className="px-1 py-1 text-center">

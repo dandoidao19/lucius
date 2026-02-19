@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
-import { formatarErro } from '@/lib/errorUtils'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalFaturarPedido from './ModalFaturarPedido'
 
@@ -108,6 +107,26 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       setLoading(false)
     }
   }, [transacaoId, tipo])
+
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+
+    let mensagem = err.message || 'Erro interno'
+    if (err.details) mensagem += ` (Detalhes: ${err.details})`
+    if (err.code) mensagem += ` [Código: ${err.code}]`
+    if (err.hint) mensagem += ` - Dica: ${err.hint}`
+
+    if (mensagem === 'Erro interno' && typeof err === 'object') {
+      try {
+        const str = JSON.stringify(err)
+        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
+      } catch {
+        return 'Erro ao processar objeto de erro'
+      }
+    }
+    return mensagem
+  }
 
   const handleExcluir = async () => {
     if (!window.confirm(`⚠️ TEM CERTEZA? Esta ação irá EXCLUIR permanentemente esta transação e REVERTER todos os impactos no ESTOQUE e FINANCEIRO.`)) {
@@ -294,9 +313,6 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       status_pagamento: (transacaoFull.status_pagamento || transacaoFull.status || 'pendente') as string,
       quantidade_parcelas: (transacaoFull.quantidade_parcelas as number) || 1,
       prazoparcelas: (transacaoFull.prazoparcelas as string) || 'mensal',
-      data_vencimento: (transacaoFull.data_vencimento || (parcelas.length > 0 ? parcelas[0].data : null)) as string,
-      acrescimo: (transacaoFull.acrescimo as number) || 0,
-      desconto: (transacaoFull.desconto as number) || 0,
       observacao: (transacaoFull.observacao as string) || '',
       numero_transacao: transacaoFull.numero_transacao as number,
       itens: itens.map(i => ({

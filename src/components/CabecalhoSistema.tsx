@@ -17,7 +17,7 @@ export default function CabecalhoSistema() {
 
   return (
     <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white py-1.5 px-4 shadow-lg border-b-2 border-blue-600">
-      <div className="container mx-auto flex items-center justify-center gap-4 md:gap-8">
+      <div className="container mx-auto flex items-center justify-center gap-8">
         {/* Logo Empresa (Esquerda) */}
         {logos.empresa && (
           <div className="flex-shrink-0">
@@ -33,7 +33,7 @@ export default function CabecalhoSistema() {
         <div className="text-center">
           <h1 className="text-2xl font-black tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative">
             LUCIUS
-            <span className="absolute -top-1 -right-8 text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v5.4</span>
+            <span className="absolute -top-1 -right-8 text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v4.9</span>
           </h1>
         </div>
 

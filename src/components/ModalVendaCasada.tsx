@@ -8,7 +8,6 @@ import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
-import { formatarErro } from '@/lib/errorUtils'
 
 interface ItemVendaCasada {
   id: string
@@ -65,8 +64,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   ])
 
   // Pagamentos
-  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal', acrescimo: 0, desconto: 0 })
-  const [pagCompra, setPagCompra] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal', acrescimo: 0, desconto: 0 })
+  const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
+  const [pagCompra, setPagCompra] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal' })
 
   const [casadasAbertas, setCasadasAbertas] = useState<any[]>([])
   const [mostrarBuscaCasada, setMostrarBuscaCasada] = useState(false)
@@ -88,8 +87,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         setFornecedor(draft.fornecedor || '')
         setData(draft.data || getDataAtualBrasil())
         setItens(draft.itens || [{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }])
-        setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal', acrescimo: 0, desconto: 0 })
-        setPagCompra(draft.pagCompra || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal', acrescimo: 0, desconto: 0 })
+        setPagVenda(draft.pagVenda || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
+        setPagCompra(draft.pagCompra || { status: 'pendente', parcelas: 1, vencimento: draft.data || getDataAtualBrasil(), prazo: 'mensal' })
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -107,8 +106,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     setFornecedor('')
     setData(getDataAtualBrasil())
     setItens([{ id: Date.now().toString(), id_produto: '', codigo: '', nome: '', quantidade: 1, preco_unitario: 0, valor_repasse: 0, preco_custo: 0, isNovoCadastro: false, minimizado: false }])
-    setPagVenda({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal', acrescimo: 0, desconto: 0 })
-    setPagCompra({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal', acrescimo: 0, desconto: 0 })
+    setPagVenda({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
+    setPagCompra({ status: 'pendente', parcelas: 1, vencimento: getDataAtualBrasil(), prazo: 'mensal' })
     setVendaAnexar(null)
     setCompraAnexar(null)
     setIdSaidaAnexar(null)
@@ -182,12 +181,18 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     } : i))
   }
 
-  const totalVendaItens = itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
-  const totalVendaFinal = totalVendaItens + pagVenda.acrescimo - pagVenda.desconto
+  const totalVenda = itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
+  const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
+  const diferenca = totalVenda - totalCompra
 
-  const totalCompraItens = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
-  const totalCompraFinal = totalCompraItens + pagCompra.acrescimo - pagCompra.desconto
-  const diferenca = totalVendaFinal - totalCompraFinal
+  const formatarErro = (err: any): string => {
+    if (!err) return 'Erro desconhecido'
+    if (typeof err === 'string') return err
+    let mensagem = err.message || 'Erro interno'
+    if (err.details) mensagem += ` (Detalhes: ${err.details})`
+    if (err.code) mensagem += ` [Código: ${err.code}]`
+    return mensagem
+  }
 
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: any, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -374,13 +379,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       if (tipoSaida === 'venda') {
         if (vendaAnexar) {
           idSaida = vendaAnexar.id
-          const totalFinal = (vendaAnexar.total || 0) + totalVendaFinal
-          await supabase.from('vendas').update({ total: totalFinal, acrescimo: pagVenda.acrescimo, desconto: pagVenda.desconto, data_vencimento: prepararDataParaInsert(pagVenda.vencimento), quantidade_itens: (vendaAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idSaida)
+          const totalFinal = (vendaAnexar.total || 0) + totalVenda
+          await supabase.from('vendas').update({ total: totalFinal, quantidade_itens: (vendaAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
         } else {
-          const { data: v } = await supabase.from('vendas').insert({ cliente, data_venda: prepararDataParaInsert(data), total: totalVendaFinal, acrescimo: pagVenda.acrescimo, desconto: pagVenda.desconto, data_vencimento: prepararDataParaInsert(pagVenda.vencimento), status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida, observacao: obsSaida, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, quantidade_itens: itensValidos.length }).select().single()
-          idSaida = v.id; await criarFinanceiro(totalVendaFinal, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
+          const { data: v } = await supabase.from('vendas').insert({ cliente, data_venda: prepararDataParaInsert(data), total: totalVenda, status_pagamento: pagVenda.status, user_id: user.id, numero_transacao: numSaida, observacao: obsSaida, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, quantidade_itens: itensValidos.length }).select().single()
+          idSaida = v.id; await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
         }
       } else {
         if (idSaidaAnexar) {
@@ -388,13 +393,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           const table = idSaidaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
           const colTotal = idSaidaAnexarIsNovo ? 'total_geral' : 'total'
           const { data: pOld } = await supabase.from(table).select(colTotal).eq('id', idSaida).single()
-          const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalVendaFinal
-          await supabase.from(table).update({ [colTotal]: totalFinal, [idSaidaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal, acrescimo: pagVenda.acrescimo, desconto: pagVenda.desconto, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, data_vencimento: prepararDataParaInsert(pagVenda.vencimento) }).eq('id', idSaida)
+          const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalVenda
+          await supabase.from(table).update({ [colTotal]: totalFinal, [idSaidaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, data_vencimento: prepararDataParaInsert(pagVenda.vencimento) }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq(idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idSaida)
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { [idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idSaida }, true)
         } else {
-          const { data: p } = await supabase.from('pedidos_loja').insert({ entidade: cliente, data_pedido: prepararDataParaInsert(data), tipo: 'venda', status: 'pendente', numero_transacao: numSaida, total_geral: totalVendaFinal, total_financeiro: totalVendaFinal, acrescimo: pagVenda.acrescimo, desconto: pagVenda.desconto, observacao: obsSaida, user_id: user.id, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, data_vencimento: prepararDataParaInsert(pagVenda.vencimento) }).select().single()
-          idSaida = p.id; await criarFinanceiro(totalVendaFinal, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_pedido: idSaida }, true)
+          const { data: p } = await supabase.from('pedidos_loja').insert({ entidade: cliente, data_pedido: prepararDataParaInsert(data), tipo: 'venda', status: 'pendente', numero_transacao: numSaida, total_geral: totalVenda, total_financeiro: totalVenda, observacao: obsSaida, user_id: user.id, quantidade_parcelas: pagVenda.parcelas, prazoparcelas: pagVenda.prazo, data_vencimento: prepararDataParaInsert(pagVenda.vencimento) }).select().single()
+          idSaida = p.id; await criarFinanceiro(totalVenda, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_pedido: idSaida }, true)
         }
       }
 
@@ -402,13 +407,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       if (tipoEntrada === 'compra') {
         if (compraAnexar) {
           idEntrada = compraAnexar.id
-          const totalFinal = (compraAnexar.total || 0) + totalCompraFinal
-          await supabase.from('compras').update({ total: totalFinal, acrescimo: pagCompra.acrescimo, desconto: pagCompra.desconto, data_vencimento: prepararDataParaInsert(pagCompra.vencimento), quantidade_itens: (compraAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idEntrada)
+          const totalFinal = (compraAnexar.total || 0) + totalCompra
+          await supabase.from('compras').update({ total: totalFinal, quantidade_itens: (compraAnexar.quantidade_itens || 0) + itensValidos.length }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
         } else {
-          const { data: c } = await supabase.from('compras').insert({ fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompraFinal, acrescimo: pagCompra.acrescimo, desconto: pagCompra.desconto, data_vencimento: prepararDataParaInsert(pagCompra.vencimento), status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada, observacao: obsEntrada, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, quantidade_itens: itensValidos.length }).select().single()
-          idEntrada = c.id; await criarFinanceiro(totalCompraFinal, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
+          const { data: c } = await supabase.from('compras').insert({ fornecedor, data_compra: prepararDataParaInsert(data), total: totalCompra, status_pagamento: pagCompra.status, user_id: user.id, numero_transacao: numEntrada, observacao: obsEntrada, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, quantidade_itens: itensValidos.length }).select().single()
+          idEntrada = c.id; await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
         }
       } else {
         if (idEntradaAnexar) {
@@ -416,13 +421,13 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           const table = idEntradaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
           const colTotal = idEntradaAnexarIsNovo ? 'total_geral' : 'total'
           const { data: pOld } = await supabase.from(table).select(colTotal).eq('id', idEntrada).single()
-          const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalCompraFinal
-          await supabase.from(table).update({ [colTotal]: totalFinal, [idEntradaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal, acrescimo: pagCompra.acrescimo, desconto: pagCompra.desconto, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, data_vencimento: prepararDataParaInsert(pagCompra.vencimento) }).eq('id', idEntrada)
+          const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalCompra
+          await supabase.from(table).update({ [colTotal]: totalFinal, [idEntradaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, data_vencimento: prepararDataParaInsert(pagCompra.vencimento) }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq(idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idEntrada)
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { [idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idEntrada }, true)
         } else {
-          const { data: p } = await supabase.from('pedidos_loja').insert({ entidade: fornecedor, data_pedido: prepararDataParaInsert(data), tipo: 'compra', status: 'pendente', numero_transacao: numEntrada, total_geral: totalCompraFinal, total_financeiro: totalCompraFinal, acrescimo: pagCompra.acrescimo, desconto: pagCompra.desconto, observacao: obsEntrada, user_id: user.id, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, data_vencimento: prepararDataParaInsert(pagCompra.vencimento) }).select().single()
-          idEntrada = p.id; await criarFinanceiro(totalCompraFinal, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_pedido: idEntrada }, true)
+          const { data: p } = await supabase.from('pedidos_loja').insert({ entidade: fornecedor, data_pedido: prepararDataParaInsert(data), tipo: 'compra', status: 'pendente', numero_transacao: numEntrada, total_geral: totalCompra, total_financeiro: totalCompra, observacao: obsEntrada, user_id: user.id, quantidade_parcelas: pagCompra.parcelas, prazoparcelas: pagCompra.prazo, data_vencimento: prepararDataParaInsert(pagCompra.vencimento) }).select().single()
+          idEntrada = p.id; await criarFinanceiro(totalCompra, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_pedido: idEntrada }, true)
         }
       }
 
@@ -574,77 +579,29 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           <div className={`grid grid-cols-1 md:grid-cols-2 gap-4 ${(vendaAnexar || (idSaidaAnexar && idEntradaAnexar)) ? 'hidden' : ''}`}>
             <div className={`bg-pink-50/10 p-3 rounded-lg border border-pink-100 space-y-3 ${idSaidaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
               <h4 className="text-[11px] font-bold text-pink-700 uppercase border-b border-pink-100 pb-1.5">Pagamento Venda</h4>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase tracking-tighter">Status</label><select value={pagVenda.status} onChange={e => setPagVenda({...pagVenda, status: e.target.value})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-pink-500 outline-none"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase tracking-tighter">Parc.</label><input type="number" value={pagVenda.parcelas} onChange={e => setPagVenda({...pagVenda, parcelas: Math.max(1, Number(e.target.value))})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-pink-500 outline-none" /></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase tracking-tighter">Venc.</label><input type="date" value={pagVenda.vencimento} onChange={e => setPagVenda({...pagVenda, vencimento: e.target.value})} className="border rounded px-1 py-1 text-[10px] bg-white h-[28px] focus:ring-1 focus:ring-pink-500 outline-none" /></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-pink-600 uppercase tracking-tighter">Prazo</label><select value={pagVenda.prazo} onChange={e => setPagVenda({...pagVenda, prazo: e.target.value})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-pink-500 outline-none"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária</option></select></div>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="flex flex-col"><label className="text-[9px] font-bold text-pink-600 uppercase">Acréscimo (+)</label><input type="number" step="0.01" value={pagVenda.acrescimo} onChange={e => setPagVenda({...pagVenda, acrescimo: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
-                <div className="flex flex-col"><label className="text-[9px] font-bold text-pink-600 uppercase">Desconto (-)</label><input type="number" step="0.01" value={pagVenda.desconto} onChange={e => setPagVenda({...pagVenda, desconto: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
-              </div>
-              {/* Preview Venda */}
-              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
-                 {Array.from({ length: pagVenda.parcelas }).map((_, i) => {
-                    let dtP = pagVenda.vencimento || getDataAtualBrasil()
-                    if (i > 0) {
-                      const dt = new Date(dtP + 'T12:00:00')
-                      if (pagVenda.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                      else if (pagVenda.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                      else if (pagVenda.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                      dtP = dt.toISOString().split('T')[0]
-                    }
-                    return (
-                      <div key={i} className="min-w-[75px] bg-white border border-slate-200 rounded-md p-1.5 flex flex-col items-center justify-center shadow-sm">
-                         <span className="text-[8px] font-bold text-pink-600 uppercase leading-none">{i+1}ª Parc.</span>
-                         <span className="text-[10px] font-black text-slate-800 my-0.5">R$ {(totalVendaFinal / pagVenda.parcelas).toFixed(2)}</span>
-                         <span className="text-[8px] text-slate-500 font-medium">{dtP.split('-').reverse().join('/')}</span>
-                      </div>
-                    )
-                 })}
-              </div>
             </div>
             <div className={`bg-blue-50/10 p-3 rounded-lg border border-blue-100 space-y-3 ${idEntradaAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
               <h4 className="text-[11px] font-bold text-blue-700 uppercase border-b border-blue-100 pb-1.5">Pagamento Compra</h4>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase tracking-tighter">Status</label><select value={pagCompra.status} onChange={e => setPagCompra({...pagCompra, status: e.target.value})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none"><option value="pendente">Pendente</option><option value="pago">Pago</option></select></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase tracking-tighter">Parc.</label><input type="number" value={pagCompra.parcelas} onChange={e => setPagCompra({...pagCompra, parcelas: Math.max(1, Number(e.target.value))})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none" /></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase tracking-tighter">Venc.</label><input type="date" value={pagCompra.vencimento} onChange={e => setPagCompra({...pagCompra, vencimento: e.target.value})} className="border rounded px-1 py-1 text-[10px] bg-white h-[28px] focus:ring-1 focus:ring-blue-500 outline-none" /></div>
                 <div className="flex flex-col"><label className="text-[10px] font-semibold text-blue-600 uppercase tracking-tighter">Prazo</label><select value={pagCompra.prazo} onChange={e => setPagCompra({...pagCompra, prazo: e.target.value})} className="border rounded px-2 py-1 text-xs bg-white focus:ring-1 focus:ring-blue-500 outline-none"><option value="mensal">Mensal</option><option value="semanal">Semanal</option><option value="diaria">Diária</option></select></div>
               </div>
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <div className="flex flex-col"><label className="text-[9px] font-bold text-blue-600 uppercase">Acréscimo (+)</label><input type="number" step="0.01" value={pagCompra.acrescimo} onChange={e => setPagCompra({...pagCompra, acrescimo: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
-                <div className="flex flex-col"><label className="text-[9px] font-bold text-blue-600 uppercase">Desconto (-)</label><input type="number" step="0.01" value={pagCompra.desconto} onChange={e => setPagCompra({...pagCompra, desconto: parseFloat(e.target.value) || 0})} className="border rounded px-2 py-1 text-xs bg-white" /></div>
-              </div>
-              {/* Preview Compra */}
-              <div className="mt-2 flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide">
-                 {Array.from({ length: pagCompra.parcelas }).map((_, i) => {
-                    let dtP = pagCompra.vencimento || getDataAtualBrasil()
-                    if (i > 0) {
-                      const dt = new Date(dtP + 'T12:00:00')
-                      if (pagCompra.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                      else if (pagCompra.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                      else if (pagCompra.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                      dtP = dt.toISOString().split('T')[0]
-                    }
-                    return (
-                      <div key={i} className="min-w-[75px] bg-white border border-slate-200 rounded-md p-1.5 flex flex-col items-center justify-center shadow-sm">
-                         <span className="text-[8px] font-bold text-blue-600 uppercase leading-none">{i+1}ª Parc.</span>
-                         <span className="text-[10px] font-black text-slate-800 my-0.5">R$ {(totalCompraFinal / pagCompra.parcelas).toFixed(2)}</span>
-                         <span className="text-[8px] text-slate-500 font-medium">{dtP.split('-').reverse().join('/')}</span>
-                      </div>
-                    )
-                 })}
-              </div>
             </div>
           </div>
 
           <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t border-pink-500 relative">
-            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.0</div>
+            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v4.9</div>
             <div className="flex gap-8 items-center">
-              <div className="flex flex-col"><p className="text-[8px] uppercase font-bold text-pink-400">Venda { (totalSaidaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalSaidaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalSaidaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalSaidaAnterior + totalVendaFinal).toFixed(2)}</p></div></div>
-              <div className="flex flex-col border-l border-white/10 pl-8"><p className="text-[8px] uppercase font-bold text-blue-400">Compra { (totalEntradaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalEntradaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalEntradaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalEntradaAnterior + totalCompraFinal).toFixed(2)}</p></div></div>
+              <div className="flex flex-col"><p className="text-[8px] uppercase font-bold text-pink-400">Venda { (totalSaidaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalSaidaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalSaidaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalSaidaAnterior + totalVenda).toFixed(2)}</p></div></div>
+              <div className="flex flex-col border-l border-white/10 pl-8"><p className="text-[8px] uppercase font-bold text-blue-400">Compra { (totalEntradaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalEntradaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalEntradaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalEntradaAnterior + totalCompra).toFixed(2)}</p></div></div>
             </div>
             <div className="flex gap-4">
               <button onClick={handleCancelar} className="bg-slate-700 hover:bg-red-700 text-white px-8 py-2.5 rounded-lg font-bold transition-all uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600">Cancelar</button>
