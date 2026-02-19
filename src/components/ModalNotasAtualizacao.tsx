@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.3'
+  const VERSAO_ATUAL = '5.4'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -102,21 +102,29 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 6. Quitação Parcial Inteligente */}
+            {/* 6. Gestão Avançada de Banco de Dados */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-pink-300 transition-all group">
               <div className="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 mb-3 group-hover:scale-110 transition-transform">
                 <RefreshCw size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Quitação Parcial Loja</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Visão Unificada (Supabase)</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                O sistema agora gerencia automaticamente a numeração das parcelas em pagamentos parciais, mantendo o histórico organizado (Ex: 1/2, 2/2).
+                Adicionadas Views de Banco de Dados para facilitar a visualização de Transações e seus respectivos itens em uma única tela diretamente no Supabase.
               </p>
             </div>
 
           </div>
 
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
-            <p className="text-blue-800 text-sm italic">
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl">
+            <h4 className="text-xs font-bold text-blue-700 uppercase mb-1">💡 Dica Técnica para Administradores:</h4>
+            <p className="text-blue-800 text-[10px] leading-tight">
+              Para visualizar transações com itens no Supabase Dashboard, use as novas <b>Views</b> (view_vendas_detalhadas, etc.).
+              Alterações diretas no banco são possíveis nas tabelas originais, mas lembre-se de manter a consistência entre os totais da transação principal e a soma dos seus itens.
+            </p>
+          </div>
+
+          <div className="bg-slate-100 border border-slate-200 p-4 rounded-xl text-center">
+            <p className="text-slate-600 text-xs italic">
               "Continuamos trabalhando para tornar o Lucius a ferramenta definitiva para o seu negócio."
             </p>
           </div>
