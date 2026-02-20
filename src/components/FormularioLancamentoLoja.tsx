@@ -30,6 +30,8 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   const [valor, setValor] = useState(0)
   const [acrescimoDesconto, setAcrescimoDesconto] = useState(0)
   const [data, setData] = useState(getDataAtualBrasil())
+  const [quantidadeParcelas, setQuantidadeParcelas] = useState(1)
+  const [prazoParcelas, setPrazoParcelas] = useState('mensal')
   const [tipo, setTipo] = useState('saida')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
   const [observacao, setObservacao] = useState('')
@@ -121,18 +123,23 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
     setLoading(true)
 
     try {
-      const dadosBase = {
-        descricao: clienteFornecedor.trim(),
-        total: valorFinal,
-        tipo: tipo,
-        data: prepararDataParaInsert(data),
-        status_pagamento: statusPagamento,
-        data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
-        valor_pago: statusPagamento === 'pago' ? valorFinal : null,
-        observacao: observacao.trim() || null,
-      }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado.')
+
+      const valorBase = Math.floor((valorFinal / quantidadeParcelas) * 100) / 100
+      const valorUltima = Number((valorFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
       if (isEditMode && lancamentoInicial) {
+        const dadosBase = {
+          descricao: clienteFornecedor.trim(),
+          total: valorFinal,
+          tipo: tipo,
+          data: prepararDataParaInsert(data),
+          status_pagamento: statusPagamento,
+          data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
+          valor_pago: statusPagamento === 'pago' ? valorFinal : null,
+          observacao: observacao.trim() || null,
+        }
         // Lógica de Atualização
         const { error } = await supabase
           .from('transacoes_loja')
@@ -140,23 +147,37 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
           .eq('id', lancamentoInicial.id)
         if (error) throw error
       } else {
-        // Lógica de Inserção
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) throw new Error('Usuário não autenticado.')
-
-        // Obter próximo número de transação via RPC para evitar erro de tipo/limite
+        // Obter próximo número de transação via RPC
         const { data: numeroTransacao, error: errorNumero } = await supabase.rpc('obter_proximo_numero_transacao')
         if (errorNumero) throw errorNumero
 
-        const dadosInsert = {
-          ...dadosBase,
-          user_id: user.id,
-          numero_transacao: numeroTransacao,
-          quantidade_parcelas: 1,
+        const transacoes = []
+        for (let i = 1; i <= quantidadeParcelas; i++) {
+          let dataParcela = data
+          if (i > 1) {
+            const dt = new Date(data + 'T12:00:00')
+            if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + (i - 1))
+            else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
+            else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
+            dataParcela = dt.toISOString().split('T')[0]
+          }
+
+          transacoes.push({
+            user_id: user.id,
+            numero_transacao: numeroTransacao,
+            descricao: `${clienteFornecedor.trim()} (${i}/${quantidadeParcelas})`,
+            total: i === quantidadeParcelas ? valorUltima : valorBase,
+            tipo: tipo,
+            data: prepararDataParaInsert(dataParcela),
+            status_pagamento: statusPagamento === 'pago' && i === 1 ? 'pago' : 'pendente',
+            data_pagamento: statusPagamento === 'pago' && i === 1 ? prepararDataParaInsert(getDataAtualBrasil()) : null,
+            valor_pago: statusPagamento === 'pago' && i === 1 ? (i === quantidadeParcelas ? valorUltima : valorBase) : null,
+            observacao: observacao.trim() || null,
+            quantidade_parcelas: quantidadeParcelas
+          })
         }
-        const { error } = await supabase
-          .from('transacoes_loja')
-          .insert(dadosInsert)
+
+        const { error } = await supabase.from('transacoes_loja').insert(transacoes)
         if (error) throw error
       }
 
@@ -247,34 +268,90 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
           <span className="text-sm font-black text-slate-800">R$ {(valor + acrescimoDesconto).toFixed(2)}</span>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Tipo *
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Tipo *</label>
             <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
                 <option value="saida">Saída / Despesa</option>
                 <option value="entrada">Entrada / Receita</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Status *
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-1">Status *</label>
             <select
                 value={statusPagamento}
                 onChange={(e) => setStatusPagamento(e.target.value)}
-                className="w-full px-2 py-1 text-xs border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
                 <option value="pendente">Pendente</option>
                 <option value="pago">Pago</option>
             </select>
           </div>
+          {!isEditMode && (
+            <>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Parc.</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantidadeParcelas}
+                  onChange={(e) => setQuantidadeParcelas(parseInt(e.target.value) || 1)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Prazo</label>
+                <select
+                  value={prazoParcelas}
+                  onChange={(e) => setPrazoParcelas(e.target.value)}
+                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="diaria">Diária</option>
+                  <option value="semanal">Semanal</option>
+                  <option value="mensal">Mensal</option>
+                </select>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Preview Parcelas Avulso */}
+        {!isEditMode && quantidadeParcelas > 1 && (
+          <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100 shadow-inner overflow-x-auto">
+             <div className="flex gap-2 pb-1">
+                {Array.from({ length: Math.min(quantidadeParcelas, 12) }).map((_, i) => {
+                   const valorFinal = valor + acrescimoDesconto
+                   const vBase = Math.floor((valorFinal / quantidadeParcelas) * 100) / 100
+                   const vUlt = Number((valorFinal - (vBase * (quantidadeParcelas - 1))).toFixed(2))
+
+                   let dtP = data
+                   if (i > 0 && data) {
+                      try {
+                        const dt = new Date(data + 'T12:00:00')
+                        if (!isNaN(dt.getTime())) {
+                          if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                          else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                          else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                          dtP = dt.toISOString().split('T')[0]
+                        }
+                      } catch(e) {}
+                   }
+
+                   return (
+                     <div key={i} className="min-w-[80px] bg-white border border-blue-100 rounded p-1 flex flex-col shadow-sm">
+                        <span className="text-[8px] font-bold text-blue-400 uppercase">{i + 1}ª</span>
+                        <span className="text-[9px] font-semibold text-gray-600">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                        <span className="text-[10px] font-black text-blue-700">R$ {(i === quantidadeParcelas - 1 ? vUlt : vBase).toFixed(2)}</span>
+                     </div>
+                   )
+                })}
+             </div>
+          </div>
+        )}
 
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">

@@ -696,24 +696,30 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
               {/* Preview Parcelas Venda */}
               {pagVenda.parcelas > 1 && (
-                <div className="mt-2 bg-white/40 p-2 rounded-lg border border-pink-100 max-h-24 overflow-y-auto shadow-inner">
+                <div className="mt-2 bg-pink-50/30 p-2 rounded-lg border border-pink-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
-                    {Array.from({ length: Math.min(pagVenda.parcelas, 24) }).map((_, i) => {
+                    {Array.from({ length: Math.min(pagVenda.parcelas, 48) }).map((_, i) => {
                       const valorBase = Math.floor(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
                       const valorUltima = Number(((totalVenda + pagVenda.acrescimoDesconto) - (valorBase * (pagVenda.parcelas - 1))).toFixed(2))
                       let dtP = pagVenda.vencimento
-                      if (i > 0) {
-                        const dt = new Date(pagVenda.vencimento + 'T12:00:00')
-                        if (pagVenda.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                        else if (pagVenda.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                        else if (pagVenda.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                        dtP = dt.toISOString().split('T')[0]
+                      if (i > 0 && pagVenda.vencimento) {
+                        try {
+                          const dt = new Date(pagVenda.vencimento + 'T12:00:00')
+                          if (!isNaN(dt.getTime())) {
+                            if (pagVenda.prazo === 'diaria') dt.setDate(dt.getDate() + i)
+                            else if (pagVenda.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                            else if (pagVenda.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
+                            dtP = dt.toISOString().split('T')[0]
+                          }
+                        } catch (e) {
+                          console.error('Erro data casada (venda):', e)
+                        }
                       }
                       return (
-                        <div key={i} className="flex justify-between items-center bg-white/80 px-2 py-0.5 rounded border border-pink-50 shadow-sm">
-                          <span className="text-[8px] font-bold text-slate-400 uppercase">{i + 1}ª</span>
-                          <span className="text-[9px] font-semibold text-slate-600">{dtP.split('-').reverse().slice(0, 2).join('/')}</span>
-                          <span className="text-[10px] font-black text-pink-600">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/90 px-2 py-1 rounded border border-pink-50 shadow-sm">
+                          <span className="text-[8px] font-black text-pink-300 uppercase italic leading-none">{i + 1}ª</span>
+                          <span className="text-[9px] font-semibold text-slate-500 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          <span className="text-[10px] font-black text-pink-700 leading-none">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}
@@ -739,24 +745,30 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
               {/* Preview Parcelas Compra */}
               {pagCompra.parcelas > 1 && (
-                <div className="mt-2 bg-white/40 p-2 rounded-lg border border-blue-100 max-h-24 overflow-y-auto shadow-inner">
+                <div className="mt-2 bg-blue-50/30 p-2 rounded-lg border border-blue-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
-                    {Array.from({ length: Math.min(pagCompra.parcelas, 24) }).map((_, i) => {
+                    {Array.from({ length: Math.min(pagCompra.parcelas, 48) }).map((_, i) => {
                       const valorBase = Math.floor(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
                       const valorUltima = Number(((totalCompra + pagCompra.acrescimoDesconto) - (valorBase * (pagCompra.parcelas - 1))).toFixed(2))
                       let dtP = pagCompra.vencimento
-                      if (i > 0) {
-                        const dt = new Date(pagCompra.vencimento + 'T12:00:00')
-                        if (pagCompra.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                        else if (pagCompra.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                        else if (pagCompra.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                        dtP = dt.toISOString().split('T')[0]
+                      if (i > 0 && pagCompra.vencimento) {
+                        try {
+                          const dt = new Date(pagCompra.vencimento + 'T12:00:00')
+                          if (!isNaN(dt.getTime())) {
+                            if (pagCompra.prazo === 'diaria') dt.setDate(dt.getDate() + i)
+                            else if (pagCompra.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                            else if (pagCompra.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
+                            dtP = dt.toISOString().split('T')[0]
+                          }
+                        } catch (e) {
+                          console.error('Erro data casada (compra):', e)
+                        }
                       }
                       return (
-                        <div key={i} className="flex justify-between items-center bg-white/80 px-2 py-0.5 rounded border border-blue-50 shadow-sm">
-                          <span className="text-[8px] font-bold text-slate-400 uppercase">{i + 1}ª</span>
-                          <span className="text-[9px] font-semibold text-slate-600">{dtP.split('-').reverse().slice(0, 2).join('/')}</span>
-                          <span className="text-[10px] font-black text-blue-600">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/90 px-2 py-1 rounded border border-blue-50 shadow-sm">
+                          <span className="text-[8px] font-black text-blue-300 uppercase italic leading-none">{i + 1}ª</span>
+                          <span className="text-[9px] font-semibold text-slate-500 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          <span className="text-[10px] font-black text-blue-700 leading-none">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}

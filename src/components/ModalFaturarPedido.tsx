@@ -416,27 +416,38 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
                 {/* Preview Parcelas Faturamento */}
                 {quantidadeParcelas > 1 && (
-                  <div className="mt-4 bg-purple-50/50 p-3 rounded-lg border border-purple-100 shadow-inner">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {Array.from({ length: Math.min(quantidadeParcelas, 48) }).map((_, i) => {
+                  <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-purple-100 shadow-inner overflow-hidden">
+                    <div className="flex items-center justify-between mb-2 px-1">
+                       <p className="text-[9px] font-bold text-purple-900 uppercase tracking-widest">Cronograma de Faturamento</p>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
+                      {Array.from({ length: Math.min(quantidadeParcelas, 60) }).map((_, i) => {
                         const totalFaturadoFinal = (itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)) + acrescimoDesconto
                         const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
                         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
                         let dataP = dataVencimento
-                        if (i > 0) {
-                          const dt = new Date(dataVencimento + 'T12:00:00')
-                          if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                          else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                          else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                          dataP = dt.toISOString().split('T')[0]
+                        if (i > 0 && dataVencimento) {
+                          try {
+                            const dt = new Date(dataVencimento + 'T12:00:00')
+                            if (!isNaN(dt.getTime())) {
+                              if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                              else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                              else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                              dataP = dt.toISOString().split('T')[0]
+                            }
+                          } catch (e) {
+                            console.error('Erro data faturamento:', e)
+                          }
                         }
 
                         return (
-                          <div key={i} className="bg-white border border-purple-100 rounded p-1.5 flex flex-col shadow-sm">
-                            <span className="text-[8px] font-bold text-purple-400 uppercase tracking-tighter leading-none mb-1">Parcela {i + 1}</span>
-                            <div className="flex justify-between items-baseline gap-1">
-                              <span className="text-[9px] font-semibold text-gray-700">{dataP.split('-').reverse().slice(0, 2).join('/')}</span>
+                          <div key={i} className="bg-white border border-slate-200 rounded-lg p-2 flex flex-col shadow-sm group hover:border-purple-400 transition-all">
+                            <div className="flex justify-between items-center mb-1">
+                               <span className="text-[8px] font-black text-slate-400 group-hover:text-purple-600 uppercase tracking-tighter italic">{i + 1}ª Parc</span>
+                               <span className="text-[9px] font-semibold text-slate-500">{dataP ? dataP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                            </div>
+                            <div className="text-right">
                               <span className="text-[10px] font-black text-purple-700">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                             </div>
                           </div>

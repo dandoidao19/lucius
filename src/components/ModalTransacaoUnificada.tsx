@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
 import SeletorProduto from './SeletorProduto'
@@ -1639,32 +1640,43 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
                  {/* Preview Parcelas */}
                  {quantidadeParcelas > 1 && (
-                    <div className="mt-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100 shadow-inner">
-                      <p className="text-[10px] font-semibold text-purple-800 uppercase mb-2 tracking-widest flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
-                        Cronograma de Recebimento / Pagamento
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        {Array.from({ length: Math.min(quantidadeParcelas, 48) }).map((_, i) => {
+                    <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-purple-100 shadow-inner overflow-hidden">
+                      <div className="flex items-center justify-between mb-3 px-1">
+                        <p className="text-[10px] font-bold text-purple-900 uppercase tracking-widest flex items-center gap-2">
+                          <RefreshCw size={12} className="text-purple-500 animate-spin-slow" />
+                          Projeção Financeira ({quantidadeParcelas}x)
+                        </p>
+                        <span className="text-[9px] font-black bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase">Visualização Prévia</span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                        {Array.from({ length: Math.min(quantidadeParcelas, 72) }).map((_, i) => {
                           const totalFinal = calcularTotal()
                           const valorBase = Math.floor((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
                           let dataParcela = dataVencimento
-                          if (i > 0) {
-                            const dt = new Date(dataVencimento + 'T12:00:00')
-                            if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                            else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                            else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                            dataParcela = dt.toISOString().split('T')[0]
+                          if (i > 0 && dataVencimento) {
+                            try {
+                              const dt = new Date(dataVencimento + 'T12:00:00')
+                              if (!isNaN(dt.getTime())) {
+                                if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                                else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                                else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                                dataParcela = dt.toISOString().split('T')[0]
+                              }
+                            } catch (e) {
+                              console.error('Erro ao calcular data da parcela:', e)
+                            }
                           }
 
                           return (
-                            <div key={i} className="bg-white border border-purple-100 rounded p-1.5 flex flex-col shadow-sm transition-all hover:border-purple-300">
-                              <span className="text-[9px] font-bold text-purple-400 uppercase tracking-tighter leading-none mb-1">Parcela {i + 1}</span>
-                              <div className="flex justify-between items-baseline gap-1">
-                                <span className="text-[10px] font-semibold text-gray-700">{dataParcela.split('-').reverse().slice(0, 2).join('/')}</span>
-                                <span className="text-[11px] font-black text-purple-700">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2 flex flex-col shadow-sm transition-all hover:border-purple-400 group">
+                              <div className="flex justify-between items-center border-b border-slate-100 pb-1 mb-1">
+                                <span className="text-[9px] font-black text-slate-400 group-hover:text-purple-600 transition-colors">{i + 1}ª</span>
+                                <span className="text-[9px] font-bold text-slate-500">{dataParcela ? dataParcela.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[11px] font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                               </div>
                             </div>
                           )

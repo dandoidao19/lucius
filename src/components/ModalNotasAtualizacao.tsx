@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.1'
+  const VERSAO_ATUAL = '5.2'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -31,9 +31,9 @@ export default function ModalNotasAtualizacao() {
           </div>
           <div className="relative z-10">
             <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-2">
-              <Rocket className="text-yellow-300" /> Novidades do Sistema
+              <Rocket className="text-yellow-300" /> Estabilidade & Refinamento
             </h2>
-            <p className="text-blue-100 text-sm font-medium">LUCIUS v{VERSAO_ATUAL} — A evolução da sua gestão</p>
+            <p className="text-blue-100 text-sm font-medium">LUCIUS v{VERSAO_ATUAL} — Gestão sem falhas</p>
           </div>
           <button
             onClick={fechar}
@@ -47,25 +47,25 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Financeiro v5.1 */}
+            {/* 1. Financeiro v5.2 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
                 <CreditCard size={24} />
               </div>
               <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Acréscimos & Descontos</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Novo campo unificado para ajustes financeiros! Aplique descontos ou juros diretamente no total da transação sem afetar os preços unitários.
+                Ajustes financeiros agora disponíveis em todos os formulários, incluindo lançamentos avulsos e faturamento de pedidos.
               </p>
             </div>
 
-            {/* 2. Parcelamento v5.1 */}
+            {/* 2. Parcelamento v5.2 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
                 <RefreshCw size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Preview em Tempo Real</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Nova Projeção Financeira</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Visualize exatamente como ficarão as parcelas (datas e valores) antes mesmo de salvar o lançamento. Transparência total.
+                Visualização de parcelas totalmente remodelada! Interface em cards mais limpa, organizada e com proteção contra erros de data.
               </p>
             </div>
 
