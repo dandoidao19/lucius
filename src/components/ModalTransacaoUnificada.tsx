@@ -1639,10 +1639,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
                  {/* Preview Parcelas */}
                  {quantidadeParcelas > 1 && (
-                    <div className="mt-2 bg-gray-50 p-2 rounded border border-gray-200 max-h-32 overflow-y-auto">
-                      <p className="text-[10px] font-bold text-purple-700 uppercase mb-1">Preview do Parcelamento:</p>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
-                        {Array.from({ length: quantidadeParcelas }).map((_, i) => {
+                    <div className="mt-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100 shadow-inner">
+                      <p className="text-[10px] font-semibold text-purple-800 uppercase mb-2 tracking-widest flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 bg-purple-500 rounded-full"></span>
+                        Cronograma de Recebimento / Pagamento
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {Array.from({ length: Math.min(quantidadeParcelas, 48) }).map((_, i) => {
                           const totalFinal = calcularTotal()
                           const valorBase = Math.floor((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
@@ -1657,9 +1660,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                           }
 
                           return (
-                            <div key={i} className="flex justify-between text-[10px] border-b border-gray-100 pb-0.5">
-                              <span className="text-gray-500">{i + 1}ª - {dataParcela.split('-').reverse().slice(0, 2).join('/')}</span>
-                              <span className="font-bold text-purple-600">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                            <div key={i} className="bg-white border border-purple-100 rounded p-1.5 flex flex-col shadow-sm transition-all hover:border-purple-300">
+                              <span className="text-[9px] font-bold text-purple-400 uppercase tracking-tighter leading-none mb-1">Parcela {i + 1}</span>
+                              <div className="flex justify-between items-baseline gap-1">
+                                <span className="text-[10px] font-semibold text-gray-700">{dataParcela.split('-').reverse().slice(0, 2).join('/')}</span>
+                                <span className="text-[11px] font-black text-purple-700">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                              </div>
                             </div>
                           )
                         })}

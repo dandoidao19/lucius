@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '4.9'
+  const VERSAO_ATUAL = '5.1'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,25 +47,25 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Pedidos */}
+            {/* 1. Financeiro v5.1 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
-                <Package size={24} />
+                <CreditCard size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Pedidos & Faturamento</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Acréscimos & Descontos</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Módulo independente de pedidos com faturamento item a item. Controle reservas sem impactar o estoque até a quitação real.
+                Novo campo unificado para ajustes financeiros! Aplique descontos ou juros diretamente no total da transação sem afetar os preços unitários.
               </p>
             </div>
 
-            {/* 2. Financeiro */}
+            {/* 2. Parcelamento v5.1 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
-                <CreditCard size={24} />
+                <RefreshCw size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Precisão Financeira</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Preview em Tempo Real</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Fim das dízimas em parcelamentos! Ajuste automático de centavos na última parcela e registro fiel de datas em pagamentos parciais.
+                Visualize exatamente como ficarão as parcelas (datas e valores) antes mesmo de salvar o lançamento. Transparência total.
               </p>
             </div>
 
@@ -91,14 +91,14 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 5. Segurança */}
+            {/* 5. Manutenção */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-red-300 transition-all group">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 mb-3 group-hover:scale-110 transition-transform">
-                <ShieldCheck size={24} />
+                <BarChart3 size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Integridade Total</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Correção de Estoque</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Exclusão robusta com reversão garantida de estoque e financeiro. Numeração sequencial sólida para evitar duplicidades.
+                Nova ferramenta de Manutenção! Recalcule todos os saldos de estoque baseando-se no histórico real de transações para eliminar discrepâncias.
               </p>
             </div>
 

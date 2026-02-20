@@ -696,10 +696,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
               {/* Preview Parcelas Venda */}
               {pagVenda.parcelas > 1 && (
-                <div className="mt-2 bg-white/50 p-2 rounded border border-pink-100 max-h-24 overflow-y-auto">
-                  <p className="text-[9px] font-bold text-pink-700 uppercase mb-1">Preview do Parcelamento:</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {Array.from({ length: pagVenda.parcelas }).map((_, i) => {
+                <div className="mt-2 bg-white/40 p-2 rounded-lg border border-pink-100 max-h-24 overflow-y-auto shadow-inner">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Array.from({ length: Math.min(pagVenda.parcelas, 24) }).map((_, i) => {
                       const valorBase = Math.floor(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
                       const valorUltima = Number(((totalVenda + pagVenda.acrescimoDesconto) - (valorBase * (pagVenda.parcelas - 1))).toFixed(2))
                       let dtP = pagVenda.vencimento
@@ -711,9 +710,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                         dtP = dt.toISOString().split('T')[0]
                       }
                       return (
-                        <div key={i} className="flex justify-between text-[9px] border-b border-pink-50 pb-0.5">
-                          <span className="text-slate-500">{i + 1}ª - {dtP.split('-').reverse().slice(0, 2).join('/')}</span>
-                          <span className="font-bold text-pink-600">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/80 px-2 py-0.5 rounded border border-pink-50 shadow-sm">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase">{i + 1}ª</span>
+                          <span className="text-[9px] font-semibold text-slate-600">{dtP.split('-').reverse().slice(0, 2).join('/')}</span>
+                          <span className="text-[10px] font-black text-pink-600">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}
@@ -739,10 +739,9 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
               {/* Preview Parcelas Compra */}
               {pagCompra.parcelas > 1 && (
-                <div className="mt-2 bg-white/50 p-2 rounded border border-blue-100 max-h-24 overflow-y-auto">
-                  <p className="text-[9px] font-bold text-blue-700 uppercase mb-1">Preview do Parcelamento:</p>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                    {Array.from({ length: pagCompra.parcelas }).map((_, i) => {
+                <div className="mt-2 bg-white/40 p-2 rounded-lg border border-blue-100 max-h-24 overflow-y-auto shadow-inner">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {Array.from({ length: Math.min(pagCompra.parcelas, 24) }).map((_, i) => {
                       const valorBase = Math.floor(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
                       const valorUltima = Number(((totalCompra + pagCompra.acrescimoDesconto) - (valorBase * (pagCompra.parcelas - 1))).toFixed(2))
                       let dtP = pagCompra.vencimento
@@ -754,9 +753,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                         dtP = dt.toISOString().split('T')[0]
                       }
                       return (
-                        <div key={i} className="flex justify-between text-[9px] border-b border-blue-50 pb-0.5">
-                          <span className="text-slate-500">{i + 1}ª - {dtP.split('-').reverse().slice(0, 2).join('/')}</span>
-                          <span className="font-bold text-blue-600">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/80 px-2 py-0.5 rounded border border-blue-50 shadow-sm">
+                          <span className="text-[8px] font-bold text-slate-400 uppercase">{i + 1}ª</span>
+                          <span className="text-[9px] font-semibold text-slate-600">{dtP.split('-').reverse().slice(0, 2).join('/')}</span>
+                          <span className="text-[10px] font-black text-blue-600">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}

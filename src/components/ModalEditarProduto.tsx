@@ -36,13 +36,13 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
   useEffect(() => {
     if (produto) {
       setFormData({
-        codigo: produto.codigo,
-        descricao: produto.descricao,
-        quantidade: produto.quantidade.toString(),
-        preco_custo: produto.preco_custo.toString(),
-        valor_repasse: produto.valor_repasse.toString(),
-        preco_venda: produto.preco_venda.toString(),
-        data_ultima_compra: produto.data_ultima_compra,
+        codigo: produto.codigo || '',
+        descricao: produto.descricao || '',
+        quantidade: (produto.quantidade ?? 0).toString(),
+        preco_custo: (produto.preco_custo ?? 0).toString(),
+        valor_repasse: (produto.valor_repasse ?? 0).toString(),
+        preco_venda: (produto.preco_venda ?? 0).toString(),
+        data_ultima_compra: produto.data_ultima_compra || new Date().toISOString().split('T')[0],
       })
     } else {
       setFormData({
@@ -156,7 +156,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
               <input
                 type="text"
                 name="codigo"
-                value={formData.codigo}
+                value={formData.codigo || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Deixe vazio para gerar automático"
@@ -171,7 +171,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
               <input
                 type="number"
                 name="quantidade"
-                value={formData.quantidade}
+                value={formData.quantidade || ''}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
@@ -186,7 +186,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
             </label>
             <textarea
               name="descricao"
-              value={formData.descricao}
+              value={formData.descricao || ''}
               onChange={handleChange}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -204,7 +204,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
               <input
                 type="number"
                 name="preco_custo"
-                value={formData.preco_custo}
+                value={formData.preco_custo || ''}
                 onChange={handleChange}
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -220,7 +220,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
               <input
                 type="number"
                 name="valor_repasse"
-                value={formData.valor_repasse}
+                value={formData.valor_repasse || ''}
                 onChange={handleChange}
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -236,7 +236,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
               <input
                 type="number"
                 name="preco_venda"
-                value={formData.preco_venda}
+                value={formData.preco_venda || ''}
                 onChange={handleChange}
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -254,7 +254,7 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
             <input
               type="date"
               name="data_ultima_compra"
-              value={formData.data_ultima_compra}
+              value={formData.data_ultima_compra || ''}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />

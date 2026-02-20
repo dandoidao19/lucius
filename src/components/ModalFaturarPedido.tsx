@@ -416,10 +416,9 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
                 {/* Preview Parcelas Faturamento */}
                 {quantidadeParcelas > 1 && (
-                  <div className="mt-3 bg-white/50 p-2 rounded border border-purple-100 max-h-24 overflow-y-auto">
-                    <p className="text-[9px] font-bold text-purple-700 uppercase mb-1">Preview Parcelamento:</p>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
-                      {Array.from({ length: quantidadeParcelas }).map((_, i) => {
+                  <div className="mt-4 bg-purple-50/50 p-3 rounded-lg border border-purple-100 shadow-inner">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                      {Array.from({ length: Math.min(quantidadeParcelas, 48) }).map((_, i) => {
                         const totalFaturadoFinal = (itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)) + acrescimoDesconto
                         const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
                         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
@@ -434,9 +433,12 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                         }
 
                         return (
-                          <div key={i} className="flex justify-between text-[9px] border-b border-purple-50 pb-0.5">
-                            <span className="text-gray-500">{i + 1}ª - {dataP.split('-').reverse().slice(0, 2).join('/')}</span>
-                            <span className="font-bold text-purple-600">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                          <div key={i} className="bg-white border border-purple-100 rounded p-1.5 flex flex-col shadow-sm">
+                            <span className="text-[8px] font-bold text-purple-400 uppercase tracking-tighter leading-none mb-1">Parcela {i + 1}</span>
+                            <div className="flex justify-between items-baseline gap-1">
+                              <span className="text-[9px] font-semibold text-gray-700">{dataP.split('-').reverse().slice(0, 2).join('/')}</span>
+                              <span className="text-[10px] font-black text-purple-700">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                            </div>
                           </div>
                         )
                       })}
