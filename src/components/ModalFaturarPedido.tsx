@@ -39,6 +39,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
   const [quantidadeParcelas, setQuantidadeParcelas] = useState(1)
   const [prazoParcelas, setPrazoParcelas] = useState('mensal')
   const [dataVencimento, setDataVencimento] = useState(getDataAtualBrasil())
+  const [acrescimoDesconto, setAcrescimoDesconto] = useState(0)
 
   const carregarDados = useCallback(async () => {
     setLoading(true)
@@ -101,18 +102,25 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
       // 1. Criar Transação de Venda ou Compra se houver itens para efetuar
       if (itensEfetuar.length > 0) {
-        const totalFaturado = itensEfetuar.reduce((acc, i) => acc + (i.quantidade * (pedido.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)
+        const totalFaturadoItens = itensEfetuar.reduce((acc, i) => acc + (i.quantidade * (pedido.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)
+        const totalFaturadoFinal = totalFaturadoItens + acrescimoDesconto
+        const totalQtdItens = itensEfetuar.reduce((acc, i) => acc + i.quantidade, 0)
+        const acrescimo = acrescimoDesconto > 0 ? acrescimoDesconto : 0
+        const desconto = acrescimoDesconto < 0 ? Math.abs(acrescimoDesconto) : 0
 
         let transacaoPrincipalId = ''
         const payloadComum = {
           numero_transacao: numFaturamento,
-          total: totalFaturado,
-          quantidade_itens: itensEfetuar.length,
+          total: totalFaturadoFinal,
+          quantidade_itens: totalQtdItens,
           status_pagamento: 'pendente',
           quantidade_parcelas: quantidadeParcelas,
           prazoparcelas: prazoParcelas,
           observacao: `Faturado do Pedido #${numTransacaoBase}`,
-          pedido_origem_id: pedido.id
+          pedido_origem_id: pedido.id,
+          acrescimo,
+          desconto,
+          data_vencimento: prepararDataParaInsert(dataVencimento)
         }
 
         if (pedido.tipo === 'venda') {
@@ -168,8 +176,8 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         }
 
         // Financeiro da nova Transação
-        const valorBase = Math.floor((totalFaturado / quantidadeParcelas) * 100) / 100
-        const valorUltima = Number((totalFaturado - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
+        const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
+        const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
         for (let i = 1; i <= quantidadeParcelas; i++) {
             let dataParc = dataVencimento || getDataAtualBrasil()
@@ -361,7 +369,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                 <h3 className="font-bold text-purple-700 text-xs mb-3 uppercase tracking-tight flex items-center gap-2">
                   💳 Condições de Pagamento do Faturamento
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-[10px] font-bold text-gray-600 uppercase mb-1">Data Vencimento (1ª Parc)</label>
                     <input
@@ -393,7 +401,48 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                       <option value="mensal">Mensal</option>
                     </select>
                   </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-purple-600 uppercase mb-1">Acrésc./Desc. Faturamento</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={acrescimoDesconto}
+                      onChange={(e) => setAcrescimoDesconto(Number(e.target.value))}
+                      className="w-full px-2 py-1.5 text-xs border border-purple-200 rounded focus:ring-2 focus:ring-purple-500 outline-none bg-white font-bold"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
+
+                {/* Preview Parcelas Faturamento */}
+                {quantidadeParcelas > 1 && (
+                  <div className="mt-3 bg-white/50 p-2 rounded border border-purple-100 max-h-24 overflow-y-auto">
+                    <p className="text-[9px] font-bold text-purple-700 uppercase mb-1">Preview Parcelamento:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-1">
+                      {Array.from({ length: quantidadeParcelas }).map((_, i) => {
+                        const totalFaturadoFinal = (itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)) + acrescimoDesconto
+                        const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
+                        const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
+
+                        let dataP = dataVencimento
+                        if (i > 0) {
+                          const dt = new Date(dataVencimento + 'T12:00:00')
+                          if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                          else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                          else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                          dataP = dt.toISOString().split('T')[0]
+                        }
+
+                        return (
+                          <div key={i} className="flex justify-between text-[9px] border-b border-purple-50 pb-0.5">
+                            <span className="text-gray-500">{i + 1}ª - {dataP.split('-').reverse().slice(0, 2).join('/')}</span>
+                            <span className="font-bold text-purple-600">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}

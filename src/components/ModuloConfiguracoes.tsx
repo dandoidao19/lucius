@@ -9,6 +9,7 @@ import ConfiguracaoLogos from './ConfiguracaoLogos'
 import ImportacaoExcelLoja from './ImportacaoExcelLoja'
 import EdicaoEmLote from './EdicaoEmLote'
 import LogAuditoria from './LogAuditoria'
+import ManutencaoEstoque from './ManutencaoEstoque'
 
 // Define os grupos e submenus - REORGANIZADO
 const gruposConfig = [
@@ -29,6 +30,7 @@ const gruposConfig = [
       { id: 'logos', title: 'Logomarcas e PDFs', component: ConfiguracaoLogos },
       { id: 'categorias', title: 'Categorias', component: MenuCategorias },
       { id: 'importacao-loja', title: 'Importar Dados', component: ImportacaoExcelLoja },
+      { id: 'manutencao-estoque', title: 'Manutenção de Estoque', component: ManutencaoEstoque },
     ]
   },
   {
@@ -72,6 +74,8 @@ export default function ModuloConfiguracoes() {
         return <ImportacaoExcel onImportacaoConcluida={handleImportacaoConcluida} />
       case 'importacao-loja':
         return <ImportacaoExcelLoja onImportacaoConcluida={handleImportacaoConcluida} />
+      case 'manutencao-estoque':
+        return <ManutencaoEstoque />
       case 'auditoria':
         return <LogAuditoria />
       default:

@@ -28,6 +28,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   const { getDraft, setDraft, clearDraft } = useFormDraft()
   const [clienteFornecedor, setClienteFornecedor] = useState('')
   const [valor, setValor] = useState(0)
+  const [acrescimoDesconto, setAcrescimoDesconto] = useState(0)
   const [data, setData] = useState(getDataAtualBrasil())
   const [tipo, setTipo] = useState('saida')
   const [statusPagamento, setStatusPagamento] = useState('pendente')
@@ -111,8 +112,9 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       setErro('O campo Cliente/Fornecedor é obrigatório.')
       return
     }
-    if (valor <= 0) {
-      setErro('O valor deve ser maior que zero.')
+    const valorFinal = valor + acrescimoDesconto
+    if (valorFinal <= 0) {
+      setErro('O valor total deve ser maior que zero.')
       return
     }
 
@@ -121,12 +123,12 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
     try {
       const dadosBase = {
         descricao: clienteFornecedor.trim(),
-        total: valor,
+        total: valorFinal,
         tipo: tipo,
         data: prepararDataParaInsert(data),
         status_pagamento: statusPagamento,
         data_pagamento: statusPagamento === 'pago' ? prepararDataParaInsert(getDataAtualBrasil()) : null,
-        valor_pago: statusPagamento === 'pago' ? valor : null,
+        valor_pago: statusPagamento === 'pago' ? valorFinal : null,
         observacao: observacao.trim() || null,
       }
 
@@ -200,7 +202,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Valor *
@@ -215,6 +217,18 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
             />
           </div>
           <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1 text-purple-600">
+              Acrésc./Desc.
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={acrescimoDesconto}
+              onChange={(e) => setAcrescimoDesconto(parseFloat(e.target.value) || 0)}
+              className="w-full px-2 py-1 text-xs border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-purple-50/30"
+            />
+          </div>
+          <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Vencimento *
             </label>
@@ -226,6 +240,11 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
               required
             />
           </div>
+        </div>
+
+        <div className="bg-slate-100 p-2 rounded flex justify-between items-center mb-2">
+          <span className="text-[10px] font-bold text-slate-500 uppercase">Total Final:</span>
+          <span className="text-sm font-black text-slate-800">R$ {(valor + acrescimoDesconto).toFixed(2)}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-2">

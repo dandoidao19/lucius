@@ -315,6 +315,9 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       prazoparcelas: (transacaoFull.prazoparcelas as string) || 'mensal',
       observacao: (transacaoFull.observacao as string) || '',
       numero_transacao: transacaoFull.numero_transacao as number,
+      acrescimo: transacaoFull.acrescimo || 0,
+      desconto: transacaoFull.desconto || 0,
+      data_vencimento: transacaoFull.data_vencimento,
       itens: itens.map(i => ({
         id: i.id,
         produto_id: i.produto_id,
@@ -378,6 +381,12 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase">{tipo === 'pedidos_loja' ? 'Total Geral' : 'Total'}</p>
               <p className="text-sm font-black text-purple-700">R$ {dadosResumo.total.toFixed(2)}</p>
+              {(transacaoFull?.acrescimo > 0 || transacaoFull?.desconto > 0) && (
+                <div className="flex gap-2 mt-0.5">
+                   {transacaoFull.acrescimo > 0 && <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1 rounded">+{transacaoFull.acrescimo.toFixed(2)}</span>}
+                   {transacaoFull.desconto > 0 && <span className="text-[9px] font-bold text-red-600 bg-red-50 px-1 rounded">-{transacaoFull.desconto.toFixed(2)}</span>}
+                </div>
+              )}
               {tipo === 'pedidos_loja' && dadosResumo.total_financeiro !== undefined && (
                 <div className="mt-1">
                    <p className="text-[10px] font-bold text-gray-500 uppercase">Total Financeiro (Saldo)</p>

@@ -48,6 +48,9 @@ interface ModalTransacaoUnificadaProps {
     observacao: string
     numero_transacao: number
     itens: ItemTransacao[]
+    acrescimo?: number
+    desconto?: number
+    data_vencimento?: string
   }
 }
 
@@ -81,7 +84,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   const [quantidadeParcelas, setQuantidadeParcelas] = useState(transacaoInicial?.quantidade_parcelas || 1)
   const [prazoParcelas, setPrazoParcelas] = useState(transacaoInicial?.prazoparcelas || 'mensal')
   const [statusPagamento, setStatusPagamento] = useState(transacaoInicial?.status_pagamento || 'pendente')
-  const [dataVencimento, setDataVencimento] = useState(transacaoInicial?.data || getDataAtualBrasil())
+  const [dataVencimento, setDataVencimento] = useState(transacaoInicial?.data_vencimento || transacaoInicial?.data || getDataAtualBrasil())
+  const [acrescimoDesconto, setAcrescimoDesconto] = useState((transacaoInicial?.acrescimo || 0) - (transacaoInicial?.desconto || 0))
   const [categorias, setCategorias] = useState<Categoria[]>([])
   const [resetSeletorKey, setResetSeletorKey] = useState(Date.now())
   const [observacao, setObservacao] = useState(transacaoInicial?.observacao?.replace('[PEDIDO]', '').trim() || '')
@@ -178,12 +182,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   }
 
   const calcularTotal = () => {
-    return itens.reduce((total, item) => {
+    const totalItens = itens.reduce((total, item) => {
       const preco = (tipo === 'compra' || tipo === 'pedido_compra' || tipo === 'condicional_fornecedor')
         ? item.valor_repasse
         : item.preco_venda
       return total + item.quantidade * (preco || 0)
     }, 0)
+    return totalItens + acrescimoDesconto
   }
 
   const adicionarNovoItem = () => {
@@ -492,6 +497,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       }
 
       const total = calcularTotal()
+      const totalQtdItens = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
+      const acrescimo = acrescimoDesconto > 0 ? acrescimoDesconto : 0
+      const desconto = acrescimoDesconto < 0 ? Math.abs(acrescimoDesconto) : 0
+
       // APENAS venda ou compra finalizada entra aqui. Condicionais e Pedidos devem ir para handleGerarPedido.
       const isVenda = tipo === 'venda' || tipo === 'pedido_venda'
 
@@ -503,11 +512,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_venda: prepararDataParaInsert(data),
             cliente: entidade,
             total,
-            quantidade_itens: itensValidos.length,
+            quantidade_itens: totalQtdItens,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
-            observacao: observacao.trim() || null
+            observacao: observacao.trim() || null,
+            acrescimo,
+            desconto,
+            data_vencimento: prepararDataParaInsert(dataVencimento)
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: novaVenda, error: erroVenda } = await supabase
@@ -517,11 +529,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               data_venda: prepararDataParaInsert(data),
               cliente: entidade,
               total,
-              quantidade_itens: itensValidos.length,
+              quantidade_itens: totalQtdItens,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
-              observacao: observacao.trim() || null
+              observacao: observacao.trim() || null,
+              acrescimo,
+              desconto,
+              data_vencimento: prepararDataParaInsert(dataVencimento)
             })
             .select()
             .single()
@@ -606,11 +621,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             data_compra: prepararDataParaInsert(data),
             fornecedor: entidade,
             total,
-            quantidade_itens: itensValidos.length,
+            quantidade_itens: totalQtdItens,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
-            observacao: observacao.trim() || null
+            observacao: observacao.trim() || null,
+            acrescimo,
+            desconto,
+            data_vencimento: prepararDataParaInsert(dataVencimento)
           }).eq('id', transacaoInicial.id)
         } else {
           const { data: compra, error: erroCompra } = await supabase
@@ -620,11 +638,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               data_compra: prepararDataParaInsert(data),
               fornecedor: entidade,
               total,
-              quantidade_itens: itensValidos.length,
+              quantidade_itens: totalQtdItens,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
-              observacao: observacao.trim() || null
+              observacao: observacao.trim() || null,
+              acrescimo,
+              desconto,
+              data_vencimento: prepararDataParaInsert(dataVencimento)
             })
             .select()
             .single()
@@ -787,6 +808,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
     try {
       const totalNovosItens = calcularTotal()
+      const totalQtdItens = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
+      const acrescimo = acrescimoDesconto > 0 ? acrescimoDesconto : 0
+      const desconto = acrescimoDesconto < 0 ? Math.abs(acrescimoDesconto) : 0
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado')
 
@@ -824,12 +849,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                   tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
                   entidade,
                   data_pedido: prepararDataParaInsert(data),
-                  observacao: (observacao || '').trim() || null,
+                  observacao: "PEDIDO AGUARDANDO FECHAMENTO",
                   total_geral: totalFinal,
                   total_financeiro: totalFinanceiroFinal,
                   quantidade_parcelas: quantidadeParcelas,
                   prazoparcelas: prazoParcelas,
-                  data_vencimento: prepararDataParaInsert(dataVencimento)
+                  data_vencimento: prepararDataParaInsert(dataVencimento),
+                  acrescimo,
+                  desconto
                 }).eq('id', idPedidoAnexar)
              } else {
                 // Anexando a pedido legado, mas no modo NOVO sistema.
@@ -856,12 +883,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
                 entidade,
                 data_pedido: prepararDataParaInsert(data),
-                observacao: (observacao || '').trim() || null,
+                observacao: "PEDIDO AGUARDANDO FECHAMENTO",
                 total_geral: totalFinal,
                 total_financeiro: totalFinanceiroFinal,
                 quantidade_parcelas: quantidadeParcelas,
                 prazoparcelas: prazoParcelas,
-                data_vencimento: prepararDataParaInsert(dataVencimento)
+                data_vencimento: prepararDataParaInsert(dataVencimento),
+                acrescimo,
+                desconto
               }).eq('id', transacaoId)
           }
         } else {
@@ -870,14 +899,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
             entidade,
             data_pedido: prepararDataParaInsert(data),
-            observacao: (observacao || '').trim() || null,
+            observacao: "PEDIDO AGUARDANDO FECHAMENTO",
             total_geral: totalFinal,
             total_financeiro: totalFinal,
             status: 'pendente',
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             data_vencimento: prepararDataParaInsert(dataVencimento),
-            user_id: user.id
+            user_id: user.id,
+            acrescimo,
+            desconto
           }).select().single()
           if (errP) throw errP
           transacaoId = pedido.id
@@ -933,12 +964,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             tipo: isVendaPedido ? 'enviado' : 'recebido',
             origem: entidade,
             data_transacao: prepararDataParaInsert(data),
-            observacao: (prefixoPedido + (observacao || '')).trim() || null,
+            observacao: isPedidoNovoSistema ? "PEDIDO AGUARDANDO FECHAMENTO" : (prefixoPedido + (observacao || '')).trim() || null,
             status: 'pendente',
             total: totalFinal,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
-            data_vencimento: prepararDataParaInsert(dataVencimento)
+            data_vencimento: prepararDataParaInsert(dataVencimento),
+            acrescimo,
+            desconto
           }).eq('id', transacaoId)
         } else {
           const { data: transacao, error: erroTransacao } = await supabase
@@ -948,12 +981,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               tipo: isVendaPedido ? 'enviado' : 'recebido',
               origem: entidade,
               data_transacao: prepararDataParaInsert(data),
-              observacao: (prefixoPedido + (observacao || '')).trim() || null,
+              observacao: isPedidoNovoSistema ? "PEDIDO AGUARDANDO FECHAMENTO" : (prefixoPedido + (observacao || '')).trim() || null,
               status: 'pendente',
               total: totalFinal,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
-              data_vencimento: prepararDataParaInsert(dataVencimento)
+              data_vencimento: prepararDataParaInsert(dataVencimento),
+              acrescimo,
+              desconto
             })
             .select()
             .single()
@@ -1589,7 +1624,48 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                        <option value="parcial">Parcial</option>
                      </select>
                    </div>
+                   <div>
+                     <label className="block text-xs text-gray-600">Acrésc./Desc.</label>
+                     <input
+                        type="number"
+                        step="0.01"
+                        value={acrescimoDesconto}
+                        onChange={(e) => setAcrescimoDesconto(Number(e.target.value))}
+                        className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                        placeholder="0.00"
+                     />
+                   </div>
                  </div>
+
+                 {/* Preview Parcelas */}
+                 {quantidadeParcelas > 1 && (
+                    <div className="mt-2 bg-gray-50 p-2 rounded border border-gray-200 max-h-32 overflow-y-auto">
+                      <p className="text-[10px] font-bold text-purple-700 uppercase mb-1">Preview do Parcelamento:</p>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1">
+                        {Array.from({ length: quantidadeParcelas }).map((_, i) => {
+                          const totalFinal = calcularTotal()
+                          const valorBase = Math.floor((totalFinal / quantidadeParcelas) * 100) / 100
+                          const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
+
+                          let dataParcela = dataVencimento
+                          if (i > 0) {
+                            const dt = new Date(dataVencimento + 'T12:00:00')
+                            if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
+                            else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
+                            else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
+                            dataParcela = dt.toISOString().split('T')[0]
+                          }
+
+                          return (
+                            <div key={i} className="flex justify-between text-[10px] border-b border-gray-100 pb-0.5">
+                              <span className="text-gray-500">{i + 1}ª - {dataParcela.split('-').reverse().slice(0, 2).join('/')}</span>
+                              <span className="font-bold text-purple-600">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                 )}
                </div>
 
                {/* Observações */}
@@ -1618,8 +1694,12 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                     </>
                   )}
                   <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
-                      <span>Novos Itens:</span>
-                      <span>R$ {calcularTotal().toFixed(2)}</span>
+                      <span>Subtotal Itens:</span>
+                      <span>R$ {(calcularTotal() - acrescimoDesconto).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-[10px] text-purple-800 font-bold uppercase">
+                      <span>Acréscimo/Desconto:</span>
+                      <span className={acrescimoDesconto < 0 ? 'text-red-600' : 'text-green-600'}>R$ {acrescimoDesconto.toFixed(2)}</span>
                   </div>
                   <div className="h-[1px] bg-purple-300 my-0.5"></div>
                   <div className="flex justify-between items-center">
