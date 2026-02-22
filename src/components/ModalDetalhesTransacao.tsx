@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
+import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalFaturarPedido from './ModalFaturarPedido'
 
@@ -45,6 +46,7 @@ interface ModalDetalhesTransacaoProps {
 }
 
 export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, transacaoId, tipo, dadosResumo }: ModalDetalhesTransacaoProps) {
+  const { versaoRefresh } = useDadosFinanceiros()
   const [itens, setItens] = useState<ItemDetalhe[]>([])
   const [parcelas, setParcelas] = useState<ParcelaDetalhe[]>([])
   const [loading, setLoading] = useState(false)
@@ -84,6 +86,10 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       console.error('Erro ao buscar transação full:', err)
     }
   }, [transacaoId, tipo])
+
+  const isVenda = tipo === 'vendas' ||
+                 (tipo === 'pedidos_loja' && transacaoFull?.tipo === 'venda') ||
+                 (tipo === 'transacoes_condicionais' && transacaoFull?.tipo === 'enviado')
 
   const buscarItens = useCallback(async () => {
     setLoading(true)
@@ -291,7 +297,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       buscarItens()
       buscarParcelas()
     }
-  }, [aberto, transacaoId, buscarFull, buscarItens, buscarParcelas])
+  }, [aberto, transacaoId, buscarFull, buscarItens, buscarParcelas, versaoRefresh])
 
   if (!aberto) return null
 
@@ -397,7 +403,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
             </div>
             <div>
               <p className="text-xs font-bold text-gray-500 uppercase">{tipo === 'pedidos_loja' ? 'Total Geral' : 'Total'}</p>
-              <p className="text-sm font-black text-purple-700">R$ {dadosResumo.total.toFixed(2)}</p>
+              <p className="text-sm font-black text-purple-700">R$ {(transacaoFull?.total_geral || transacaoFull?.total || dadosResumo.total).toFixed(2)}</p>
               {(transacaoFull?.acrescimo > 0 || transacaoFull?.desconto > 0) && (
                 <div className="flex gap-2 mt-0.5">
                    {transacaoFull.acrescimo > 0 && <span className="text-[9px] font-bold text-green-600 bg-green-50 px-1 rounded">+{transacaoFull.acrescimo.toFixed(2)}</span>}
@@ -424,7 +430,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           {/* Itens (No topo) */}
           <div className="space-y-1">
             <h3 className="text-xs font-bold text-gray-700 flex items-center gap-1">
-              📦 Itens ({itens.length})
+              📦 Itens ({itens.reduce((acc, it) => acc + (it.quantidade || 0), 0)})
             </h3>
             <div className="border rounded overflow-x-auto shadow-sm">
               <table className="w-full text-left min-w-[500px]">
@@ -452,8 +458,8 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                         </td>
                         <td className="px-2 py-1 text-gray-600">{item.categoria || '—'}</td>
                         <td className="px-2 py-1 text-center">{item.quantidade}</td>
-                        <td className="px-2 py-1 text-right">R$ {(tipo === 'vendas' ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
-                        <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {(item.quantidade * (tipo === 'vendas' ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-right">R$ {(isVenda ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {(item.quantidade * (isVenda ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
                         <td className="px-2 py-1 text-center">
                            <span className={`inline-block px-1 rounded text-[10px] font-bold uppercase ${
                              item.status === 'efetuado' ? 'bg-green-100 text-green-700' :
@@ -474,7 +480,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                   <tfoot className="bg-purple-50 font-bold border-t text-xs">
                     <tr>
                       <td colSpan={4} className="px-2 py-1 text-right uppercase">Total Itens:</td>
-                      <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + (i.quantidade * (tipo === 'vendas' ? i.preco_venda : i.valor_repasse)), 0).toFixed(2)}</td>
+                      <td className="px-2 py-1 text-right text-purple-700">R$ {itens.reduce((acc, i) => acc + (i.quantidade * (isVenda ? i.preco_venda : i.valor_repasse)), 0).toFixed(2)}</td>
                       <td colSpan={2}></td>
                     </tr>
                   </tfoot>

@@ -964,32 +964,31 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         const prefixoPedido = ''
 
         if (transacaoId) {
+          let acrescimoFinal = acrescimo
+          let descontoFinal = desconto
+          let qtdItensFinal = totalQtdItensNovos
+
           if (idPedidoAnexar) {
              const { data: pOld } = await supabase.from('transacoes_condicionais').select('total, quantidade_itens, acrescimo, desconto').eq('id', idPedidoAnexar).single()
              totalFinal = (pOld?.total || 0) + totalNovosItens
-             const totalQtdFinal = (pOld?.quantidade_itens || 0) + totalQtdItensNovos
-
-             await supabase.from('transacoes_condicionais').update({
-                total: totalFinal,
-                quantidade_itens: totalQtdFinal,
-                acrescimo: (pOld?.acrescimo || 0) + acrescimo,
-                desconto: (pOld?.desconto || 0) + desconto
-             }).eq('id', idPedidoAnexar)
+             qtdItensFinal = (pOld?.quantidade_itens || 0) + totalQtdItensNovos
+             acrescimoFinal = (pOld?.acrescimo || 0) + acrescimo
+             descontoFinal = (pOld?.desconto || 0) + desconto
           }
 
           await supabase.from('transacoes_condicionais').update({
             tipo: isVendaPedido ? 'enviado' : 'recebido',
             origem: entidade,
             data_transacao: prepararDataParaInsert(data),
-            observacao: isPedidoNovoSistema ? "PEDIDO AGUARDANDO FECHAMENTO" : (prefixoPedido + (observacao || '')).trim() || null,
+            observacao: (prefixoPedido + (observacao || '')).trim() || null,
             status: 'pendente',
             total: totalFinal,
-            quantidade_itens: totalQtdItensNovos, // Para edição normal, sobrescrevemos com a contagem atual do form
+            quantidade_itens: qtdItensFinal,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             data_vencimento: prepararDataParaInsert(dataVencimento),
-            acrescimo,
-            desconto
+            acrescimo: acrescimoFinal,
+            desconto: descontoFinal
           }).eq('id', transacaoId)
         } else {
           const { data: transacao, error: erroTransacao } = await supabase

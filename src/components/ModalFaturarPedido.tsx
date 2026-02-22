@@ -215,15 +215,19 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
       // 3. Recalcular Pedido
       const { data: itsRestantes } = await supabase.from('itens_pedido_loja').select('*').eq('pedido_id', pedidoId)
-      const novoTotalFinanceiro = (itsRestantes || [])
-        .filter(i => i.status === 'pendente')
+      const pendentes = (itsRestantes || []).filter(i => i.status === 'pendente')
+
+      const novoTotalFinanceiro = pendentes
         .reduce((acc, i) => acc + (i.quantidade * (pedido.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)
+
+      const novaQtdItens = pendentes.reduce((acc, i) => acc + i.quantidade, 0)
 
       const todosFaturadosOuCancelados = (itsRestantes || []).every(i => i.status !== 'pendente')
       const novoStatus = todosFaturadosOuCancelados ? 'faturado' : 'parcial'
 
       await supabase.from('pedidos_loja').update({
         total_financeiro: novoTotalFinanceiro,
+        quantidade_itens: novaQtdItens,
         status: novoStatus
       }).eq('id', pedidoId)
 

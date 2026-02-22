@@ -348,7 +348,7 @@ export default function LojaPaginaTransacoes() {
                       {t.total > 0 ? `R$ ${t.total.toFixed(2)}` : '—'}
                     </td>
                     <td className="px-0.5 py-1 text-center text-gray-600">{t.quantidade_parcelas}</td>
-                    <td className="px-0.5 py-1 text-center text-gray-600 font-semibold">{t.quantidade_itens}</td>
+                    <td className="px-0.5 py-1 text-center text-gray-600 font-semibold" title="Soma total de peças">{Math.round(t.quantidade_itens)}</td>
                     <td className="px-0.5 py-1 text-center uppercase">
                       <span className={`px-1 py-0.5 rounded font-semibold ${
                         t.status === 'pago' || t.status === 'resolvido' ? 'bg-green-600 text-white' :

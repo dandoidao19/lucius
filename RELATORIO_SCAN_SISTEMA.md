@@ -6,12 +6,12 @@ Este documento detalha as descobertas da varredura completa realizada no sistema
 
 ### 1.1 Sincronização de Totais (Cabeçalho vs. Itens)
 - **Problema:** Ao anexar novos itens a um pedido existente, o `total_geral` e o `total_financeiro` no cabeçalho não estavam acumulando corretamente o valor dos novos itens.
-- **Causa:** A lógica de atualização sobrescrevia os totais com os valores apenas do formulário atual, em vez de somar ao saldo anterior do banco de dados.
-- **Correção:** Implementada a busca do saldo anterior (`pOld`) e a soma cumulativa dos novos valores.
+- **Causa:** A lógica de atualização em transações legadas continha um erro de "dupla atualização", onde a segunda chamada sobrescrevia os valores cumulativos calculados na primeira. Além disso, o modal de detalhes utilizava dados obsoletos da lista principal.
+- **Correção:** Unificada a lógica de atualização no `ModalTransacaoUnificada` e ajustado o `ModalDetalhesTransacao` para priorizar dados frescos do banco de dados e reagir a atualizações em segundo plano.
 
 ### 1.2 Contagem de Itens (Quantidade vs. Linhas)
-- **Problema:** A coluna `quantidade_itens` em algumas tabelas estava registrando apenas a contagem de linhas (tipos de produtos) em vez da soma real das unidades/peças.
-- **Correção:** Padronizada a lógica de `reduce` para somar a propriedade `quantidade` de todos os itens antes de salvar no banco de dados.
+- **Problema:** A coluna `quantidade_itens` em algumas tabelas estava registrando apenas a contagem de linhas (tipos de produtos) em vez da soma real das unidades/peças. Além disso, o contador visual no topo dos modais também contava apenas as linhas.
+- **Correção:** Padronizada a lógica de `reduce` para somar a propriedade `quantidade` de todos os itens em todos os fluxos (Inclusão, Edição, Anexação e Faturamento). O contador visual agora reflete a soma total de peças.
 
 ### 1.3 Mapeamento de Categorias em Novos Cadastros
 - **Problema:** Itens cadastrados rapidamente através da função "Novo Cadastro" dentro de uma transação perdiam a informação de categoria no histórico de itens.
