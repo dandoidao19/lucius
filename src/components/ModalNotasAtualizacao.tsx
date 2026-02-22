@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.3'
+  const VERSAO_ATUAL = '5.4'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,58 +47,58 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Financeiro v5.3 */}
+            {/* 1. Estabilização v5.4 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
                 <ShieldCheck size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Memorização Inteligente</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Sincronização de Totais</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Agora, o sistema preserva a data de vencimento original em todas as edições de transações (Vendas, Compras e Pedidos).
+                Corrigido erro no cálculo de saldos ao anexar itens em pedidos existentes. O Total Geral e Financeiro agora se mantêm 100% sincronizados.
               </p>
             </div>
 
-            {/* 2. Parcelamento v5.3 */}
+            {/* 2. Integridade v5.4 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
-                <MousePointer2 size={24} />
+                <ShieldCheck size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Refinamento Visual (HD)</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Categorização Automática</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Visualização de parcelas aprimorada com fontes maiores e layout de alta definição para conferência rápida e sem erros.
+                Produtos cadastrados "na hora" durante uma transação agora herdam e salvam a categoria corretamente no histórico de itens.
               </p>
             </div>
 
-            {/* 3. Estoque */}
+            {/* 3. Métricas v5.4 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300 transition-all group">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600 mb-3 group-hover:scale-110 transition-transform">
-                <BarChart3 size={24} />
+                <Package size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Automação de Estoque</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Contagem de Unidades</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Valores de custo e venda agora são atualizados automaticamente ao registrar compras, incluindo a data do último abastecimento.
+                A coluna 'Itens' nas listas agora reflete a soma real das quantidades de peças, e não apenas o número de linhas da transação.
               </p>
             </div>
 
-            {/* 4. Navegação */}
+            {/* 4. Limpeza v5.4 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300 transition-all group">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 group-hover:scale-110 transition-transform">
-                <MousePointer2 size={24} />
+                <ShieldCheck size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Memória de Navegação</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Sistema Otimizado</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Filtros inteligentes e abas ativas que persistem mesmo se você trocar de página ou módulo. Menos cliques, mais agilidade.
+                Remoção de mais de 10 arquivos legados e funções duplicadas. O sistema está mais leve, rápido e fácil de manter.
               </p>
             </div>
 
-            {/* 5. Manutenção */}
+            {/* 5. Manutenção v5.4 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-red-300 transition-all group">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 mb-3 group-hover:scale-110 transition-transform">
                 <BarChart3 size={24} />
               </div>
               <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Correção de Estoque</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Nova ferramenta de Manutenção! Recalcule todos os saldos de estoque baseando-se no histórico real de transações para eliminar discrepâncias.
+                Ferramenta de Manutenção recalibra saldos baseando-se no histórico real para eliminar qualquer discrepância residual.
               </p>
             </div>
 

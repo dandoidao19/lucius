@@ -175,6 +175,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
       id_produto: produto.id,
       codigo: produto.codigo || '',
       nome: produto.descricao,
+      categoria: produto.categoria || '',
       preco_unitario: produto.preco_venda || 0,
       valor_repasse: produto.valor_repasse || 0,
       preco_custo: produto.preco_custo || 0
@@ -377,7 +378,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
       const totalVendaFinal = totalVenda + pagVenda.acrescimoDesconto
       const totalCompraFinal = totalCompra + pagCompra.acrescimoDesconto
-      const totalItensQtd = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
+      const totalItensQtdNovos = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
 
       let idSaida = null
       if (tipoSaida === 'venda') {
@@ -389,7 +390,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           await supabase.from('vendas').update({
             total: totalFinal,
-            quantidade_itens: (vendaAnexar.quantidade_itens || 0) + totalItensQtd,
+            quantidade_itens: (vendaAnexar.quantidade_itens || 0) + totalItensQtdNovos,
             acrescimo,
             desconto,
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
@@ -407,7 +408,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             observacao: obsSaida,
             quantidade_parcelas: pagVenda.parcelas,
             prazoparcelas: pagVenda.prazo,
-            quantidade_itens: totalItensQtd,
+            quantidade_itens: totalItensQtdNovos,
             acrescimo: pagVenda.acrescimoDesconto > 0 ? pagVenda.acrescimoDesconto : 0,
             desconto: pagVenda.acrescimoDesconto < 0 ? Math.abs(pagVenda.acrescimoDesconto) : 0,
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
@@ -419,14 +420,16 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           idSaida = idSaidaAnexar
           const table = idSaidaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
           const colTotal = idSaidaAnexarIsNovo ? 'total_geral' : 'total'
-          const { data: pOld } = await supabase.from(table).select(`${colTotal}, acrescimo, desconto`).eq('id', idSaida).single()
+          const { data: pOld } = await supabase.from(table).select(`${colTotal}, quantidade_itens, acrescimo, desconto`).eq('id', idSaida).single()
           const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalVendaFinal
+          const totalQtdFinal = ((pOld as any)?.quantidade_itens || 0) + totalItensQtdNovos
           const acrescimo = (pagVenda.acrescimoDesconto > 0 ? pagVenda.acrescimoDesconto : 0) + ((pOld as any)?.acrescimo || 0)
           const desconto = (pagVenda.acrescimoDesconto < 0 ? Math.abs(pagVenda.acrescimoDesconto) : 0) + ((pOld as any)?.desconto || 0)
 
           await supabase.from(table).update({
             [colTotal]: totalFinal,
             [idSaidaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal,
+            quantidade_itens: totalQtdFinal,
             quantidade_parcelas: pagVenda.parcelas,
             prazoparcelas: pagVenda.prazo,
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento),
@@ -466,7 +469,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           await supabase.from('compras').update({
             total: totalFinal,
-            quantidade_itens: (compraAnexar.quantidade_itens || 0) + totalItensQtd,
+            quantidade_itens: (compraAnexar.quantidade_itens || 0) + totalItensQtdNovos,
             acrescimo,
             desconto,
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
@@ -484,7 +487,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             observacao: obsEntrada,
             quantidade_parcelas: pagCompra.parcelas,
             prazoparcelas: pagCompra.prazo,
-            quantidade_itens: totalItensQtd,
+            quantidade_itens: totalItensQtdNovos,
             acrescimo: pagCompra.acrescimoDesconto > 0 ? pagCompra.acrescimoDesconto : 0,
             desconto: pagCompra.acrescimoDesconto < 0 ? Math.abs(pagCompra.acrescimoDesconto) : 0,
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
@@ -496,14 +499,16 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           idEntrada = idEntradaAnexar
           const table = idEntradaAnexarIsNovo ? 'pedidos_loja' : 'transacoes_condicionais'
           const colTotal = idEntradaAnexarIsNovo ? 'total_geral' : 'total'
-          const { data: pOld } = await supabase.from(table).select(`${colTotal}, acrescimo, desconto`).eq('id', idEntrada).single()
+          const { data: pOld } = await supabase.from(table).select(`${colTotal}, quantidade_itens, acrescimo, desconto`).eq('id', idEntrada).single()
           const totalFinal = ((pOld as any)?.[colTotal] || 0) + totalCompraFinal
+          const totalQtdFinal = ((pOld as any)?.quantidade_itens || 0) + totalItensQtdNovos
           const acrescimo = (pagCompra.acrescimoDesconto > 0 ? pagCompra.acrescimoDesconto : 0) + ((pOld as any)?.acrescimo || 0)
           const desconto = (pagCompra.acrescimoDesconto < 0 ? Math.abs(pagCompra.acrescimoDesconto) : 0) + ((pOld as any)?.desconto || 0)
 
           await supabase.from(table).update({
             [colTotal]: totalFinal,
             [idEntradaAnexarIsNovo ? 'total_financeiro' : 'total']: totalFinal,
+            quantidade_itens: totalQtdFinal,
             quantidade_parcelas: pagCompra.parcelas,
             prazoparcelas: pagCompra.prazo,
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento),
@@ -590,7 +595,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         <div className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
           <h2 className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest">
             <ShoppingBag className="text-pink-400" size={18} />
-            Venda Casada (LUCIUS v4.9)
+            Venda Casada (LUCIUS v5.4)
           </h2>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded text-white">
             <X size={20} />
@@ -779,7 +784,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t border-pink-500 relative">
-            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v4.9</div>
+            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.4</div>
             <div className="flex gap-8 items-center">
               <div className="flex flex-col"><p className="text-[8px] uppercase font-bold text-pink-400">Venda { (totalSaidaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalSaidaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalSaidaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalSaidaAnterior + totalVenda).toFixed(2)}</p></div></div>
               <div className="flex flex-col border-l border-white/10 pl-8"><p className="text-[8px] uppercase font-bold text-blue-400">Compra { (totalEntradaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalEntradaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalEntradaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalEntradaAnterior + totalCompra).toFixed(2)}</p></div></div>

@@ -85,8 +85,8 @@ export default function ModalEditarProduto({ produto, onClose, onSave }: ModalEd
         quantidade: parseInt(formData.quantidade) || 0,
         preco_custo: parseFloat(formData.preco_custo) || 0,
         valor_repasse: parseFloat(formData.valor_repasse) || 0,
-        preco_venda: parseFloat(formData.preco_venda),
-        data_ultima_compra: formData.data_ultima_compra,
+        preco_venda: parseFloat(formData.preco_venda) || 0,
+        data_ultima_compra: formData.data_ultima_compra || new Date().toISOString().split('T')[0],
       }
 
       if (formData.codigo && formData.codigo.trim()) {

@@ -497,8 +497,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         if (pedOrig) numTransacao = pedOrig.numero_transacao
       }
 
-      const total = calcularTotal()
-      const totalQtdItens = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
+      const totalCalculado = calcularTotal()
+      const totalQtdItensNovos = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
       const acrescimo = acrescimoDesconto > 0 ? acrescimoDesconto : 0
       const desconto = acrescimoDesconto < 0 ? Math.abs(acrescimoDesconto) : 0
 
@@ -512,8 +512,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           await supabase.from('vendas').update({
             data_venda: prepararDataParaInsert(data),
             cliente: entidade,
-            total,
-            quantidade_itens: totalQtdItens,
+            total: totalCalculado,
+            quantidade_itens: totalQtdItensNovos,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
@@ -529,8 +529,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               numero_transacao: numTransacao,
               data_venda: prepararDataParaInsert(data),
               cliente: entidade,
-              total,
-              quantidade_itens: totalQtdItens,
+              total: totalCalculado,
+              quantidade_itens: totalQtdItensNovos,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
@@ -554,7 +554,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
+        await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -621,8 +621,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           await supabase.from('compras').update({
             data_compra: prepararDataParaInsert(data),
             fornecedor: entidade,
-            total,
-            quantidade_itens: totalQtdItens,
+            total: totalCalculado,
+            quantidade_itens: totalQtdItensNovos,
             status_pagamento: statusPagamento,
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
@@ -638,8 +638,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               numero_transacao: numTransacao,
               data_compra: prepararDataParaInsert(data),
               fornecedor: entidade,
-              total,
-              quantidade_itens: totalQtdItens,
+              total: totalCalculado,
+              quantidade_itens: totalQtdItensNovos,
               status_pagamento: statusPagamento,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
@@ -663,7 +663,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             .eq('numero_transacao', transacaoInicial.numero_transacao)
             .ilike('descricao', `%${transacaoInicial.entidade}%`)
         }
-        await criarTransacoesParceladas(total, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
+        await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
 
         for (const item of itensValidos) {
           let prodId = item.produto_id
@@ -809,7 +809,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
     try {
       const totalNovosItens = calcularTotal()
-      const totalQtdItens = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
+      const totalQtdItensNovos = itensValidos.reduce((acc, i) => acc + i.quantidade, 0)
       const acrescimo = acrescimoDesconto > 0 ? acrescimoDesconto : 0
       const desconto = acrescimoDesconto < 0 ? Math.abs(acrescimoDesconto) : 0
 
@@ -842,9 +842,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         if (transacaoId) {
           if (idPedidoAnexar) {
              if (idPedidoAnexarIsNovo) {
-                const { data: pOld } = await supabase.from('pedidos_loja').select('total_geral, total_financeiro').eq('id', idPedidoAnexar).single()
+                const { data: pOld } = await supabase.from('pedidos_loja').select('total_geral, total_financeiro, quantidade_itens, acrescimo, desconto').eq('id', idPedidoAnexar).single()
                 totalFinal = (pOld?.total_geral || 0) + totalNovosItens
                 totalFinanceiroFinal = (pOld?.total_financeiro || 0) + totalNovosItens
+                const totalQtdFinal = (pOld?.quantidade_itens || 0) + totalQtdItensNovos
 
                 await supabase.from('pedidos_loja').update({
                   tipo: tipo === 'pedido_venda' ? 'venda' : 'compra',
@@ -853,27 +854,32 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                   observacao: "PEDIDO AGUARDANDO FECHAMENTO",
                   total_geral: totalFinal,
                   total_financeiro: totalFinanceiroFinal,
+                  quantidade_itens: totalQtdFinal,
                   quantidade_parcelas: quantidadeParcelas,
                   prazoparcelas: prazoParcelas,
                   data_vencimento: prepararDataParaInsert(dataVencimento),
-                  acrescimo,
-                  desconto
+                  acrescimo: (pOld?.acrescimo || 0) + acrescimo,
+                  desconto: (pOld?.desconto || 0) + desconto
                 }).eq('id', idPedidoAnexar)
              } else {
                 // Anexando a pedido legado, mas no modo NOVO sistema.
                 // Deveríamos atualizar a tabela legada transacoes_condicionais
-                const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
+                const { data: pOld } = await supabase.from('transacoes_condicionais').select('total, quantidade_itens, acrescimo, desconto').eq('id', idPedidoAnexar).single()
                 totalFinal = (pOld?.total || 0) + totalNovosItens
                 totalFinanceiroFinal = totalFinal // Legado não tem saldo financeiro separado
+                const totalQtdFinal = (pOld?.quantidade_itens || 0) + totalQtdItensNovos
 
                 await supabase.from('transacoes_condicionais').update({
                    origem: entidade,
                    data_transacao: prepararDataParaInsert(data),
                    total: totalFinal,
+                   quantidade_itens: totalQtdFinal,
                    observacao: `[PEDIDO] ${observacao}`.trim(),
                    quantidade_parcelas: quantidadeParcelas,
                    prazoparcelas: prazoParcelas,
-                   data_vencimento: prepararDataParaInsert(dataVencimento)
+                   data_vencimento: prepararDataParaInsert(dataVencimento),
+                   acrescimo: (pOld?.acrescimo || 0) + acrescimo,
+                   desconto: (pOld?.desconto || 0) + desconto
                 }).eq('id', idPedidoAnexar)
              }
           } else {
@@ -887,6 +893,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                 observacao: "PEDIDO AGUARDANDO FECHAMENTO",
                 total_geral: totalFinal,
                 total_financeiro: totalFinanceiroFinal,
+                quantidade_itens: totalQtdItensNovos,
                 quantidade_parcelas: quantidadeParcelas,
                 prazoparcelas: prazoParcelas,
                 data_vencimento: prepararDataParaInsert(dataVencimento),
@@ -903,6 +910,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             observacao: "PEDIDO AGUARDANDO FECHAMENTO",
             total_geral: totalFinal,
             total_financeiro: totalFinal,
+            quantidade_itens: totalQtdItensNovos,
             status: 'pendente',
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
@@ -957,8 +965,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         if (transacaoId) {
           if (idPedidoAnexar) {
-             const { data: pOld } = await supabase.from('transacoes_condicionais').select('total').eq('id', idPedidoAnexar).single()
+             const { data: pOld } = await supabase.from('transacoes_condicionais').select('total, quantidade_itens, acrescimo, desconto').eq('id', idPedidoAnexar).single()
              totalFinal = (pOld?.total || 0) + totalNovosItens
+             const totalQtdFinal = (pOld?.quantidade_itens || 0) + totalQtdItensNovos
+
+             await supabase.from('transacoes_condicionais').update({
+                total: totalFinal,
+                quantidade_itens: totalQtdFinal,
+                acrescimo: (pOld?.acrescimo || 0) + acrescimo,
+                desconto: (pOld?.desconto || 0) + desconto
+             }).eq('id', idPedidoAnexar)
           }
 
           await supabase.from('transacoes_condicionais').update({
@@ -968,6 +984,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
             observacao: isPedidoNovoSistema ? "PEDIDO AGUARDANDO FECHAMENTO" : (prefixoPedido + (observacao || '')).trim() || null,
             status: 'pendente',
             total: totalFinal,
+            quantidade_itens: totalQtdItensNovos, // Para edição normal, sobrescrevemos com a contagem atual do form
             quantidade_parcelas: quantidadeParcelas,
             prazoparcelas: prazoParcelas,
             data_vencimento: prepararDataParaInsert(dataVencimento),
@@ -985,6 +1002,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
               observacao: isPedidoNovoSistema ? "PEDIDO AGUARDANDO FECHAMENTO" : (prefixoPedido + (observacao || '')).trim() || null,
               status: 'pendente',
               total: totalFinal,
+              quantidade_itens: totalQtdItensNovos,
               quantidade_parcelas: quantidadeParcelas,
               prazoparcelas: prazoParcelas,
               data_vencimento: prepararDataParaInsert(dataVencimento),
@@ -1739,7 +1757,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v4.9
+              CORE ENGINE v5.4
             </div>
             <button
               onClick={handleCancelar}
