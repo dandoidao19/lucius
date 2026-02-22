@@ -15,6 +15,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='data_vencimento') THEN
         ALTER TABLE public.vendas ADD COLUMN data_vencimento DATE;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='vendas' AND column_name='quantidade_itens') THEN
+        ALTER TABLE public.vendas ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
+    END IF;
 
     -- Compras
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='acrescimo') THEN
@@ -26,6 +29,9 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='data_vencimento') THEN
         ALTER TABLE public.compras ADD COLUMN data_vencimento DATE;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='compras' AND column_name='quantidade_itens') THEN
+        ALTER TABLE public.compras ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
+    END IF;
 
     -- Pedidos
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pedidos_loja' AND column_name='acrescimo') THEN
@@ -33,6 +39,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pedidos_loja' AND column_name='desconto') THEN
         ALTER TABLE public.pedidos_loja ADD COLUMN desconto NUMERIC(15,2) DEFAULT 0;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='pedidos_loja' AND column_name='quantidade_itens') THEN
+        ALTER TABLE public.pedidos_loja ADD COLUMN quantidade_itens INTEGER DEFAULT 0;
     END IF;
 
     -- Condicionais
@@ -85,7 +94,8 @@ BEGIN
     UPDATE public.pedidos_loja p
     SET status = 'faturado'
     WHERE (SELECT COUNT(*) FROM itens_pedido_loja WHERE pedido_id = p.id AND status = 'pendente') = 0
-    AND status != 'cancelado';
+    AND status != 'cancelado'
+    AND (SELECT COUNT(*) FROM itens_pedido_loja WHERE pedido_id = p.id) > 0;
 END;
 $$ LANGUAGE plpgsql;
 
