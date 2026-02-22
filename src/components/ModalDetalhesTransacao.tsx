@@ -62,7 +62,24 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
         .single()
 
       if (error) throw error
-      setTransacaoFull(data)
+
+      let transFull = { ...data }
+
+      // FALLBACK: Se data_vencimento estiver nula (registros antigos), tenta buscar da 1ª parcela
+      if (!transFull.data_vencimento) {
+        let qParc = supabase.from('transacoes_loja').select('data')
+        if (tipo === 'vendas') qParc = qParc.eq('id_venda', transacaoId)
+        else if (tipo === 'compras') qParc = qParc.eq('id_compra', transacaoId)
+        else if (tipo === 'pedidos_loja') qParc = qParc.eq('id_pedido', transacaoId)
+        else qParc = qParc.eq('id_condicional', transacaoId)
+
+        const { data: pList } = await qParc.order('data', { ascending: true }).limit(1)
+        if (pList && pList.length > 0) {
+          transFull.data_vencimento = pList[0].data
+        }
+      }
+
+      setTransacaoFull(transFull)
     } catch (err) {
       console.error('Erro ao buscar transação full:', err)
     }

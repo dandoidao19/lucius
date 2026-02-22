@@ -17,7 +17,7 @@ const ModalNotasAtualizacao = dynamic(() => import('@/components/ModalNotasAtual
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState('dashboard') // Inicia em 'dashboard' por padrão
+  const [activeSection, setActiveSection] = useState(isDevFeaturesEnabled() ? 'dashboard' : 'casa') // Inicia em 'dashboard' se habilitado, senão 'casa'
   const router = useRouter()
 
   useEffect(() => {
@@ -48,13 +48,13 @@ export default function Dashboard() {
     )
   }
 
-  // Define itens do menu
+  // Define itens do menu - Filtrado por ambiente
   const menuItems = [
-    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue' },
-    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green' },
-    { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple' },
-    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray' }
-  ]
+    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue', devOnly: true },
+    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green', devOnly: false },
+    { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple', devOnly: false },
+    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray', devOnly: false }
+  ].filter(item => !item.devOnly || isDevFeaturesEnabled())
 
   const getButtonStyle = (id: string, color: string) => {
     const isActive = activeSection === id

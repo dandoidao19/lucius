@@ -75,13 +75,10 @@ export default function LojaPaginaTransacoes() {
         .order('data_compra', { ascending: false })
       if (errC) console.error('Erro ao buscar compras:', errC)
 
-      // 3. Buscar Condicionais com contagem de itens
+      // 3. Buscar Condicionais
       const { data: condicionais, error: errCn } = await supabase
         .from('transacoes_condicionais')
-        .select(`
-          *,
-          itens_condicionais (count)
-        `)
+        .select('*')
         .not('observacao', 'ilike', '%[PEDIDO]%')
         .order('data_transacao', { ascending: false })
       if (errCn) console.error('Erro ao buscar condicionais:', errCn)
@@ -89,10 +86,7 @@ export default function LojaPaginaTransacoes() {
       // 4. Buscar Novos Pedidos
       const { data: pedidos, error: errP } = await supabase
         .from('pedidos_loja')
-        .select(`
-          *,
-          itens_pedido_loja (count)
-        `)
+        .select('*')
         .order('data_pedido', { ascending: false })
       if (errP) console.error('Erro ao buscar pedidos_loja:', errP)
 
@@ -148,7 +142,7 @@ export default function LojaPaginaTransacoes() {
           total: cn.total || 0,
           status: cn.status,
           quantidade_parcelas: 1,
-          quantidade_itens: cn.itens_condicionais?.[0]?.count || 0,
+          quantidade_itens: cn.quantidade_itens || 0,
           observacao: cn.observacao || '',
           cor: cn.tipo === 'enviado' ? 'bg-purple-600 text-white shadow-sm' : 'bg-indigo-600 text-white shadow-sm',
           tabela: 'transacoes_condicionais'
@@ -168,7 +162,7 @@ export default function LojaPaginaTransacoes() {
           total_financeiro: p.total_financeiro,
           status: p.status,
           quantidade_parcelas: p.quantidade_parcelas || 1,
-          quantidade_itens: p.itens_pedido_loja?.[0]?.count || 0,
+          quantidade_itens: p.quantidade_itens || 0,
           observacao: p.observacao || '',
           cor: p.tipo === 'venda' ? 'bg-blue-600 text-white shadow-sm font-black' : 'bg-orange-600 text-white shadow-sm font-black',
           tabela: 'pedidos_loja'

@@ -1643,7 +1643,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                     <div className="mt-4 bg-slate-50 p-3 rounded-xl border border-purple-100 shadow-inner overflow-hidden">
                       <div className="flex items-center justify-between mb-3 px-1">
                         <p className="text-[10px] font-bold text-purple-900 uppercase tracking-widest flex items-center gap-2">
-                          <RefreshCw size={12} className="text-purple-500 animate-spin-slow" />
+                          <RefreshCw size={12} className="text-purple-500 animate-spin" />
                           Projeção Financeira ({quantidadeParcelas}x)
                         </p>
                         <span className="text-[9px] font-black bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase">Visualização Prévia</span>
@@ -1670,13 +1670,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                           }
 
                           return (
-                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2 flex flex-col shadow-sm transition-all hover:border-purple-400 group">
-                              <div className="flex justify-between items-center border-b border-slate-100 pb-1 mb-1">
-                                <span className="text-[9px] font-black text-slate-400 group-hover:text-purple-600 transition-colors">{i + 1}ª</span>
-                                <span className="text-[9px] font-bold text-slate-500">{dataParcela ? dataParcela.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm transition-all hover:border-purple-400 group min-w-[100px]">
+                              <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-1.5">
+                                <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 transition-colors uppercase italic">{i + 1}ª Parcela</span>
+                                <span className="text-xs font-bold text-slate-600">{dataParcela ? dataParcela.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
                               </div>
                               <div className="text-right">
-                                <span className="text-[11px] font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                <span className="text-sm font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                               </div>
                             </div>
                           )

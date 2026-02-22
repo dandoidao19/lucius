@@ -442,13 +442,13 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                         }
 
                         return (
-                          <div key={i} className="bg-white border border-slate-200 rounded-lg p-2 flex flex-col shadow-sm group hover:border-purple-400 transition-all">
-                            <div className="flex justify-between items-center mb-1">
-                               <span className="text-[8px] font-black text-slate-400 group-hover:text-purple-600 uppercase tracking-tighter italic">{i + 1}ª Parc</span>
-                               <span className="text-[9px] font-semibold text-slate-500">{dataP ? dataP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm group hover:border-purple-400 transition-all">
+                            <div className="flex justify-between items-center mb-1.5 border-b border-slate-50 pb-1.5">
+                               <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 uppercase tracking-tighter italic">{i + 1}ª Parc.</span>
+                               <span className="text-xs font-bold text-slate-600">{dataP ? dataP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-[10px] font-black text-purple-700">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                              <span className="text-xs font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                             </div>
                           </div>
                         )

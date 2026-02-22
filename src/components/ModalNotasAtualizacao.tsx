@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.2'
+  const VERSAO_ATUAL = '5.3'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,25 +47,25 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Financeiro v5.2 */}
+            {/* 1. Financeiro v5.3 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
-                <CreditCard size={24} />
+                <ShieldCheck size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Acréscimos & Descontos</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Memorização Inteligente</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Ajustes financeiros agora disponíveis em todos os formulários, incluindo lançamentos avulsos e faturamento de pedidos.
+                Agora, o sistema preserva a data de vencimento original em todas as edições de transações (Vendas, Compras e Pedidos).
               </p>
             </div>
 
-            {/* 2. Parcelamento v5.2 */}
+            {/* 2. Parcelamento v5.3 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
               <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
-                <RefreshCw size={24} />
+                <MousePointer2 size={24} />
               </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Nova Projeção Financeira</h3>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Refinamento Visual (HD)</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Visualização de parcelas totalmente remodelada! Interface em cards mais limpa, organizada e com proteção contra erros de data.
+                Visualização de parcelas aprimorada com fontes maiores e layout de alta definição para conferência rápida e sem erros.
               </p>
             </div>
 

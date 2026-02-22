@@ -342,10 +342,14 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
                    }
 
                    return (
-                     <div key={i} className="min-w-[80px] bg-white border border-blue-100 rounded p-1 flex flex-col shadow-sm">
-                        <span className="text-[8px] font-bold text-blue-400 uppercase">{i + 1}ª</span>
-                        <span className="text-[9px] font-semibold text-gray-600">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
-                        <span className="text-[10px] font-black text-blue-700">R$ {(i === quantidadeParcelas - 1 ? vUlt : vBase).toFixed(2)}</span>
+                     <div key={i} className="min-w-[100px] bg-white border border-blue-100 rounded-lg p-2 flex flex-col shadow-sm transition-all hover:border-blue-300 group">
+                        <div className="flex justify-between items-center mb-1 border-b border-blue-50 pb-1">
+                          <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 uppercase italic leading-none">{i + 1}ª</span>
+                          <span className="text-[11px] font-semibold text-gray-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-xs font-black text-blue-800">R$ {(i === quantidadeParcelas - 1 ? vUlt : vBase).toFixed(2)}</span>
+                        </div>
                      </div>
                    )
                 })}

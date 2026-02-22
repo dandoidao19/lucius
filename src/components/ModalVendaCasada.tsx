@@ -716,10 +716,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                         }
                       }
                       return (
-                        <div key={i} className="flex justify-between items-center bg-white/90 px-2 py-1 rounded border border-pink-50 shadow-sm">
-                          <span className="text-[8px] font-black text-pink-300 uppercase italic leading-none">{i + 1}ª</span>
-                          <span className="text-[9px] font-semibold text-slate-500 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
-                          <span className="text-[10px] font-black text-pink-700 leading-none">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-pink-100 shadow-sm transition-all hover:bg-white group">
+                          <span className="text-[10px] font-black text-pink-300 group-hover:text-pink-600 uppercase italic leading-none">{i + 1}ª</span>
+                          <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          <span className="text-xs font-black text-pink-800 leading-none">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}
@@ -765,10 +765,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                         }
                       }
                       return (
-                        <div key={i} className="flex justify-between items-center bg-white/90 px-2 py-1 rounded border border-blue-50 shadow-sm">
-                          <span className="text-[8px] font-black text-blue-300 uppercase italic leading-none">{i + 1}ª</span>
-                          <span className="text-[9px] font-semibold text-slate-500 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
-                          <span className="text-[10px] font-black text-blue-700 leading-none">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                        <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition-all hover:bg-white group">
+                          <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 uppercase italic leading-none">{i + 1}ª</span>
+                          <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          <span className="text-xs font-black text-blue-800 leading-none">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
                         </div>
                       )
                     })}
