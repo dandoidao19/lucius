@@ -47,6 +47,23 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
 
   if (!aberto) return null
 
+  const handleCancelar = () => {
+    if (window.confirm('Deseja realmente cancelar o lançamento? Todos os dados preenchidos serão perdidos.')) {
+      clearDraft('casa')
+      setForm({
+        descricao: '',
+        valor: '',
+        tipo: 'saida',
+        centroCustoId: '',
+        data: getDataAtualBrasil(),
+        status: 'previsto',
+        parcelas: 1,
+        prazoParcelas: 'mensal',
+      })
+      onClose()
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.descricao || !form.valor || !form.centroCustoId) {
@@ -189,13 +206,22 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
               <option value="mensal">Mensal</option>
             </select>
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-1.5 rounded font-bold hover:bg-blue-700 disabled:bg-gray-400 text-xs uppercase"
-          >
-            {loading ? 'Salvando...' : 'Adicionar Lançamento'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleCancelar}
+              className="flex-1 bg-gray-200 text-gray-700 py-1.5 rounded font-bold hover:bg-gray-300 text-xs uppercase"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-[2] bg-blue-600 text-white py-1.5 rounded font-bold hover:bg-blue-700 disabled:bg-gray-400 text-xs uppercase"
+            >
+              {loading ? 'Salvando...' : 'Adicionar Lançamento'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
