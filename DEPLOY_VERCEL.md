@@ -7,7 +7,7 @@ Siga estes passos para colocar o sistema em produção.
 Antes de fazer o deploy, certifique-se de que o seu banco de dados está atualizado.
 
 1.  Acesse o **SQL Editor** no painel do seu projeto Supabase.
-2.  Execute o conteúdo do arquivo `sql/SQL_MASTER_V5_1.sql` para garantir que todas as funções de manutenção e correções de integridade estejam ativas.
+2.  Execute o conteúdo do arquivo `sql/MASTER_INSTALL_V5_4.sql`. Este script garante que todas as colunas necessárias (v5.0+) existam e recalibra todos os saldos e contagens do sistema.
 
 ## 2. Configuração das Variáveis de Ambiente
 

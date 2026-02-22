@@ -50,9 +50,9 @@ npm run dev
 
 Para corrigir registros antigos que possam estar com totais ou contagens de itens divergentes, disponibilizamos um novo script de manutenção.
 
-### 1. Corrigir Totais e Contagens
-Se você notar transações com valores de cabeçalho diferentes da soma dos itens, execute o arquivo:
-**`sql/SQL_MANUTENCAO_TOTAIS_V5_4.sql`** no seu SQL Editor do Supabase.
+### 1. Corrigir Colunas, Totais e Contagens
+Se você notar transações com valores de cabeçalho diferentes da soma dos itens ou erros de colunas faltantes, execute o arquivo:
+**`sql/MASTER_INSTALL_V5_4.sql`** no seu SQL Editor do Supabase. Este script cria automaticamente qualquer coluna faltante e sincroniza todos os saldos.
 
 ### 2. Recalibrar Estoque
 Caso note discrepâncias no saldo de produtos, utilize a ferramenta de **Manutenção de Estoque** disponível no painel de configurações do módulo Loja (v5.3+).
