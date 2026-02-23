@@ -46,12 +46,12 @@ export default function LojaModulo() {
     <div className="space-y-1">
       {/* Menu Horizontal Compacto */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200 p-0.5">
-        <nav className="flex flex-wrap gap-0.5">
+        <nav className="flex flex-nowrap overflow-x-auto gap-0.5 custom-scrollbar">
           {abas.map((aba) => (
             <button
               key={aba.id}
               onClick={() => trocarAba(aba.id)}
-              className={`flex-1 min-w-max px-4 py-1 text-sm font-semibold transition-all rounded flex items-center justify-center ${
+              className={`flex-1 min-w-max px-4 py-2 sm:py-1 text-xs sm:text-sm font-semibold transition-all rounded flex items-center justify-center whitespace-nowrap ${
                 abaAtiva === aba.id
                   ? aba.corAtiva
                   : 'bg-white text-gray-600 hover:bg-gray-50 border border-transparent'

@@ -550,18 +550,18 @@ export default function LojaPaginaFinanceiro() {
                 <table className="w-full border-collapse text-xs">
                   <thead>
                     <tr className="bg-purple-600 text-white border-b border-purple-500">
-                      <th className="px-1 py-1 text-left font-semibold uppercase w-[85px]">Venc.</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase w-[85px]">Pagto.</th>
-                      <th className="px-0.5 py-1 text-left font-semibold uppercase w-[45px]">Nº</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[90px]">Cliente/Fornecedor</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[150px]">Observações</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[60px]">Valor</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[60px]">Pago</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[40px]">Dif.</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px]">Parc.</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[80px]">Tipo</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[65px]">Status</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[35px]">Ação</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase w-[80px] sm:w-[85px]">Venc.</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase hidden sm:table-cell w-[85px]">Pagto.</th>
+                      <th className="px-0.5 py-1 text-left font-semibold uppercase w-[35px] sm:w-[45px]">Nº</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[80px] sm:min-w-[90px]">Cliente/Forn.</th>
+                      <th className="px-1 py-1 text-left font-semibold uppercase hidden lg:table-cell min-w-[150px]">Observações</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[55px] sm:w-[60px]">Valor</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase hidden md:table-cell w-[60px]">Pago</th>
+                      <th className="px-0.5 py-1 text-right font-semibold uppercase hidden md:table-cell w-[40px]">Dif.</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px]">P.</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[70px] sm:w-[80px]">Tipo</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[60px] sm:w-[65px]">Status</th>
+                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px] sm:w-[35px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -572,22 +572,20 @@ export default function LojaPaginaFinanceiro() {
                       return (
                         <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
-                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
-                          <td className="px-0.5 py-1 text-gray-500">#{transacao.numero_transacao || '—'}</td>
-                          <td className="px-1 py-1 text-gray-800 truncate max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
-                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={transacao.observacao}>{transacao.observacao || '—'}</td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap">
-                            <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>
-                              R$ {transacao.valor.toFixed(2)}
-                            </span>
+                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap hidden sm:table-cell">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-1 text-gray-500 text-center">#{transacao.numero_transacao || '—'}</td>
+                          <td className="px-1 py-1 text-gray-800 truncate max-w-[100px] sm:max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
+                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px] hidden lg:table-cell" title={transacao.observacao}>{transacao.observacao || '—'}</td>
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap font-bold text-gray-700">
+                            {transacao.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap">
-                            {temPag ? <span className={transacao.status_pagamento === 'pago' ? (transacao.tipo === 'entrada' ? 'bg-green-700 text-white font-bold px-1 py-0.5 rounded inline-block' : 'bg-red-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (transacao.tipo === 'entrada' ? 'text-green-600 font-bold' : 'text-red-600 font-bold')}>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap hidden md:table-cell">
+                            {temPag ? <span>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
                           </td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap">{temPag && diferenca !== 0 ? <span className={transacao.status_pagamento === 'pago' ? (diferenca > 0 ? 'bg-yellow-600 text-white font-bold px-1.5 py-0.5 rounded inline-block' : 'bg-blue-600 text-white font-bold px-1.5 py-0.5 rounded inline-block') : (diferenca > 0 ? 'text-yellow-600 font-bold' : 'text-blue-600 font-bold')}>{diferenca > 0 ? '+' : ''}R$ {Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
-                          <td className="px-0.5 py-1 text-center text-gray-500"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-0.5 py-1 text-center whitespace-nowrap"><span className={`px-1 py-0.5 rounded text-white font-bold ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
+                          <td className="px-0.5 py-1 text-right whitespace-nowrap hidden md:table-cell">{temPag && diferenca !== 0 ? <span className={diferenca > 0 ? 'text-green-600' : 'text-red-600'}>{diferenca > 0 ? '+' : ''}{Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-1 text-center text-gray-500 text-[10px]"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
+                          <td className="px-0.5 py-1 text-center whitespace-nowrap"><span className={`px-1 py-0.5 rounded text-white font-bold text-[9px] ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
+                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase text-[9px] ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional/pedido) */}

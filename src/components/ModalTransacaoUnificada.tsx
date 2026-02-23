@@ -241,7 +241,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
             if (categoriaSelecionada && precoCusto > 0) {
               const percentual = categoriaSelecionada.percentual_repasse || 0
-              itemAtualizado.valor_repasse = precoCusto * (1 + percentual / 100)
+              itemAtualizado.valor_repasse = Math.ceil(precoCusto * (1 + percentual / 100) * 100) / 100
             } else {
               itemAtualizado.valor_repasse = precoCusto
             }
@@ -284,7 +284,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
     if (categoriaSelecionada && precoCusto > 0) {
       const percentual = categoriaSelecionada.percentual_repasse || 0
-      valorRepasse = precoCusto * (1 + percentual / 100)
+      valorRepasse = Math.ceil(precoCusto * (1 + percentual / 100) * 100) / 100
     }
 
     setItens((prevItens) =>
@@ -327,7 +327,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
-    const valorBase = Math.floor((total / qtdParcelas) * 100) / 100
+    const valorBase = Math.ceil((total / qtdParcelas) * 100) / 100
     const valorUltima = Number((total - (valorBase * (qtdParcelas - 1))).toFixed(2))
 
     const transacoes = []
@@ -1190,7 +1190,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       novosItens.forEach(it => {
         const cat = categorias.find(c => c.nome === it.categoria)
         if (cat && it.preco_custo > 0) {
-           it.valor_repasse = it.preco_custo * (1 + (cat.percentual_repasse || 0) / 100)
+           it.valor_repasse = Math.ceil(it.preco_custo * (1 + (cat.percentual_repasse || 0) / 100) * 100) / 100
         }
       })
       setItens([...novosItens])
@@ -1210,8 +1210,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
-      <div className={`bg-white rounded shadow-xl w-full max-h-[95vh] overflow-hidden flex flex-col transition-all border border-purple-200 ${tipo ? 'max-w-4xl' : 'max-w-md'}`}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-1 sm:p-2">
+      <div className={`bg-white rounded shadow-xl w-full max-h-[98vh] sm:max-h-[95vh] overflow-hidden flex flex-col transition-all border border-purple-200 ${tipo ? 'max-w-5xl' : 'max-w-md'}`}>
         {/* Cabeçalho */}
         <div className="bg-purple-600 px-3 py-1 flex justify-between items-center text-white border-b border-purple-700">
           <h2 className="text-xs font-semibold uppercase tracking-widest">Lançar Nova Transação</h2>
@@ -1665,10 +1665,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                         </p>
                         <span className="text-[9px] font-black bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase">Visualização Prévia</span>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                      <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 sm:max-h-48 overflow-y-auto pr-1 custom-scrollbar pb-2">
                         {Array.from({ length: Math.min(quantidadeParcelas, 72) }).map((_, i) => {
                           const totalFinal = calcularTotal()
-                          const valorBase = Math.floor((totalFinal / quantidadeParcelas) * 100) / 100
+                          const valorBase = Math.ceil((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
                           let dataParcela = dataVencimento
@@ -1754,33 +1754,33 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
         {/* Rodapé fixo quando tipo selecionado */}
         {tipo && (
-          <div className="p-4 border-t bg-slate-900 flex justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
-            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
+          <div className="p-3 sm:p-4 border-t bg-slate-900 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
+            <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
               CORE ENGINE v5.4
             </div>
             <button
               onClick={handleCancelar}
-              className="px-6 py-2.5 bg-slate-700 hover:bg-red-700 text-white rounded-lg font-bold transition-all flex items-center justify-center uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600"
+              className="w-full sm:w-auto px-6 py-2.5 bg-slate-700 hover:bg-red-700 text-white rounded-lg font-bold transition-all flex items-center justify-center uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600 order-2 sm:order-1"
             >
               Cancelar Lançamento
             </button>
-            <div className="flex gap-3 items-center">
+            <div className="flex gap-2 sm:gap-3 items-center w-full sm:w-auto order-1 sm:order-2">
               {(tipo === 'pedido_venda' || tipo === 'pedido_compra' || tipo === 'condicional_cliente' || tipo === 'condicional_fornecedor') && (
                 <button
                   onClick={handleGerarPedido}
                   disabled={loading}
-                  className="px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
+                  className="flex-1 sm:flex-none px-6 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
                 >
-                  {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Pedido' : '📝 Gerar Pedido'}
+                  {loading ? '...' : transacaoInicial ? '💾 Salvar' : '📝 Pedido'}
                 </button>
               )}
               {(tipo === 'venda' || tipo === 'compra') && (
                 <button
                   onClick={handleGerarTransacao}
                   disabled={loading}
-                  className="px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
+                  className="flex-1 sm:flex-none px-6 py-2.5 bg-green-600 hover:bg-green-500 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg font-black transition-all shadow-lg flex items-center justify-center uppercase text-[11px] active:scale-95"
                 >
-                  {loading ? 'Processando...' : transacaoInicial ? '💾 Salvar Transação' : '💰 Gerar Transação'}
+                  {loading ? '...' : transacaoInicial ? '💾 Salvar' : '💰 Lançar'}
                 </button>
               )}
             </div>

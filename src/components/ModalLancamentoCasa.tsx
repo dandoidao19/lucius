@@ -77,7 +77,8 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
       if (!user) throw new Error('Usuário não autenticado')
 
       const valorNumerico = parseFloat(form.valor)
-      const valorParcela = valorNumerico / form.parcelas
+      const valorBase = Math.ceil((valorNumerico / form.parcelas) * 100) / 100
+      const valorUltima = Number((valorNumerico - (valorBase * (form.parcelas - 1))).toFixed(2))
 
       const lancamentos = []
       for (let i = 1; i <= form.parcelas; i++) {
@@ -92,7 +93,7 @@ export default function ModalLancamentoCasa({ aberto, onClose }: ModalLancamento
         lancamentos.push({
           user_id: user.id,
           descricao: form.parcelas > 1 ? `${form.descricao.toUpperCase()} (${i}/${form.parcelas})` : form.descricao.toUpperCase(),
-          valor: valorParcela,
+          valor: i === form.parcelas ? valorUltima : valorBase,
           tipo: form.tipo,
           centro_custo_id: form.centroCustoId,
           data_lancamento: form.status === 'pago' ? getDataAtualBrasil() : dataParcela,

@@ -22,20 +22,24 @@ Este documento detalha as descobertas da varredura completa realizada no sistema
 - **Problema:** Avisos no console sobre inputs mudando de controlado para não controlado devido a valores `null` vindos do banco de dados.
 - **Correção:** Aplicados fallbacks defensivos (`value || ''`) em todos os componentes de formulário, especialmente no `ModalEditarProduto`.
 
+### 1.5 Precisão Decimal (Dízimas Periódicas)
+- **Problema:** Cálculos de parcelamento e repasse geravam dízimas (ex: 33.333333334), causando centavos de diferença no total.
+- **Correção:** Padronizado o uso de `Math.ceil(valor * 100) / 100` em todos os motores de cálculo financeiro (Loja e Casa) para garantir que o arredondamento seja sempre para cima no segundo decimal, eliminando resíduos matemáticos.
+
 ## 2. Limpeza e Otimização
 
 ### 2.1 Remoção de Arquivos Órfãos
-Foram removidos 7 componentes que não possuíam mais referências no código fonte, reduzindo o tamanho do bundle e facilitando a manutenção:
-- `AuthGuard.tsx`
-- `BotaoFiltroRapido.tsx`
-- `FiltroModular.tsx`
-- `FiltrosLancamentosCasa.tsx`
-- `FiltrosLancamentosLoja.tsx`
-- `ModuloCondicional.tsx`
-- `VisualizacaoCaixas.tsx`
+Foram removidos 7 componentes que não possuia mais referências no código fonte, reduzindo o tamanho do bundle e facilitando a manutenção:
+- `AuthGuard.tsx`, `BotaoFiltroRapido.tsx`, `FiltroModular.tsx`, `FiltrosLancamentosCasa.tsx`, `FiltrosLancamentosLoja.tsx`, `ModuloCondicional.tsx`, `VisualizacaoCaixas.tsx`.
 
-### 2.2 Centralização de Erros
+### 2.2 Otimização Mobile (Navegação via Browser)
+- **Dashboard:** Menu superior redesenhado com scroll horizontal e botões fluidos.
+- **Tabelas:** Implementado scroll horizontal (`overflow-x-auto`) e ocultação inteligente de colunas secundárias (Obs, CDC) em telas pequenas.
+- **Modais:** Grids de formulários agora empilham verticalmente no mobile, garantindo que todos os campos sejam acessíveis sem zoom.
+- **Acessibilidade:** Adicionado botão "Cancelar" explícito nos formulários da Casa para facilitar a limpeza de rascunhos em telas de toque.
+
+### 2.3 Centralização de Erros
 - Reiteração do uso do utilitário `formatarErro` para evitar strings de erro brutas do banco de dados expostas ao usuário final.
 
 ## 3. Conclusão da Varredura
-O sistema encontra-se agora em um estado de **Estabilidade v5.4**, com integridade de dados reforçada e código limpo de redundâncias identificadas.
+O sistema encontra-se agora em um estado de **Estabilidade v5.4**, com integridade de dados reforçada, interface responsiva otimizada para navegadores mobile e código limpo de redundâncias identificadas.

@@ -126,7 +126,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('Usuário não autenticado.')
 
-      const valorBase = Math.floor((valorFinal / quantidadeParcelas) * 100) / 100
+      const valorBase = Math.ceil((valorFinal / quantidadeParcelas) * 100) / 100
       const valorUltima = Number((valorFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
       if (isEditMode && lancamentoInicial) {
@@ -325,7 +325,7 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
              <div className="flex gap-2 pb-1">
                 {Array.from({ length: Math.min(quantidadeParcelas, 12) }).map((_, i) => {
                    const valorFinal = valor + acrescimoDesconto
-                   const vBase = Math.floor((valorFinal / quantidadeParcelas) * 100) / 100
+                   const vBase = Math.ceil((valorFinal / quantidadeParcelas) * 100) / 100
                    const vUlt = Number((valorFinal - (vBase * (quantidadeParcelas - 1))).toFixed(2))
 
                    let dtP = data

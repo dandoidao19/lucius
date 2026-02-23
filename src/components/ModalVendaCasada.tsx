@@ -143,7 +143,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
           const cat = categorias.find(c => c.nome === categoriaNome)
           if (cat && precoCusto > 0) {
-            itemAtualizado.valor_repasse = precoCusto * (1 + (cat.percentual_repasse || 0) / 100)
+            itemAtualizado.valor_repasse = Math.ceil(precoCusto * (1 + (cat.percentual_repasse || 0) / 100) * 100) / 100
           } else {
             itemAtualizado.valor_repasse = precoCusto
           }
@@ -198,7 +198,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: any, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const valorBase = Math.floor((total / qtdParcelas) * 100) / 100
+    const valorBase = Math.ceil((total / qtdParcelas) * 100) / 100
     const valorUltima = Number((total - (valorBase * (qtdParcelas - 1))).toFixed(2))
     const transacoes = []
     for (let i = 1; i <= qtdParcelas; i++) {
@@ -589,7 +589,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   if (!aberto) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-2 sm:p-4 overflow-y-auto pt-4 pb-20">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center z-[50] p-1 sm:p-4 overflow-y-auto pt-2 sm:pt-4 pb-20">
       <div className="bg-white w-full max-w-6xl rounded-xl shadow-xl flex flex-col h-fit my-auto min-h-[600px] border border-slate-200">
         {/* Header */}
         <div className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
@@ -704,7 +704,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <div className="mt-2 bg-pink-50/30 p-2 rounded-lg border border-pink-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
                     {Array.from({ length: Math.min(pagVenda.parcelas, 48) }).map((_, i) => {
-                      const valorBase = Math.floor(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
+                      const valorBase = Math.ceil(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
                       const valorUltima = Number(((totalVenda + pagVenda.acrescimoDesconto) - (valorBase * (pagVenda.parcelas - 1))).toFixed(2))
                       let dtP = pagVenda.vencimento
                       if (i > 0 && pagVenda.vencimento) {
@@ -753,7 +753,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <div className="mt-2 bg-blue-50/30 p-2 rounded-lg border border-blue-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
                     {Array.from({ length: Math.min(pagCompra.parcelas, 48) }).map((_, i) => {
-                      const valorBase = Math.floor(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
+                      const valorBase = Math.ceil(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
                       const valorUltima = Number(((totalCompra + pagCompra.acrescimoDesconto) - (valorBase * (pagCompra.parcelas - 1))).toFixed(2))
                       let dtP = pagCompra.vencimento
                       if (i > 0 && pagCompra.vencimento) {
@@ -784,14 +784,14 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t border-pink-500 relative">
-            <div className="absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.4</div>
-            <div className="flex gap-8 items-center">
+            <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.4</div>
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-center w-full sm:w-auto">
               <div className="flex flex-col"><p className="text-[8px] uppercase font-bold text-pink-400">Venda { (totalSaidaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalSaidaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalSaidaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalSaidaAnterior + totalVenda).toFixed(2)}</p></div></div>
               <div className="flex flex-col border-l border-white/10 pl-8"><p className="text-[8px] uppercase font-bold text-blue-400">Compra { (totalEntradaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalEntradaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalEntradaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalEntradaAnterior + totalCompra).toFixed(2)}</p></div></div>
             </div>
-            <div className="flex gap-4">
-              <button onClick={handleCancelar} className="bg-slate-700 hover:bg-red-700 text-white px-8 py-2.5 rounded-lg font-bold transition-all uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600">Cancelar</button>
-              <button onClick={handleSubmit} disabled={loading || !cliente || !fornecedor} className="bg-green-600 hover:bg-green-500 text-white px-10 py-2.5 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase text-[11px] disabled:opacity-50">{loading ? 'PROCESSANDO...' : '💰 FINALIZAR CASADA'}</button>
+            <div className="flex gap-2 sm:gap-4 w-full sm:w-auto">
+              <button onClick={handleCancelar} className="flex-1 sm:flex-none bg-slate-700 hover:bg-red-700 text-white px-4 sm:px-8 py-2.5 rounded-lg font-bold transition-all uppercase text-[11px] shadow-lg active:scale-95 border border-slate-600">Cancelar</button>
+              <button onClick={handleSubmit} disabled={loading || !cliente || !fornecedor} className="flex-[2] sm:flex-none bg-green-600 hover:bg-green-500 text-white px-4 sm:px-10 py-2.5 rounded-lg font-black transition-all shadow-lg active:scale-95 uppercase text-[11px] disabled:opacity-50">{loading ? '...' : '💰 FINALIZAR'}</button>
             </div>
           </div>
         </div>

@@ -384,14 +384,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
         <div className="p-2 overflow-y-auto space-y-2 text-xs">
           {/* Resumo */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-gray-50 p-1.5 rounded border">
-            <div>
-              <p className="text-xs font-bold text-gray-500 uppercase">Entidade</p>
-              <p className="font-bold text-gray-800 truncate">{dadosResumo.entidade}</p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 bg-gray-50 p-1.5 rounded border">
+            <div className="col-span-2 md:col-span-1">
+              <p className="text-[10px] font-bold text-gray-500 uppercase">Entidade</p>
+              <p className="font-bold text-gray-800 truncate text-sm">{dadosResumo.entidade}</p>
             </div>
             <div>
-              <p className="text-xs font-bold text-gray-500 uppercase">Status</p>
-              <span className={`inline-block text-xs font-black px-1.5 rounded ${
+              <p className="text-[10px] font-bold text-gray-500 uppercase">Status</p>
+              <span className={`inline-block text-[10px] font-black px-1.5 rounded ${
                 dadosResumo.status === 'pago' || dadosResumo.status === 'resolvido' ? 'bg-green-600 text-white' :
                 dadosResumo.status === 'faturado' ? 'bg-purple-600 text-white' :
                 dadosResumo.status === 'parcial' ? 'bg-blue-600 text-white' :
@@ -435,14 +435,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
             <div className="border rounded overflow-x-auto shadow-sm">
               <table className="w-full text-left min-w-[500px]">
                 <thead className="bg-gray-100 border-b">
-                  <tr className="text-xs">
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase">Descrição</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase">Categoria</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center">Qtd</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right">Unitário</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right">Subtotal</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center">Status</th>
-                    <th className="px-2 py-1 font-bold text-gray-600 uppercase">Obs. Item</th>
+                  <tr className="text-[10px] sm:text-xs">
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase min-w-[120px]">Descrição</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase hidden sm:table-cell">Cat.</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center w-[40px]">Qtd</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right hidden sm:table-cell">Unit.</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-right w-[80px]">Total</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase text-center w-[70px]">Status</th>
+                    <th className="px-2 py-1 font-bold text-gray-600 uppercase hidden md:table-cell">Obs.</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y bg-white">
@@ -452,16 +452,16 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                     <tr><td colSpan={7} className="px-2 py-4 text-center text-gray-400 italic">Vazio</td></tr>
                   ) : (
                     itens.map(item => (
-                      <tr key={item.id} className="hover:bg-gray-50">
+                      <tr key={item.id} className="hover:bg-gray-50 text-[10px] sm:text-xs">
                         <td className="px-2 py-1">
                           <div className="font-medium text-gray-800">{item.descricao}</div>
                         </td>
-                        <td className="px-2 py-1 text-gray-600">{item.categoria || '—'}</td>
-                        <td className="px-2 py-1 text-center">{item.quantidade}</td>
-                        <td className="px-2 py-1 text-right">R$ {(isVenda ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
-                        <td className="px-2 py-1 text-right font-bold text-gray-900">R$ {(item.quantidade * (isVenda ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-gray-600 hidden sm:table-cell">{item.categoria || '—'}</td>
+                        <td className="px-2 py-1 text-center font-bold">{item.quantidade}</td>
+                        <td className="px-2 py-1 text-right hidden sm:table-cell">R$ {(isVenda ? item.preco_venda : item.valor_repasse).toFixed(2)}</td>
+                        <td className="px-2 py-1 text-right font-bold text-gray-900 whitespace-nowrap">R$ {(item.quantidade * (isVenda ? item.preco_venda : item.valor_repasse)).toFixed(2)}</td>
                         <td className="px-2 py-1 text-center">
-                           <span className={`inline-block px-1 rounded text-[10px] font-bold uppercase ${
+                           <span className={`inline-block px-1 rounded text-[9px] font-bold uppercase ${
                              item.status === 'efetuado' ? 'bg-green-100 text-green-700' :
                              item.status === 'cancelado' ? 'bg-red-100 text-red-700' :
                              'bg-yellow-100 text-yellow-700'
@@ -469,7 +469,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                              {item.status}
                            </span>
                         </td>
-                        <td className="px-2 py-1 text-gray-500 italic truncate max-w-[200px]" title={item.observacao}>
+                        <td className="px-2 py-1 text-gray-500 italic truncate max-w-[200px] hidden md:table-cell" title={item.observacao}>
                           {item.observacao || '—'}
                         </td>
                       </tr>
@@ -540,12 +540,12 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           )}
         </div>
 
-        <div className="p-2 bg-gray-50 border-t flex justify-between items-center">
-          <div className="flex gap-2">
+        <div className="p-2 bg-gray-50 border-t flex flex-col sm:flex-row justify-between items-center gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             {tipo === 'pedidos_loja' && dadosResumo.status !== 'faturado' && dadosResumo.status !== 'cancelado' && (
               <button
                 onClick={() => setFaturarAberto(true)}
-                className="px-4 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-700 transition-all text-xs"
+                className="flex-1 sm:flex-none px-4 py-1.5 bg-green-600 text-white rounded font-bold hover:bg-green-700 transition-all text-xs uppercase"
               >
                 Faturar
               </button>
@@ -553,21 +553,21 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
             <button
               onClick={handleEditClick}
               disabled={loadingExcluir || !transacaoFull}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-all text-xs disabled:opacity-50"
+              className="flex-1 sm:flex-none px-4 py-1.5 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition-all text-xs disabled:opacity-50 uppercase"
             >
               Editar
             </button>
             <button
               onClick={handleExcluir}
               disabled={loadingExcluir}
-              className="px-4 py-1.5 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs disabled:opacity-50"
+              className="flex-1 sm:flex-none px-4 py-1.5 bg-red-600 text-white rounded font-bold hover:bg-red-700 transition-all text-xs disabled:opacity-50 uppercase"
             >
-              {loadingExcluir ? 'Excluindo...' : 'Excluir'}
+              {loadingExcluir ? '...' : 'Excluir'}
             </button>
           </div>
           <button
             onClick={onClose}
-            className="px-4 py-1.5 bg-gray-800 text-white rounded font-bold hover:bg-gray-900 transition-all text-xs"
+            className="w-full sm:w-auto px-4 py-1.5 bg-gray-800 text-white rounded font-bold hover:bg-gray-900 transition-all text-xs uppercase"
           >
             Fechar
           </button>

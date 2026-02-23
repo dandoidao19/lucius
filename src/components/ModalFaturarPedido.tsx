@@ -176,7 +176,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         }
 
         // Financeiro da nova Transação
-        const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
+        const valorBase = Math.ceil((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
         for (let i = 1; i <= quantidadeParcelas; i++) {
@@ -240,7 +240,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
 
       if (parcelasPendentes && parcelasPendentes.length > 0) {
         if (novoTotalFinanceiro > 0) {
-          const valorBase = Math.floor((novoTotalFinanceiro / parcelasPendentes.length) * 100) / 100
+          const valorBase = Math.ceil((novoTotalFinanceiro / parcelasPendentes.length) * 100) / 100
           const valorUltima = Number((novoTotalFinanceiro - (valorBase * (parcelasPendentes.length - 1))).toFixed(2))
 
           for (let i = 0; i < parcelasPendentes.length; i++) {
@@ -274,9 +274,9 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
   if (!aberto) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4">
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-purple-200">
-        <div className="bg-purple-700 text-white px-4 py-2 flex justify-between items-center">
+    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-1 sm:p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-5xl max-h-[98vh] sm:max-h-[90vh] overflow-hidden flex flex-col border border-purple-200">
+        <div className="bg-purple-700 text-white px-4 py-1.5 sm:py-2 flex justify-between items-center">
           <h2 className="font-bold text-sm uppercase tracking-wider">Faturamento do Pedido #{pedido?.numero_transacao}</h2>
           <button onClick={onClose} className="hover:bg-purple-800 p-1 rounded">✕</button>
         </div>
@@ -286,10 +286,10 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
             <div className="text-center py-10 text-gray-500">Carregando itens...</div>
           ) : (
             <div className="space-y-4">
-              <div className="bg-blue-50 p-3 rounded border border-blue-200 grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-                <div>
-                  <span className="block font-bold text-blue-700 uppercase">Entidade</span>
-                  <span className="text-gray-900 font-semibold">{pedido?.entidade}</span>
+              <div className="bg-blue-50 p-2 sm:p-3 rounded border border-blue-200 grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 text-xs">
+                <div className="col-span-2 md:col-span-1">
+                  <span className="block font-bold text-blue-700 uppercase text-[10px]">Entidade</span>
+                  <span className="text-gray-900 font-bold text-sm">{pedido?.entidade}</span>
                 </div>
                 <div>
                   <span className="block font-bold text-blue-700 uppercase">Data Pedido</span>
@@ -308,45 +308,45 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
               {erro && <div className="bg-red-100 text-red-700 p-2 rounded text-xs font-bold">{erro}</div>}
 
               <div className="border rounded overflow-hidden">
-                <table className="w-full text-left text-xs">
+                <table className="w-full text-left text-[10px] sm:text-xs">
                   <thead className="bg-gray-100 border-b">
                     <tr>
-                      <th className="px-3 py-2 font-bold text-gray-600 uppercase">Item</th>
-                      <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center">Qtd</th>
-                      <th className="px-3 py-2 font-bold text-gray-600 uppercase text-right">Valor</th>
-                      <th className="px-3 py-2 font-bold text-gray-600 uppercase text-center">Ação</th>
+                      <th className="px-2 sm:px-3 py-2 font-bold text-gray-600 uppercase">Item</th>
+                      <th className="px-1 sm:px-3 py-2 font-bold text-gray-600 uppercase text-center w-[40px]">Qtd</th>
+                      <th className="px-1 sm:px-3 py-2 font-bold text-gray-600 uppercase text-right w-[80px]">Total</th>
+                      <th className="px-2 sm:px-3 py-2 font-bold text-gray-600 uppercase text-center w-[120px] sm:w-[220px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
                     {itens.map(item => (
                       <tr key={item.id} className={item.acao === 'efetuar' ? 'bg-green-50' : item.acao === 'cancelar' ? 'bg-red-50' : ''}>
-                        <td className="px-3 py-2">
-                          <div className="font-bold">{item.descricao}</div>
-                          <div className="text-[10px] text-gray-500">{item.categoria}</div>
+                        <td className="px-2 sm:px-3 py-2">
+                          <div className="font-bold truncate max-w-[100px] sm:max-w-none">{item.descricao}</div>
+                          <div className="text-[9px] text-gray-500 hidden sm:block">{item.categoria}</div>
                         </td>
-                        <td className="px-3 py-2 text-center font-bold">{item.quantidade}</td>
-                        <td className="px-3 py-2 text-right font-bold text-purple-700">
-                          R$ {(item.quantidade * (pedido.tipo === 'venda' ? item.preco_venda : item.valor_repasse)).toFixed(2)}
+                        <td className="px-1 sm:px-3 py-2 text-center font-bold">{item.quantidade}</td>
+                        <td className="px-1 sm:px-3 py-2 text-right font-bold text-purple-700 whitespace-nowrap">
+                          {(item.quantidade * (pedido.tipo === 'venda' ? item.preco_venda : item.valor_repasse)).toFixed(2)}
                         </td>
-                        <td className="px-3 py-2">
-                          <div className="flex justify-center gap-1">
+                        <td className="px-2 sm:px-3 py-2">
+                          <div className="flex flex-wrap sm:flex-nowrap justify-center gap-1">
                             <button
                               onClick={() => handleAcaoItem(item.id, 'efetuar')}
-                              className={`px-2 py-1 rounded text-[10px] font-bold ${item.acao === 'efetuar' ? 'bg-green-600 text-white shadow-md scale-105' : 'bg-gray-200 text-gray-600 hover:bg-green-100'}`}
+                              className={`flex-1 sm:flex-none px-1.5 sm:px-2 py-1 rounded text-[9px] sm:text-[10px] font-bold ${item.acao === 'efetuar' ? 'bg-green-600 text-white shadow-sm' : 'bg-gray-200 text-gray-600'}`}
                             >
-                              EFETUAR
+                              FATURAR
                             </button>
                             <button
                               onClick={() => handleAcaoItem(item.id, 'pendente')}
-                              className={`px-2 py-1 rounded text-[10px] font-bold ${item.acao === 'pendente' ? 'bg-yellow-500 text-white shadow-md scale-105' : 'bg-gray-200 text-gray-600 hover:bg-yellow-100'}`}
+                              className={`flex-1 sm:flex-none px-1.5 sm:px-2 py-1 rounded text-[9px] sm:text-[10px] font-bold ${item.acao === 'pendente' ? 'bg-yellow-500 text-white shadow-sm' : 'bg-gray-200 text-gray-600'}`}
                             >
-                              PENDENTE
+                              ADIA
                             </button>
                             <button
                               onClick={() => handleAcaoItem(item.id, 'cancelar')}
-                              className={`px-2 py-1 rounded text-[10px] font-bold ${item.acao === 'cancelar' ? 'bg-red-600 text-white shadow-md scale-105' : 'bg-gray-200 text-gray-600 hover:bg-red-100'}`}
+                              className={`flex-1 sm:flex-none px-1.5 sm:px-2 py-1 rounded text-[9px] sm:text-[10px] font-bold ${item.acao === 'cancelar' ? 'bg-red-600 text-white shadow-sm' : 'bg-gray-200 text-gray-600'}`}
                             >
-                              CANCELAR
+                              CANC.
                             </button>
                           </div>
                         </td>
@@ -427,7 +427,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
                       {Array.from({ length: Math.min(quantidadeParcelas, 60) }).map((_, i) => {
                         const totalFaturadoFinal = (itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)) + acrescimoDesconto
-                        const valorBase = Math.floor((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
+                        const valorBase = Math.ceil((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
                         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
                         let dataP = dataVencimento
@@ -465,19 +465,19 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
           )}
         </div>
 
-        <div className="p-4 bg-gray-100 border-t flex justify-between items-center">
+        <div className="p-3 sm:p-4 bg-gray-100 border-t flex flex-col sm:flex-row justify-between items-center gap-3">
           <button
             onClick={onClose}
-            className="px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-bold uppercase text-xs transition-all"
+            className="w-full sm:w-auto px-6 py-2 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded font-bold uppercase text-xs transition-all"
           >
             Cancelar
           </button>
           <button
             onClick={handleFinalizar}
             disabled={processando || itens.length === 0}
-            className="px-8 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded font-black uppercase text-xs transition-all shadow-lg disabled:opacity-50"
+            className="w-full sm:w-auto px-8 py-2 bg-purple-700 hover:bg-purple-800 text-white rounded font-black uppercase text-xs transition-all shadow-lg disabled:opacity-50"
           >
-            {processando ? 'PROCESSANDO...' : 'FINALIZAR FATURAMENTO'}
+            {processando ? '...' : 'FINALIZAR FATURAMENTO'}
           </button>
         </div>
       </div>

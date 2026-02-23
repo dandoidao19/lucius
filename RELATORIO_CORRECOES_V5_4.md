@@ -12,7 +12,12 @@ Este relatório descreve as alterações técnicas aplicadas na versão 5.4 e as
 - **Categorização:** Correção no vínculo de categorias para novos produtos.
 - **Métricas Reais:** A contagem de itens agora reflete a quantidade real de peças vendidas/compradas, fornecendo métricas mais precisas nos relatórios.
 
+### 📱 Otimização Mobile (Browser)
+- **Responsividade:** Listas de transações e finanças agora são perfeitamente navegáveis em celulares via browser.
+- **Grids Fluidos:** Formulários de lançamento ajustam automaticamente o tamanho para evitar scroll lateral desnecessário.
+
 ### 🧹 Faxina de Código
+- **Precisão Matemática:** Implementado arredondamento `Math.ceil` para eliminar centavos residuais (dízimas).
 - **Limpeza:** Remoção de 7 arquivos de componentes obsoletos.
 - **Branding:** Sistema atualizado visualmente para a marca **LUCIUS v5.4**.
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { Home, ShoppingBag, Receipt, Handshake } from 'lucide-react'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalLancamentoCasa from './ModalLancamentoCasa'
@@ -17,12 +18,13 @@ export default function AtalhosGlobais() {
   const [mounted, setMounted] = useState(false)
   const { triggerRefresh } = useDadosFinanceiros()
   const { hasDraft } = useFormDraft()
+  const pathname = usePathname()
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted) return null
+  if (!mounted || pathname === '/') return null
 
   return (
     <>

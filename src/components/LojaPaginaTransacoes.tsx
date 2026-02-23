@@ -305,20 +305,20 @@ export default function LojaPaginaTransacoes() {
       </div>
 
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="overflow-x-auto p-0.5">
+          <table className="w-full text-left border-collapse text-[10px] sm:text-xs">
             <thead className="bg-pink-700 text-white border-b border-pink-800">
               <tr>
-                <th className="px-1 py-1 font-semibold uppercase w-[85px]">Data</th>
-                <th className="px-1 py-1 font-semibold uppercase text-center w-[85px]">Tipo</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[45px]">Nº</th>
-                <th className="px-1 py-1 font-semibold uppercase min-w-[90px]">Cliente/Fornecedor</th>
-                <th className="px-1 py-1 font-semibold uppercase min-w-[150px]">Observações</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-right w-[60px]">Total</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[30px]">Parc.</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[30px]">Itens</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[65px]">Status</th>
-                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[35px]">Ação</th>
+                <th className="px-1 py-1 font-semibold uppercase w-[75px] sm:w-[85px]">Data</th>
+                <th className="px-1 py-1 font-semibold uppercase text-center w-[75px] sm:w-[85px]">Tipo</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[35px] sm:w-[45px]">Nº</th>
+                <th className="px-1 py-1 font-semibold uppercase min-w-[80px] sm:min-w-[90px]">Cliente/Forn.</th>
+                <th className="px-1 py-1 font-semibold uppercase hidden md:table-cell min-w-[150px]">Observações</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-right w-[50px] sm:w-[60px]">Total</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-center hidden sm:table-cell w-[30px]">P.</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[30px]">It.</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[60px] sm:w-[65px]">Status</th>
+                <th className="px-0.5 py-1 font-semibold uppercase text-center w-[30px] sm:w-[35px]">Ação</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -340,14 +340,14 @@ export default function LojaPaginaTransacoes() {
                       </span>
                     </td>
                     <td className="px-0.5 py-1 text-gray-500 text-center">#{t.numero}</td>
-                    <td className="px-1 py-1 text-gray-800 truncate max-w-[140px]" title={t.entidade}>{t.entidade}</td>
-                    <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px]" title={t.observacao}>
+                    <td className="px-1 py-1 text-gray-800 truncate max-w-[100px] sm:max-w-[140px]" title={t.entidade}>{t.entidade}</td>
+                    <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px] hidden md:table-cell" title={t.observacao}>
                       {t.observacao.replace('[PEDIDO]', '').trim() || '—'}
                     </td>
                     <td className="px-0.5 py-1 text-right font-semibold text-gray-700 whitespace-nowrap">
-                      {t.total > 0 ? `R$ ${t.total.toFixed(2)}` : '—'}
+                      {t.total > 0 ? t.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'}
                     </td>
-                    <td className="px-0.5 py-1 text-center text-gray-600">{t.quantidade_parcelas}</td>
+                    <td className="px-0.5 py-1 text-center text-gray-600 hidden sm:table-cell">{t.quantidade_parcelas}</td>
                     <td className="px-0.5 py-1 text-center text-gray-600 font-semibold" title="Soma total de peças">{Math.round(t.quantidade_itens)}</td>
                     <td className="px-0.5 py-1 text-center uppercase">
                       <span className={`px-1 py-0.5 rounded font-semibold ${

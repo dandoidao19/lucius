@@ -266,6 +266,7 @@ export default function CasaModulo() {
 
     try {
       if (abaLancamentos === 'padrao') {
+        const valorNumerico = parseFloat(form.valor)
         if (form.parcelas === 1) {
           const dadosLancamento = {
             user_id: user.id,
@@ -288,7 +289,7 @@ export default function CasaModulo() {
 
           if (error) throw error
         } else {
-          const valorBase = Math.floor((valorNumerico / form.parcelas) * 100) / 100
+          const valorBase = Math.ceil((valorNumerico / form.parcelas) * 100) / 100
           const valorUltima = Number((valorNumerico - (valorBase * (form.parcelas - 1))).toFixed(2))
 
           const lancamentosParcelados = []
@@ -829,15 +830,15 @@ export default function CasaModulo() {
               </button>
             </div>
 
-            <form onSubmit={editandoLancamento ? salvarEdicao : adicionarLancamento} className="space-y-1.5">
-              <div className="grid grid-cols-2 gap-2">
+            <form onSubmit={editandoLancamento ? salvarEdicao : adicionarLancamento} className="space-y-2 sm:space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-0.5">Descrição *</label>
                   <input
                     type="text"
                     value={form.descricao}
                     onChange={(e) => setForm({...form, descricao: e.target.value})}
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Descrição do lançamento"
                   />
                 </div>
@@ -849,18 +850,18 @@ export default function CasaModulo() {
                     step="0.01"
                     value={form.valor}
                     onChange={(e) => setForm({...form, valor: e.target.value})}
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-0.5">Tipo *</label>
                   <select
                     value={form.tipo}
                     onChange={(e) => setForm({...form, tipo: e.target.value})}
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
                   >
                     <option value="saida">Saída</option>
                     <option value="entrada">Entrada</option>
@@ -872,7 +873,7 @@ export default function CasaModulo() {
                   <select
                     value={form.status}
                     onChange={(e) => setForm({...form, status: e.target.value})}
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
                   >
                     <option value="pago">Pago</option>
                     <option value="previsto">Previsto</option>
@@ -884,7 +885,7 @@ export default function CasaModulo() {
                   <select
                     value={form.centroCustoId}
                     onChange={(e) => setForm({...form, centroCustoId: e.target.value})}
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white"
                   >
                     <option value="">Selecione...</option>
                     {centrosCustoFiltrados.map(centro => (
@@ -894,12 +895,12 @@ export default function CasaModulo() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Data (Vencimento) *</label>
+                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Data *</label>
                   <input
                     type="date"
                     value={form.data}
                     onChange={handleDataChange} 
-                    className="block w-full px-2 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="block w-full px-2 py-1.5 sm:py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
@@ -1028,16 +1029,16 @@ export default function CasaModulo() {
             ) : lancamentosFiltrados.length === 0 ? (
               <p className="text-xs text-gray-500 text-center py-2">📭 Nenhum lançamento encontrado</p>
             ) : (
-              <div className="overflow-x-auto p-1">
-                <table className="min-w-full table-fixed text-xs">
+              <div className="overflow-x-auto p-0.5 sm:p-1">
+                <table className="min-w-full table-auto text-xs border-collapse">
                   <thead className="bg-blue-600 text-white border-b border-blue-500">
                     <tr>
-                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Data</th>
-                      <th className="w-1/12 px-1 py-1 text-left font-semibold uppercase text-xs">Status</th>
-                      <th className="w-2/12 px-1 py-1 text-right font-semibold uppercase text-xs">Valor</th>
-                      <th className="w-4/12 px-1 py-1 text-left font-semibold uppercase text-xs">Descrição</th>
-                      <th className="w-2/12 px-1 py-1 text-left font-semibold uppercase text-xs">CDC</th>
-                      <th className="w-2/12 px-1 py-1 text-center font-semibold uppercase text-xs">Ações</th>
+                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs w-[75px] sm:w-auto">Data</th>
+                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs w-[80px] sm:w-auto">Status</th>
+                      <th className="px-1.5 py-1 text-right font-semibold uppercase text-[10px] sm:text-xs w-[90px] sm:w-auto">Valor</th>
+                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs min-w-[120px]">Descrição</th>
+                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs hidden md:table-cell">CDC</th>
+                      <th className="px-1.5 py-1 text-center font-semibold uppercase text-[10px] sm:text-xs w-[80px] sm:w-auto">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1074,7 +1075,7 @@ export default function CasaModulo() {
                         <td className="px-1 py-1 text-xs text-gray-700 truncate">
                           {lancamento.descricao}
                         </td>
-                        <td className="px-1 py-1 text-xs text-gray-600 truncate">
+                        <td className="px-1 py-1 text-xs text-gray-600 truncate hidden md:table-cell">
                           {lancamento.centros_de_custo?.nome || '-'}
                         </td>
                         <td className="px-1 py-1 text-center">
