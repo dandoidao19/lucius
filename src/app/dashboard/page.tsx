@@ -102,29 +102,29 @@ export default function Dashboard() {
           {/* Header com Usuário e Logout - COMPACTADO */}
           <div className="flex justify-between items-center mb-2">
             <div>
-              <h1 className="text-lg md:text-xl font-bold text-gray-800">
+              <h1 className="text-base md:text-xl font-bold text-gray-800">
                 {getTitleBySection()}
               </h1>
-              <p className="text-xs text-gray-600 mt-0.5">
+              <p className="text-[10px] md:text-xs text-gray-600 mt-0.5">
                 Bem-vindo, <span className="font-semibold text-gray-800">{user?.email}</span>
               </p>
             </div>
             <button
               onClick={handleLogout}
-              className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors shadow-md text-xs"
+              className="bg-red-500 hover:bg-red-600 text-white px-2 md:px-3 py-1 md:py-1.5 rounded-lg font-medium transition-colors shadow-md text-[10px] md:text-xs"
             >
               🚪 Sair
             </button>
           </div>
 
           {/* Menu de Navegação com Ícones - COMPACTADO */}
-          <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
+          <div className="bg-white rounded-lg shadow-md p-0.5 md:p-1 mb-2 border border-gray-100">
             <div className="flex flex-wrap gap-1">
               {menuItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
+                  className={`px-2 md:px-3 py-1 md:py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${getButtonStyle(item.id, item.color)}`}
                 >
                   <span>{item.icon}</span>
                   <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
@@ -135,11 +135,11 @@ export default function Dashboard() {
 
           {/* Conteúdo Dinâmico */}
           {isDevFeaturesEnabled() && activeSection === 'dashboard' && (
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="col-span-1">
                 <ResumoCaixas />
               </div>
-              <div className="col-span-2">
+              <div className="hidden md:block md:col-span-2">
                 {/* Espaço para futuros componentes */}
               </div>
             </div>

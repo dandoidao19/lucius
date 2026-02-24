@@ -31,7 +31,7 @@ export default function CabecalhoSistema() {
 
         {/* Nome do Sistema (Centro) */}
         <div className="text-center flex-1 md:flex-none">
-          <h1 className="text-xl md:text-2xl font-black tracking-tighter md:tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative inline-block">
+          <h1 className="text-lg md:text-2xl font-black tracking-tighter md:tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative inline-block">
             LUCIUS
             <span className="absolute -top-1 -right-6 md:-right-8 text-[7px] md:text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v5.4</span>
           </h1>
