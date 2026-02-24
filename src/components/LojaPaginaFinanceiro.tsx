@@ -134,7 +134,7 @@ export default function LojaPaginaFinanceiro() {
         valor: trans.total,
         valor_pago: trans.valor_pago,
         juros_descontos: trans.juros_descontos,
-        status_pagamento: trans.status_pagamento || 'pendente',
+        status_pagamento: (trans.status_pagamento || 'pendente').toLowerCase().trim(),
         quantidade_parcelas: trans.quantidade_parcelas || 1,
         parcela_numero,
         parcela_total: trans.quantidade_parcelas || parcela_total,
@@ -300,7 +300,9 @@ export default function LojaPaginaFinanceiro() {
     }
 
     if (filtroStatus !== 'todos') {
-      resultado = resultado.filter(transacao => transacao.status_pagamento === filtroStatus)
+      resultado = resultado.filter(transacao =>
+        (transacao.status_pagamento || '').toLowerCase().trim() === filtroStatus.toLowerCase()
+      )
     }
 
     if (filtroDataInicio && filtroDataFim) {
@@ -369,18 +371,17 @@ export default function LojaPaginaFinanceiro() {
   }, [setFiltersLojaFinanceiro])
 
   const getStatusColor = useCallback((status: string | null) => {
-    if (!status) return 'bg-gray-100 text-gray-800'
-    if (status === 'pago') return 'bg-green-700 text-white font-bold'
-    switch (status) {
-      case 'pendente': return 'bg-yellow-100 text-yellow-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+    const s = (status || 'pendente').toLowerCase().trim()
+    if (s === 'pago') return 'bg-green-700 text-white font-bold'
+    if (s === 'pendente') return 'bg-yellow-100 text-yellow-800'
+    return 'bg-gray-100 text-gray-800'
   }, [])
 
   const getStatusLabel = useCallback((status: string | null) => {
-    if (!status) return 'N/A'
-    if (status === 'pago') return 'PAGO'
-    return status.charAt(0).toUpperCase() + status.slice(1)
+    const s = (status || 'pendente').toLowerCase().trim()
+    if (s === 'pago') return 'PAGO'
+    if (s === 'pendente') return 'PENDENTE'
+    return s.toUpperCase()
   }, [])
 
   const getTipoColor = useCallback((transacao: Transacao) => {
@@ -588,17 +589,29 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase text-[9px] ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
-                              {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional/pedido) */}
+                              {/* Ações permitidas para TODOS os tipos de parcelas (Pagar e Estornar) */}
+                              {transacao.status_pagamento === 'pago' ? (
+                                <button
+                                  onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })}
+                                  className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors"
+                                  title="Estornar"
+                                >
+                                  ↩️
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })}
+                                  className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors"
+                                  title="Pagar"
+                                >
+                                  💰
+                                </button>
+                              )}
+
+                              {/* Ações restritas apenas para lançamentos AVULSOS (Editar e Excluir) */}
                               {(!transacao.id_venda && !transacao.id_compra && !transacao.id_condicional && !transacao.id_pedido) ? (
-                                transacao.status_pagamento === 'pago' ? (
-                                  <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
-                                    ↩️
-                                  </button>
-                                ) : (
+                                transacao.status_pagamento !== 'pago' && (
                                   <>
-                                    <button onClick={() => setModalPagarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-green-500 hover:text-green-700 font-medium text-xs px-1.5 py-0.5 bg-green-50 rounded hover:bg-green-100 transition-colors" title="Pagar">
-                                      💰
-                                    </button>
                                     <button
                                       onClick={() => {
                                         setLancamentoParaEditar(transacao)
@@ -619,8 +632,8 @@ export default function LojaPaginaFinanceiro() {
                                   </>
                                 )
                               ) : (
-                                /* Se for vinculado, exibe apenas cadeado ou dica de que deve ser editado na transação */
-                                <span className="text-[10px] text-gray-400 font-semibold" title="Vínculo com Transação: Edite no módulo de Transações">
+                                /* Se for vinculado, exibe cadeado para Editar/Excluir */
+                                <span className="text-[10px] text-gray-400 font-semibold" title="Vínculo com Transação: Para editar dados básicos, acesse o módulo de Transações">
                                   🔒
                                 </span>
                               )}

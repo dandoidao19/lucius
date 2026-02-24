@@ -18,6 +18,10 @@ interface ModalEstornarTransacaoProps {
     valor_pago?: number
     juros_descontos?: number
     data_pagamento?: string
+    id_venda?: string
+    id_compra?: string
+    id_condicional?: string
+    id_pedido?: string
   } | null
   onClose: () => void
   onEstornoRealizado: () => void
@@ -40,56 +44,40 @@ export default function ModalEstornarTransacao({
     setErro('')
     
     try {
-      const tabela = transacao.tipo === 'entrada' ? 'vendas' : 'compras'
-      
-      console.log(`🔄 Processando estorno da ${tabela} ID: ${transacao.id}`)
-      
-      // 1. ESTORNAR TRANSAÇÃO PRINCIPAL (VENDA/COMPRA)
-      const { error: errorTransacao } = await supabase
-        .from(tabela)
-        .update({ status_pagamento: 'pendente' })
-        .eq('id', transacao.id)
-      
-      if (errorTransacao) {
-        console.error('❌ Erro ao estornar transação principal:', errorTransacao)
-        throw new Error(`Erro ao estornar ${tabela}: ${errorTransacao.message}`)
+      // 1. IDENTIFICAR E ESTORNAR TRANSAÇÃO PRINCIPAL (VENDA/COMPRA/PEDIDO/CONDICIONAL)
+      const idPrincipal = transacao.id_venda || transacao.id_compra || transacao.id_condicional || transacao.id_pedido
+      const tabelaPrincipal = transacao.id_venda ? 'vendas' :
+                             transacao.id_compra ? 'compras' :
+                             transacao.id_condicional ? 'transacoes_condicionais' :
+                             transacao.id_pedido ? 'pedidos_loja' : null
+
+      if (idPrincipal && tabelaPrincipal) {
+        console.log(`🔄 Estornando status da transação principal (${tabelaPrincipal}): ${idPrincipal}`)
+        const { error: errorPrincipal } = await supabase
+          .from(tabelaPrincipal)
+          .update({ status_pagamento: 'pendente' })
+          .eq('id', idPrincipal)
+
+        if (errorPrincipal) {
+          console.warn('⚠️ Falha ao atualizar transação principal (pode não existir mais):', errorPrincipal.message)
+        }
       }
       
-      console.log('✅ Transação principal estornada com sucesso')
-      
-      // 2. ESTORNAR TRANSAÇÕES LOJA (LIMPAR dados de pagamento)
-      const { data: transacoesLoja, error: erroBusca } = await supabase
+      // 2. ESTORNAR APENAS A PARCELA SELECIONADA (LIMPAR dados de pagamento)
+      console.log(`🔄 Estornando parcela específica: ${transacao.id}`)
+      const { error: errorParcela } = await supabase
         .from('transacoes_loja')
-        .select('id, valor_pago, juros_descontos, data_pagamento')
-        .ilike('descricao', `%${transacao.cliente_fornecedor || transacao.descricao}%`)
-        .eq('tipo', transacao.tipo)
-        .eq('status_pagamento', 'pago')
+        .update({
+          status_pagamento: 'pendente',
+          data_pagamento: null,
+          valor_pago: null,
+          juros_descontos: null
+        })
+        .eq('id', transacao.id)
       
-      if (erroBusca) {
-        console.error('❌ Erro ao buscar transações da loja:', erroBusca)
-      } else if (transacoesLoja && transacoesLoja.length > 0) {
-        const transacoesIds = transacoesLoja.map(t => t.id)
-        console.log(`📋 Encontradas ${transacoesIds.length} transações para estornar`)
-        
-        // ✅ LIMPAR COMPLETAMENTE dados de pagamento
-        const { error: errorTransacoesLoja } = await supabase
-          .from('transacoes_loja')
-          .update({ 
-            status_pagamento: 'pendente',
-            data_pagamento: null,           // ✅ LIMPAR DATA DE PAGAMENTO
-            valor_pago: null,               // ✅ LIMPAR VALOR PAGO
-            juros_descontos: null          // ✅ LIMPAR JUROS/DESCONTOS
-          })
-          .in('id', transacoesIds)
-        
-        if (errorTransacoesLoja) {
-          console.error('❌ Erro ao estornar transações da loja:', errorTransacoesLoja)
-          throw new Error(`Erro ao limpar dados de pagamento: ${errorTransacoesLoja.message}`)
-        } else {
-          console.log(`✅ ${transacoesIds.length} transações da loja estornadas (dados limpos)`)
-        }
-      } else {
-        console.log('ℹ️ Nenhuma transação da loja encontrada para estornar')
+      if (errorParcela) {
+        console.error('❌ Erro ao estornar parcela:', errorParcela)
+        throw new Error(`Erro ao estornar parcela: ${errorParcela.message}`)
       }
       
       // 3. ATUALIZAR CAIXA

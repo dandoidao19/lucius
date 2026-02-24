@@ -17,7 +17,7 @@ const ModalNotasAtualizacao = dynamic(() => import('@/components/ModalNotasAtual
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState(isDevFeaturesEnabled() ? 'dashboard' : 'casa') // Inicia em 'dashboard' se habilitado, senão 'casa'
+  const [activeSection, setActiveSection] = useState('dashboard') // Inicia em 'dashboard' por padrão
   const router = useRouter()
 
   useEffect(() => {
@@ -48,13 +48,13 @@ export default function Dashboard() {
     )
   }
 
-  // Define itens do menu - Filtrado por ambiente
+  // Define itens do menu
   const menuItems = [
-    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue', devOnly: true },
-    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green', devOnly: false },
-    { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple', devOnly: false },
-    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray', devOnly: false }
-  ].filter(item => !item.devOnly || isDevFeaturesEnabled())
+    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue' },
+    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green' },
+    { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple' },
+    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray' }
+  ]
 
   const getButtonStyle = (id: string, color: string) => {
     const isActive = activeSection === id
@@ -118,16 +118,16 @@ export default function Dashboard() {
           </div>
 
           {/* Menu de Navegação com Ícones - COMPACTADO */}
-          <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100 sticky top-0 z-30">
-            <div className="flex flex-nowrap overflow-x-auto gap-1 custom-scrollbar pb-1 sm:pb-0">
+          <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
+            <div className="flex flex-wrap gap-1">
               {menuItems.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveSection(item.id)}
-                  className={`px-3 py-2 sm:py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs flex-shrink-0 ${getButtonStyle(item.id, item.color)}`}
+                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
                 >
-                  <span className="text-sm sm:text-base">{item.icon}</span>
-                  <span className="inline">{item.label.split(' ')[1]}</span>
+                  <span>{item.icon}</span>
+                  <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
                 </button>
               ))}
             </div>
@@ -135,11 +135,11 @@ export default function Dashboard() {
 
           {/* Conteúdo Dinâmico */}
           {isDevFeaturesEnabled() && activeSection === 'dashboard' && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="md:col-span-1">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-1">
                 <ResumoCaixas />
               </div>
-              <div className="md:col-span-2">
+              <div className="col-span-2">
                 {/* Espaço para futuros componentes */}
               </div>
             </div>

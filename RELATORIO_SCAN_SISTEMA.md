@@ -26,6 +26,11 @@ Este documento detalha as descobertas da varredura completa realizada no sistema
 - **Problema:** Cálculos de parcelamento e repasse geravam dízimas (ex: 33.333333334), causando centavos de diferença no total.
 - **Correção:** Padronizado o uso de `Math.ceil(valor * 100) / 100` em todos os motores de cálculo financeiro (Loja e Casa) para garantir que o arredondamento seja sempre para cima no segundo decimal, eliminando resíduos matemáticos.
 
+### 1.6 Correções Emergenciais de Fluxo (Financeiro)
+- **Estorno de Parcelas:** Corrigida a lógica de estorno que estava afetando todas as parcelas de um cliente indevidamente. Agora o sistema utiliza o ID único da parcela e atualiza corretamente o status da transação principal.
+- **Ações em Parcelas Vinculadas:** Liberados os botões de Pagar e Estornar para parcelas vindas de Vendas/Compras no financeiro da loja. Ações de edição continuam protegidas para garantir a integridade.
+- **Normalização de Status:** Corrigido o erro visual de "PENDENTE" cinza. O sistema agora normaliza os status para minúsculas antes de aplicar cores e filtros, resolvendo discrepâncias entre o banco de dados e a interface.
+
 ## 2. Limpeza e Otimização
 
 ### 2.1 Remoção de Arquivos Órfãos
