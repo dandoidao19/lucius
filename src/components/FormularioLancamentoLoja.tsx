@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorEntidade from './SeletorEntidade'
 
@@ -39,30 +40,6 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
   const [erro, setErro] = useState('')
 
   const isEditMode = !!lancamentoInicial
-
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-
-    if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23502') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR).`
-    }
-
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    if (err.hint) mensagem += ` - Dica: ${err.hint}`
-
-    if (mensagem === 'Erro interno' && typeof err === 'object') {
-      try {
-        const str = JSON.stringify(err)
-        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
-      } catch {
-        return 'Erro ao processar objeto de erro'
-      }
-    }
-    return mensagem
-  }
 
   useEffect(() => {
     if (isEditMode && lancamentoInicial) {
@@ -152,14 +129,12 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         if (errorNumero) throw errorNumero
 
         const transacoes = []
+        let dataAtualParcela = data
         for (let i = 1; i <= quantidadeParcelas; i++) {
-          let dataParcela = data
+          let dataParcela = dataAtualParcela
           if (i > 1) {
-            const dt = new Date(data + 'T12:00:00')
-            if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-            else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-            else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
-            dataParcela = dt.toISOString().split('T')[0]
+            dataParcela = calcularDataPorPrazo(dataAtualParcela, prazoParcelas)
+            dataAtualParcela = dataParcela
           }
 
           transacoes.push({
@@ -323,26 +298,19 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
         {!isEditMode && quantidadeParcelas > 1 && (
           <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100 shadow-inner overflow-x-auto">
              <div className="flex gap-2 pb-1">
-                {Array.from({ length: Math.min(quantidadeParcelas, 12) }).map((_, i) => {
-                   const valorFinal = valor + acrescimoDesconto
-                   const vBase = Math.ceil((valorFinal / quantidadeParcelas) * 100) / 100
-                   const vUlt = Number((valorFinal - (vBase * (quantidadeParcelas - 1))).toFixed(2))
+                {(() => {
+                  const parcelasPreview = []
+                  let dataPreview = data
+                  const valorFinal = valor + acrescimoDesconto
+                  const vBase = Math.ceil((valorFinal / quantidadeParcelas) * 100) / 100
+                  const vUlt = Number((valorFinal - (vBase * (quantidadeParcelas - 1))).toFixed(2))
 
-                   let dtP = data
-                   if (i > 0 && data) {
-                      try {
-                        const dt = new Date(data + 'T12:00:00')
-                        if (!isNaN(dt.getTime())) {
-                          if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                          else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                          else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                          dtP = dt.toISOString().split('T')[0]
-                        }
-                      } catch(e) {}
-                   }
+                  for (let i = 0; i < Math.min(quantidadeParcelas, 12); i++) {
+                    const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, prazoParcelas)
+                    if (i > 0) dataPreview = dtP
 
-                   return (
-                     <div key={i} className="min-w-[100px] bg-white border border-blue-100 rounded-lg p-2 flex flex-col shadow-sm transition-all hover:border-blue-300 group">
+                    parcelasPreview.push(
+                      <div key={i} className="min-w-[100px] bg-white border border-blue-100 rounded-lg p-2 flex flex-col shadow-sm transition-all hover:border-blue-300 group">
                         <div className="flex justify-between items-center mb-1 border-b border-blue-50 pb-1">
                           <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 uppercase italic leading-none">{i + 1}ª</span>
                           <span className="text-[11px] font-semibold text-gray-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
@@ -350,9 +318,11 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
                         <div className="text-right">
                           <span className="text-xs font-black text-blue-800">R$ {(i === quantidadeParcelas - 1 ? vUlt : vBase).toFixed(2)}</span>
                         </div>
-                     </div>
-                   )
-                })}
+                      </div>
+                    )
+                  }
+                  return parcelasPreview
+                })()}
              </div>
           </div>
         )}

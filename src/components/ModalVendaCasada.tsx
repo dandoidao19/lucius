@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Trash2, X, ShoppingBag, Truck, Handshake } from 'lucide-react'
+import { X, ShoppingBag, Truck } from 'lucide-react'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
-import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 
 interface ItemVendaCasada {
   id: string
@@ -67,8 +68,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
   const [pagVenda, setPagVenda] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal', acrescimoDesconto: 0 })
   const [pagCompra, setPagCompra] = useState({ status: 'pendente', parcelas: 1, vencimento: data, prazo: 'mensal', acrescimoDesconto: 0 })
 
-  const [casadasAbertas, setCasadasAbertas] = useState<any[]>([])
-  const [mostrarBuscaCasada, setMostrarBuscaCasada] = useState(false)
   const [vendaAnexar, setVendaAnexar] = useState<any>(null)
   const [compraAnexar, setCompraAnexar] = useState<any>(null)
 
@@ -184,16 +183,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
 
   const totalVenda = itens.reduce((acc, item) => acc + (item.quantidade * item.preco_unitario), 0)
   const totalCompra = itens.reduce((acc, item) => acc + (item.quantidade * item.valor_repasse), 0)
-  const diferenca = totalVenda - totalCompra
-
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    return mensagem
-  }
 
   const criarFinanceiro = async (total: number, entidade: string, tipo: 'entrada' | 'saida', refNum: number, status: string, qtdParcelas: number, vencimento: string, prazo: string, parentIds: any, isPedido: boolean = false) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -201,14 +190,12 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     const valorBase = Math.ceil((total / qtdParcelas) * 100) / 100
     const valorUltima = Number((total - (valorBase * (qtdParcelas - 1))).toFixed(2))
     const transacoes = []
+    let dataAtualParcela = vencimento
     for (let i = 1; i <= qtdParcelas; i++) {
-      let dtP = vencimento
+      let dtP = dataAtualParcela
       if (i > 1) {
-        const dt = new Date(vencimento + 'T12:00:00')
-        if (prazo === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-        else if (prazo === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-        else if (prazo === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
-        dtP = dt.toISOString().split('T')[0]
+        dtP = calcularDataPorPrazo(dataAtualParcela, prazo)
+        dataAtualParcela = dtP
       }
       transacoes.push({
         user_id: user.id,
@@ -227,60 +214,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
     if (error) throw error
   }
 
-  const buscarCasadas = async () => {
-    try {
-      const { data: vendas, error } = await supabase
-        .from('vendas')
-        .select('*')
-        .ilike('observacao', '%VENDA CASADA%')
-        .order('data_venda', { ascending: false })
-        .limit(10)
-
-      if (error) throw error
-      setCasadasAbertas(vendas || [])
-      setMostrarBuscaCasada(true)
-    } catch (err) {
-      console.error('Erro ao buscar vendas casadas:', err)
-    }
-  }
-
-  const selecionarCasadaParaAnexar = async (venda: any) => {
-    if (!window.confirm(`Deseja ADICIONAR itens à Venda Casada #${venda.numero_transacao}?`)) return
-
-    try {
-      setTotalSaidaAnterior(venda.total || 0)
-      const match = venda.observacao.match(/Transação #(\d+)/) || venda.observacao.match(/Compra #(\d+)/)
-      let compraEncontrada = null
-
-      if (match && match[1]) {
-        const numCompra = parseInt(match[1])
-        const { data: c } = await supabase.from('compras').select('*').eq('numero_transacao', numCompra).single()
-        compraEncontrada = c
-      }
-
-      setVendaAnexar(venda)
-      setCompraAnexar(compraEncontrada)
-      if (compraEncontrada) setTotalEntradaAnterior(compraEncontrada.total || 0)
-      setCliente(venda.cliente)
-      if (compraEncontrada) setFornecedor(compraEncontrada.fornecedor)
-      setData(venda.data_venda.split('T')[0])
-
-      if (venda.quantidade_parcelas) setPagVenda(prev => ({ ...prev, parcelas: venda.quantidade_parcelas }))
-      if (venda.prazoparcelas) setPagVenda(prev => ({ ...prev, prazo: venda.prazoparcelas }))
-
-      if (compraEncontrada) {
-        if (compraEncontrada.quantidade_parcelas) setPagCompra(prev => ({ ...prev, parcelas: compraEncontrada.quantidade_parcelas }))
-        if (compraEncontrada.prazoparcelas) setPagCompra(prev => ({ ...prev, prazo: compraEncontrada.prazoparcelas }))
-      }
-
-      setTipoSaida('venda')
-      setTipoEntrada('compra')
-      setMostrarBuscaCasada(false)
-    } catch (err) {
-      console.error('Erro ao vincular compra casada:', err)
-      alert('Erro ao encontrar compra vinculada.')
-    }
-  }
 
   const buscarPedidos = async (tipoLado: 'enviado' | 'recebido') => {
     try {
@@ -608,11 +541,6 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                 <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
                   {vendaAnexar ? `📍 ANEXANDO À CASADA #${vendaAnexar.numero_transacao}` : 'LANÇAMENTO NOVO'}
                 </span>
-                {!vendaAnexar && !idSaidaAnexar && !idEntradaAnexar && (
-                  <button onClick={buscarCasadas} className="bg-purple-600 text-white px-2 py-0.5 rounded text-[10px] font-black uppercase hover:bg-purple-500 transition-colors">
-                    Venda Casada Existente ➕
-                  </button>
-                )}
              </div>
              {(vendaAnexar || idSaidaAnexar || idEntradaAnexar) && (
                <button onClick={resetForm} className="text-[10px] font-bold text-red-600 hover:underline">CANCELAR ANEXO</button>
@@ -703,31 +631,26 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               {pagVenda.parcelas > 1 && (
                 <div className="mt-2 bg-pink-50/30 p-2 rounded-lg border border-pink-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
-                    {Array.from({ length: Math.min(pagVenda.parcelas, 48) }).map((_, i) => {
+                    {(() => {
+                      const parcelasPreview = []
+                      let dataPreview = pagVenda.vencimento
                       const valorBase = Math.ceil(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
                       const valorUltima = Number(((totalVenda + pagVenda.acrescimoDesconto) - (valorBase * (pagVenda.parcelas - 1))).toFixed(2))
-                      let dtP = pagVenda.vencimento
-                      if (i > 0 && pagVenda.vencimento) {
-                        try {
-                          const dt = new Date(pagVenda.vencimento + 'T12:00:00')
-                          if (!isNaN(dt.getTime())) {
-                            if (pagVenda.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                            else if (pagVenda.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                            else if (pagVenda.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                            dtP = dt.toISOString().split('T')[0]
-                          }
-                        } catch (e) {
-                          console.error('Erro data casada (venda):', e)
-                        }
+
+                      for (let i = 0; i < Math.min(pagVenda.parcelas, 48); i++) {
+                        const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, pagVenda.prazo)
+                        if (i > 0) dataPreview = dtP
+
+                        parcelasPreview.push(
+                          <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-pink-100 shadow-sm transition-all hover:bg-white group">
+                            <span className="text-[10px] font-black text-pink-300 group-hover:text-pink-600 uppercase italic leading-none">{i + 1}ª</span>
+                            <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                            <span className="text-xs font-black text-pink-800 leading-none">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                          </div>
+                        )
                       }
-                      return (
-                        <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-pink-100 shadow-sm transition-all hover:bg-white group">
-                          <span className="text-[10px] font-black text-pink-300 group-hover:text-pink-600 uppercase italic leading-none">{i + 1}ª</span>
-                          <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
-                          <span className="text-xs font-black text-pink-800 leading-none">R$ {(i === pagVenda.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
-                        </div>
-                      )
-                    })}
+                      return parcelasPreview
+                    })()}
                   </div>
                 </div>
               )}
@@ -752,31 +675,26 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
               {pagCompra.parcelas > 1 && (
                 <div className="mt-2 bg-blue-50/30 p-2 rounded-lg border border-blue-100 max-h-32 overflow-y-auto shadow-inner custom-scrollbar">
                   <div className="grid grid-cols-2 gap-1.5">
-                    {Array.from({ length: Math.min(pagCompra.parcelas, 48) }).map((_, i) => {
+                    {(() => {
+                      const parcelasPreview = []
+                      let dataPreview = pagCompra.vencimento
                       const valorBase = Math.ceil(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
                       const valorUltima = Number(((totalCompra + pagCompra.acrescimoDesconto) - (valorBase * (pagCompra.parcelas - 1))).toFixed(2))
-                      let dtP = pagCompra.vencimento
-                      if (i > 0 && pagCompra.vencimento) {
-                        try {
-                          const dt = new Date(pagCompra.vencimento + 'T12:00:00')
-                          if (!isNaN(dt.getTime())) {
-                            if (pagCompra.prazo === 'diaria') dt.setDate(dt.getDate() + i)
-                            else if (pagCompra.prazo === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                            else if (pagCompra.prazo === 'mensal') dt.setMonth(dt.getMonth() + i)
-                            dtP = dt.toISOString().split('T')[0]
-                          }
-                        } catch (e) {
-                          console.error('Erro data casada (compra):', e)
-                        }
+
+                      for (let i = 0; i < Math.min(pagCompra.parcelas, 48); i++) {
+                        const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, pagCompra.prazo)
+                        if (i > 0) dataPreview = dtP
+
+                        parcelasPreview.push(
+                          <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition-all hover:bg-white group">
+                            <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 uppercase italic leading-none">{i + 1}ª</span>
+                            <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                            <span className="text-xs font-black text-blue-800 leading-none">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                          </div>
+                        )
                       }
-                      return (
-                        <div key={i} className="flex justify-between items-center bg-white/95 px-3 py-1.5 rounded-lg border border-blue-100 shadow-sm transition-all hover:bg-white group">
-                          <span className="text-[10px] font-black text-blue-300 group-hover:text-blue-600 uppercase italic leading-none">{i + 1}ª</span>
-                          <span className="text-xs font-bold text-slate-600 leading-none">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
-                          <span className="text-xs font-black text-blue-800 leading-none">R$ {(i === pagCompra.parcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
-                        </div>
-                      )
-                    })}
+                      return parcelasPreview
+                    })()}
                   </div>
                 </div>
               )}

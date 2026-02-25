@@ -125,3 +125,67 @@ export function getMesAtualParaInput(): string {
   
   return `${ano}-${mes}`;
 }
+
+/**
+ * Adiciona meses a uma data (YYYY-MM-DD), ajustando para meses com menos dias.
+ * Garante o fuso horário de Brasília.
+ */
+export function addMonths(dateString: string, months: number): string {
+  const [ano, mes, dia] = dateString.split('-').map(Number);
+  // Usamos meio-dia para evitar problemas de fuso
+  const date = new Date(ano, mes - 1 + months, dia, 12, 0, 0);
+
+  // Ajuste para meses com menos dias (ex: 31/01 + 1 mês = 28/02)
+  if (date.getDate() !== dia) {
+    date.setDate(0);
+  }
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+  });
+
+  return formatter.format(date);
+}
+
+/**
+ * Adiciona N dias a uma data (YYYY-MM-DD).
+ * Garante o fuso horário de Brasília.
+ */
+export function getDataNDias(dataBase: string, dias: number): string {
+  const [ano, mes, dia] = dataBase.split('-').map(Number);
+  const data = new Date(ano, mes - 1, dia + dias, 12, 0, 0);
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+  });
+
+  return formatter.format(data);
+}
+
+/**
+ * Calcula a próxima data baseada em um prazo/recorrência.
+ */
+export function calcularDataPorPrazo(dataBase: string, prazo: string): string {
+  switch (prazo) {
+    case 'diaria':
+      return getDataNDias(dataBase, 1);
+    case 'semanal':
+      return getDataNDias(dataBase, 7);
+    case '10dias':
+      return getDataNDias(dataBase, 10);
+    case 'quinzenal':
+      return getDataNDias(dataBase, 15);
+    case '20dias':
+      return getDataNDias(dataBase, 20);
+    case 'mensal':
+      return addMonths(dataBase, 1);
+    default:
+      return dataBase;
+  }
+}

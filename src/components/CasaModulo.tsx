@@ -6,7 +6,7 @@ import ModalPagarAvancado from './ModalPagarAvancado'
 import { useEffect, useState, useMemo } from 'react'
 import { useDadosFinanceiros, CentroCusto, LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 import { useFilters } from '@/context/FilterContext'
-import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
+import { getDataAtualBrasil, formatarDataParaExibicao, calcularDataPorPrazo } from '@/lib/dateUtils'
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
 import FiltrosCasa from './FiltrosCasa'
 import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
@@ -50,55 +50,8 @@ const getOntemBrasil = () => {
   return formatter.format(dataOntem);
 }
 
-// ✅ Função auxiliar para calcular a data N dias à frente
-const getDataNDias = (dataBase: string, dias: number) => {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/Sao_Paulo'
-  });
-  
-  const [ano, mes, dia] = dataBase.split('-').map(Number);
-  const data = new Date(ano, mes - 1, dia + dias);
-  return formatter.format(data);
-}
-
-// Função auxiliar para adicionar meses a uma data
-const addMonths = (dateString: string, months: number): string => {
-  const [ano, mes, dia] = dateString.split('-').map(Number);
-  const date = new Date(ano, mes - 1 + months, dia);
-  
-  if (date.getDate() !== dia) {
-    date.setDate(0);
-  }
-
-  const novoAno = date.getFullYear();
-  const novoMes = String(date.getMonth() + 1).padStart(2, '0');
-  const novoDia = String(date.getDate()).padStart(2, '0');
-  
-  return `${novoAno}-${novoMes}-${novoDia}`;
-}
-
-// Função para calcular data baseada no prazo
-const calcularDataPorPrazo = (dataBase: string, prazo: string): string => {
-  switch (prazo) {
-    case 'diaria':
-      return getDataNDias(dataBase, 2);
-    case 'semanal':
-      return getDataNDias(dataBase, 8);
-    case '10dias':
-      return getDataNDias(dataBase, 11);
-    case 'quinzenal':
-      return getDataNDias(dataBase, 16);
-    case '20dias':
-      return getDataNDias(dataBase, 21);
-    case 'mensal':
-      return addMonths(dataBase, 1);
-    default:
-      return dataBase;
-  }
-}
+// ✅ Função auxiliar para calcular a data N dias à frente (usando dateUtils)
+import { getDataNDias } from '@/lib/dateUtils'
 
 // Função para validar se todos os campos estão preenchidos
 const validarFormulario = (form: FormLancamento): boolean => {

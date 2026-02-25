@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
 import { useFormDraft } from '@/context/FormDraftContext'
@@ -336,15 +337,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       ? `[PEDIDO] ${observacao.replace('[PEDIDO]', '').trim()}`.trim()
       : observacao.trim()
 
+    let dataAtualParcela = vencimento
     for (let i = 1; i <= qtdParcelas; i++) {
-      let dataParcela = vencimento
+      let dataParcela = dataAtualParcela
 
       if (i > 1) {
-        const dt = new Date(vencimento + 'T12:00:00')
-        if (prazo === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-        else if (prazo === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-        else if (prazo === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
-        dataParcela = dt.toISOString().split('T')[0]
+        dataParcela = calcularDataPorPrazo(dataAtualParcela, prazo)
+        dataAtualParcela = dataParcela
       }
 
       let statusParcela = 'pendente'
@@ -379,29 +378,6 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     }
   }
 
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-
-    if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23502') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR).`
-    }
-
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    if (err.hint) mensagem += ` - Dica: ${err.hint}`
-
-    if (mensagem === 'Erro interno' && typeof err === 'object') {
-      try {
-        const str = JSON.stringify(err)
-        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
-      } catch {
-        return 'Erro ao processar objeto de erro'
-      }
-    }
-    return mensagem
-  }
 
   const reverterImpactosOld = async () => {
     if (!transacaoInicial) return;
@@ -1666,38 +1642,31 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                         <span className="text-[9px] font-black bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase">Visualização Prévia</span>
                       </div>
                       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 sm:max-h-48 overflow-y-auto pr-1 custom-scrollbar pb-2">
-                        {Array.from({ length: Math.min(quantidadeParcelas, 72) }).map((_, i) => {
+                        {(() => {
+                          const parcelasPreview = []
+                          let dataPreview = dataVencimento
                           const totalFinal = calcularTotal()
                           const valorBase = Math.ceil((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
-                          let dataParcela = dataVencimento
-                          if (i > 0 && dataVencimento) {
-                            try {
-                              const dt = new Date(dataVencimento + 'T12:00:00')
-                              if (!isNaN(dt.getTime())) {
-                                if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                                else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                                else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                                dataParcela = dt.toISOString().split('T')[0]
-                              }
-                            } catch (e) {
-                              console.error('Erro ao calcular data da parcela:', e)
-                            }
-                          }
+                          for (let i = 0; i < Math.min(quantidadeParcelas, 72); i++) {
+                            const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, prazoParcelas)
+                            if (i > 0) dataPreview = dtP
 
-                          return (
-                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm transition-all hover:border-purple-400 group min-w-[100px]">
-                              <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-1.5">
-                                <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 transition-colors uppercase italic">{i + 1}ª Parcela</span>
-                                <span className="text-xs font-bold text-slate-600">{dataParcela ? dataParcela.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                            parcelasPreview.push(
+                              <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm transition-all hover:border-purple-400 group min-w-[100px]">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-1.5">
+                                  <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 transition-colors uppercase italic">{i + 1}ª Parcela</span>
+                                  <span className="text-xs font-bold text-slate-600">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-sm font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="text-sm font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                              </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          }
+                          return parcelasPreview
+                        })()}
                       </div>
                     </div>
                  )}
