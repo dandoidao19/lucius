@@ -22,14 +22,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-
-      if (!session) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
         router.push('/')
       } else {
-        setUser(session.user)
-        setLoading(false)
+        setUser(user)
       }
+      setLoading(false)
     }
 
     checkAuth()
