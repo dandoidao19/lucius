@@ -6,6 +6,7 @@ import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalFaturarPedido from './ModalFaturarPedido'
+import ModalFaturarCondicional from './ModalFaturarCondicional'
 
 interface ItemDetalhe {
   id: string
@@ -54,6 +55,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   const [transacaoFull, setTransacaoFull] = useState<any>(null)
   const [editAberto, setEditAberto] = useState(false)
   const [faturarAberto, setFaturarAberto] = useState(false)
+  const [faturarCondAberto, setFaturarCondAberto] = useState(false)
 
   const buscarFull = useCallback(async () => {
     try {
@@ -550,6 +552,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                 Faturar
               </button>
             )}
+            {tipo === 'transacoes_condicionais' && dadosResumo.status === 'pendente' && !dadosResumo.observacao?.includes('[PEDIDO]') && (
+              <button
+                onClick={() => setFaturarCondAberto(true)}
+                className="flex-1 sm:flex-none px-4 py-1.5 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 transition-all text-xs uppercase"
+              >
+                Resolver
+              </button>
+            )}
             <button
               onClick={handleEditClick}
               disabled={loadingExcluir || !transacaoFull}
@@ -579,6 +589,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           onClose={() => setFaturarAberto(false)}
           onSucesso={handleEditSucesso}
           pedidoId={transacaoId}
+        />
+      )}
+      {faturarCondAberto && (
+        <ModalFaturarCondicional
+          aberto={faturarCondAberto}
+          onClose={() => setFaturarCondAberto(false)}
+          onSucesso={handleEditSucesso}
+          transacaoId={transacaoId}
         />
       )}
     </div>

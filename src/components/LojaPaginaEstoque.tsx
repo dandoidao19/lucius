@@ -498,7 +498,7 @@ export default function LojaPaginaEstoque() {
                         </span>
                       </td>
                       <td className={`px-1.5 py-1 text-center font-semibold text-xs ${
-                        qtdCondicional > 0 ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'
+                        qtdCondicional !== 0 ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'
                       }`}>
                         {qtdCondicional}
                       </td>

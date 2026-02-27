@@ -389,10 +389,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       const afetaEstoque = !isPedidoNovo && !isPedidoLegado
 
       if (afetaEstoque) {
+        const isCondicional = transacaoInicial.tipo === 'condicional_cliente' || transacaoInicial.tipo === 'condicional_fornecedor'
+        const rpcName = isCondicional ? 'atualizar_estoque_condicional' : 'atualizar_estoque'
+
         for (const item of transacaoInicial.itens) {
           if (item.produto_id) {
             const multiplicador = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 1 : -1
-            await supabase.rpc('atualizar_estoque', {
+            await supabase.rpc(rpcName, {
               produto_id_param: item.produto_id,
               quantidade_param: item.quantidade * multiplicador
             })
@@ -774,6 +777,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       return
     }
 
+    const isCondicional = tipo === 'condicional_cliente' || tipo === 'condicional_fornecedor'
+
     const itensValidos = itens.filter(i => (i.descricao || '').trim())
     if (itensValidos.length === 0) {
       setErro('Adicione pelo menos um item')
@@ -1027,12 +1032,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           if (prodId && !isPedidoTipo) {
             const multiplicadorEstoque = isVendaPedido ? -1 : 1
-            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade * multiplicadorEstoque) })
+            // v5.6: Condicionais agora afetam a coluna específica de estoque condicional
+            const rpcName = isCondicional ? 'atualizar_estoque_condicional' : 'atualizar_estoque'
+
+            await supabase.rpc(rpcName, { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade * multiplicadorEstoque) })
+
             await supabase.from('movimentacoes_estoque').insert({
               produto_id: prodId,
               tipo: isVendaPedido ? 'saida' : 'entrada',
               quantidade: item.quantidade,
-              observacao: `Condicional #${numTransacao}`
+              observacao: `${isCondicional ? 'Condicional' : 'Pedido'} #${numTransacao}`
             })
           }
         }
@@ -1566,9 +1575,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                </div>
 
                {/* Informações de Pagamento (Apenas para Transações e se não for anexo) */}
-               <div className={`border-t pt-2 border-gray-100 ${idPedidoAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+               <div className={`border-t pt-2 border-gray-100 ${(idPedidoAnexar || tipo?.startsWith('condicional')) ? 'hidden' : ''}`}>
                  <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
-                   Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
+                   Pagamento / Condições
                  </h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
