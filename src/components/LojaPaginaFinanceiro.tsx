@@ -10,7 +10,7 @@ import ModalEstornarTransacao from './ModalEstornarTransacao'
 import FormularioLancamentoLoja from './FormularioLancamentoLoja'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { useFilters } from '@/context/FilterContext'
-import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
+import { GeradorPDFProfissional, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 interface Transacao {
   id: string
@@ -328,32 +328,44 @@ export default function LojaPaginaFinanceiro() {
   const gerarPDFFinanceiroFiltrado = () => {
     try {
       const logoConfig = obterConfigLogos()
-      const transacoesPDF = transacoesFiltradas.map(transacao => ({
-        vencimento: transacao.data,
-        transacao: transacao.numero_transacao,
-        clienteFornecedor: transacao.descricao,
-        valor: transacao.valor_pago || transacao.valor,
-        parcela: `${transacao.parcela_numero || 1}/${transacao.parcela_total || transacao.quantidade_parcelas || 1}`,
-        tipo: transacao.tipo === 'entrada' ? 'VENDA' : 'COMPRA' as 'VENDA' | 'COMPRA',
-        status: transacao.status_pagamento || 'pendente'
-      }))
-      const totalGeral = transacoesFiltradas.reduce((total, transacao) => total + (transacao.valor_pago || transacao.valor), 0)
-      const filtrosAplicados = []
-      if (filtroDataInicio && filtroDataFim) filtrosAplicados.push(`Período: ${filtroDataInicio} até ${filtroDataFim}`)
-      if (filtroMes) filtrosAplicados.push(`Mês: ${filtroMes}`)
-      if (filtroNumeroTransacao) filtrosAplicados.push(`Transação: ${filtroNumeroTransacao}`)
-      if (filtroDescricao) filtrosAplicados.push(`Cliente/Fornecedor: ${filtroDescricao}`)
-      if (filtroTipo !== 'todos') filtrosAplicados.push(`Tipo: ${filtroTipo}`)
-      if (filtroStatus !== 'todos') filtrosAplicados.push(`Status: ${filtroStatus}`)
-      const dadosRelatorio = { tipo: 'financeiro' as const, transacoes: transacoesPDF, filtrosAplicados: filtrosAplicados.length > 0 ? filtrosAplicados : undefined, totalGeral }
-      const gerador = new GeradorPDF(logoConfig)
-      gerador.gerarRelatorioFinanceiro(dadosRelatorio)
+      const gerador = new GeradorPDFProfissional(logoConfig)
+
+      const filtros: string[] = []
+      if (filtroDataInicio && filtroDataFim) filtros.push(`PERÍODO: ${formatarDataParaExibicao(filtroDataInicio)} ATÉ ${formatarDataParaExibicao(filtroDataFim)}`)
+      if (filtroMes) filtros.push(`MÊS: ${filtroMes}`)
+      if (filtroNumeroTransacao) filtros.push(`Nº: ${filtroNumeroTransacao}`)
+      if (filtroDescricao) filtros.push(`BUSCA: ${filtroDescricao.toUpperCase()}`)
+      if (filtroTipo !== 'todos') filtros.push(`TIPO: ${filtroTipo.toUpperCase()}`)
+      if (filtroStatus !== 'todos') filtros.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+
+      const totalGeral = transacoesFiltradas.reduce((total, t) => total + (t.valor_pago || t.valor), 0)
+
+      gerador.gerarRelatorioTabular({
+        titulo: 'Relatório Financeiro de Parcelas',
+        subtitulo: `Extrato detalhado do contas a receber/pagar`,
+        corTema: [124, 58, 237], // Violet-600
+        filtros: filtros,
+        colunas: ['Vencimento', 'Nº', 'Entidade', 'Parcela', 'Tipo', 'Valor', 'Status'],
+        linhas: transacoesFiltradas.map(t => [
+          formatarDataParaExibicao(t.data),
+          `#${t.numero_transacao}`,
+          t.descricao.toUpperCase(),
+          `${t.parcela_numero}/${t.parcela_total}`,
+          t.tipo === 'entrada' ? 'VENDA' : 'COMPRA',
+          (t.valor_pago || t.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          (t.status_pagamento || 'PENDENTE').toUpperCase()
+        ]),
+        resumo: [
+          { label: 'TOTAL FILTRADO', valor: totalGeral }
+        ]
+      })
+
       const nomeArquivo = `relatorio_financeiro_${new Date().toISOString().split('T')[0]}.pdf`
       gerador.salvar(nomeArquivo)
-      alert(`✅ Relatório financeiro gerado com sucesso! ${transacoesFiltradas.length} transação(ões) no relatório.`)
+      alert(`✅ Relatório profissional gerado!`)
     } catch (error) {
       console.error('Erro ao gerar relatório financeiro:', error)
-      alert('❌ Erro ao gerar relatório financeiro.')
+      alert('❌ Erro ao gerar PDF.')
     }
   }
 

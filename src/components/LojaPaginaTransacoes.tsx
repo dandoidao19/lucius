@@ -243,29 +243,15 @@ export default function LojaPaginaTransacoes() {
 
   const gerarPDF = () => {
     try {
+      const filtrosAplicados: string[] = []
+      if (filtroDataInicio) filtrosAplicados.push(`DE: ${formatarDataParaExibicao(filtroDataInicio)}`)
+      if (filtroDataFim) filtrosAplicados.push(`ATÉ: ${formatarDataParaExibicao(filtroDataFim)}`)
+      if (filtroTipo !== 'todos') filtrosAplicados.push(`TIPO: ${filtroTipo.toUpperCase()}`)
+      if (filtroStatus !== 'todos') filtrosAplicados.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+      if (filtroEntidade) filtrosAplicados.push(`ENTIDADE: ${filtroEntidade.toUpperCase()}`)
+
       const gerador = new GeradorPDFLancamentos()
-      const dadosPDF = transacoesFiltradas.map(t => ({
-        data: t.data,
-        entidade: t.entidade,
-        numero: t.numero,
-        tipo: t.tipo_exibicao,
-        total: t.total,
-        status: t.status,
-        itens: t.quantidade_itens
-      }))
-
-      // Gambiarra técnica para usar o gerador existente adaptado
-      const lancamentosAdaptados = dadosPDF.map(d => ({
-        data_lancamento: d.data,
-        cliente_fornecedor: d.entidade,
-        numero_transacao: d.numero,
-        tipo: d.tipo,
-        total: d.total,
-        status: d.status,
-        parcelas: `${d.itens} itens`
-      }))
-
-      gerador.gerarPDFTransacoesLoja(lancamentosAdaptados, 'Relatório Unificado de Transações')
+      gerador.gerarPDFTransacoesLoja(transacoesFiltradas, 'Relatório Unificado de Transações', filtrosAplicados)
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
       alert('Erro ao gerar PDF')

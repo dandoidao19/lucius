@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalEditarProduto from './ModalEditarProduto'
 import ModalLogProduto from './ModalLogProduto'
-import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
+import { GeradorPDFProfissional, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 import { formatarDataParaExibicao } from '@/lib/dateUtils'
 
 interface Produto {
@@ -226,41 +226,40 @@ export default function LojaPaginaEstoque() {
   const gerarPDF = () => {
     try {
       const logoConfig = obterConfigLogos()
-      
-      const itens = produtosFiltrados.map(produto => ({
-        codigo: produto.codigo,
-        descricao: produto.descricao,
-        quantidade: produto.quantidade,
-        valorUnitario: produto.preco_venda || 0,
-        valorTotal: (produto.quantidade || 0) * (produto.preco_venda || 0),
-        categoria: produto.categoria || 'Sem categoria',
-        status: produto.status_item || 'resolvido',
-      }))
-      
-      const filtrosAplicados = []
-      if (filtroDescricao) filtrosAplicados.push(`Descrição: ${filtroDescricao}`)
-      if (filtroCodigo) filtrosAplicados.push(`Código: ${filtroCodigo}`)
-      if (filtroStatus !== 'todos') filtrosAplicados.push(`Status: ${filtroStatus}`)
-      
-      const dadosPDF = {
-        tipo: 'estoque' as const,
-        data: new Date().toISOString(),
-        itens,
+      const gerador = new GeradorPDFProfissional(logoConfig)
+
+      const filtros: string[] = []
+      if (filtroDescricao) filtros.push(`DESCRIÇÃO: ${filtroDescricao.toUpperCase()}`)
+      if (filtroCodigo) filtros.push(`CÓDIGO: ${filtroCodigo.toUpperCase()}`)
+      if (filtroStatus !== 'todos') filtros.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+
+      gerador.gerarDocumento({
+        tipo: 'estoque',
+        titulo: 'Inventário de Estoque',
+        data: new Date().toISOString().split('T')[0],
+        entidade: 'Relatório Geral de Produtos',
+        corTema: [185, 28, 28], // Red-700
+        filtros: filtros,
+        itens: produtosFiltrados.map(p => ({
+          codigo: p.codigo,
+          descricao: p.descricao,
+          quantidade: p.quantidade,
+          valorUnitario: p.preco_venda || 0,
+          valorTotal: (p.quantidade || 0) * (p.preco_venda || 0),
+          categoria: p.categoria
+        })),
         total: calcularValorRealizadoVenda(),
-        filtrosAplicados: filtrosAplicados.length > 0 ? filtrosAplicados : undefined,
-        observacoes: 'Relatório de estoque gerado automaticamente pelo sistema LUCIUS.',
-      }
-      
-      const gerador = new GeradorPDF(logoConfig)
-      gerador.gerarOrdemCompra(dadosPDF)
+        totalSecundario: calcularValorRealizadoRepasse(),
+        observacoes: 'Relatório de conferência de estoque físico e financeiro (preço de venda).'
+      })
       
       const nomeArquivo = `estoque_${new Date().toISOString().split('T')[0]}.pdf`
       gerador.salvar(nomeArquivo)
       
-      alert('✅ PDF gerado com sucesso!')
+      alert('✅ PDF Profissional gerado com sucesso!')
     } catch (error) {
       console.error('Erro ao gerar PDF:', error)
-      alert('❌ Erro ao gerar PDF. Verifique o console para mais detalhes.')
+      alert('❌ Erro ao gerar PDF.')
     }
   }
 

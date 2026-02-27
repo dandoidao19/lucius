@@ -10,6 +10,7 @@ import { getDataAtualBrasil, formatarDataParaExibicao, calcularDataPorPrazo } fr
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
 import FiltrosCasa from './FiltrosCasa'
 import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
+import { obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 // As interfaces CentroCusto e Lancamento agora são importadas do DadosFinanceirosContext
 type Lancamento = LancamentoFinanceiro;
@@ -673,8 +674,16 @@ export default function CasaModulo() {
       alert('❌ Nenhum lançamento para gerar PDF com os filtros aplicados')
       return
     }
+
+    const filtrosAplicados: string[] = []
+    if (filtroMes) filtrosAplicados.push(`MÊS: ${filtroMes}`)
+    if (filtroDescricao) filtrosAplicados.push(`BUSCA: ${filtroDescricao.toUpperCase()}`)
+    if (filtroStatus && filtroStatus !== 'todos') filtrosAplicados.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+    if (mostrarTodos) filtrosAplicados.push("VISUALIZAÇÃO COMPLETA")
+    else if (!filtroDataInicio && !filtroDataFim && !filtroMes) filtrosAplicados.push("VISUALIZAÇÃO 11 DIAS")
+
     const gerador = new GeradorPDFLancamentos()
-    gerador.gerarPDFLancamentosCasa(lancamentosFiltrados, centrosCusto)
+    gerador.gerarPDFLancamentosCasa(lancamentosFiltrados, centrosCusto, filtrosAplicados)
   }
 
   const ModalExcluir = () => {
