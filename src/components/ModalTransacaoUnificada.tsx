@@ -410,15 +410,22 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
       }
 
-      // 2. Deletar Financeiro
-      const prefixo = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 'Venda' : 'Compra'
-      const { data: parcelasLoja } = await supabase
-        .from('transacoes_loja')
-        .select('id')
-        .ilike('descricao', `${prefixo}%${transacaoInicial.entidade}%`)
+      // 2. Deletar Financeiro (v5.8: Proteção contra deleção em massa de mesma entidade)
+      let queryDel = supabase.from('transacoes_loja').delete()
 
-      if (parcelasLoja && parcelasLoja.length > 0) {
-        await supabase.from('transacoes_loja').delete().in('id', parcelasLoja.map(p => p.id))
+      if (transacaoInicial.tipo === 'venda') queryDel = queryDel.eq('id_venda', transacaoInicial.id)
+      else if (transacaoInicial.tipo === 'compra') queryDel = queryDel.eq('id_compra', transacaoInicial.id)
+      else if (transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'pedido_compra') queryDel = queryDel.eq('id_pedido', transacaoInicial.id)
+      else queryDel = queryDel.eq('id_condicional', transacaoInicial.id)
+
+      await queryDel
+
+      // Fallback de segurança para registros legados (Obrigatório filtrar por número da transação)
+      if (transacaoInicial.numero_transacao) {
+        await supabase.from('transacoes_loja')
+          .delete()
+          .eq('numero_transacao', transacaoInicial.numero_transacao)
+          .ilike('descricao', `%${transacaoInicial.entidade}%`)
       }
 
       // 3. Deletar Itens (Garante exclusão da tabela correta para evitar duplicidade na re-inserção)
@@ -529,9 +536,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         if (transacaoInicial) {
           await supabase.from('transacoes_loja').delete().eq('id_venda', transacaoPrincipalId)
           // Fallback para legado (v3.8 ou anterior)
-          await supabase.from('transacoes_loja').delete()
-            .eq('numero_transacao', transacaoInicial.numero_transacao)
-            .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          if (transacaoInicial.numero_transacao) {
+            await supabase.from('transacoes_loja').delete()
+              .eq('numero_transacao', transacaoInicial.numero_transacao)
+              .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
 
@@ -638,9 +647,11 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         if (transacaoInicial) {
           await supabase.from('transacoes_loja').delete().eq('id_compra', transacaoPrincipalId)
           // Fallback para legado (v3.8 ou anterior)
-          await supabase.from('transacoes_loja').delete()
-            .eq('numero_transacao', transacaoInicial.numero_transacao)
-            .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          if (transacaoInicial.numero_transacao) {
+            await supabase.from('transacoes_loja').delete()
+              .eq('numero_transacao', transacaoInicial.numero_transacao)
+              .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
 

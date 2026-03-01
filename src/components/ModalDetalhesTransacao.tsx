@@ -213,19 +213,21 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
       const { error: errorDel } = await queryDel
 
-      // Fallback agressivo para garantir que nada sobrou
-      const prefixo = tipo === 'vendas' ? 'Venda' : (tipo === 'compras' ? 'Compra' : '')
-      if (prefixo) {
-        await supabase.from('transacoes_loja')
-          .delete()
-          .eq('numero_transacao', dadosResumo.numero)
-          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
-      } else {
-        // Para pedidos e condicionais, buscar pela observação que contém o vínculo
-        await supabase.from('transacoes_loja')
-          .delete()
-          .eq('numero_transacao', dadosResumo.numero)
-          .ilike('observacao', `%Ref. #${dadosResumo.numero}%`)
+      // Fallback de segurança para registros legados (v5.8: Obrigatório filtrar por número da transação)
+      if (dadosResumo.numero) {
+        const prefixo = tipo === 'vendas' ? 'Venda' : (tipo === 'compras' ? 'Compra' : '')
+        if (prefixo) {
+          await supabase.from('transacoes_loja')
+            .delete()
+            .eq('numero_transacao', dadosResumo.numero)
+            .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
+        } else {
+          // Para pedidos e condicionais, buscar pelo vínculo na observação
+          await supabase.from('transacoes_loja')
+            .delete()
+            .eq('numero_transacao', dadosResumo.numero)
+            .ilike('observacao', `%Ref. #${dadosResumo.numero}%`)
+        }
       }
 
       // 3. Deletar a Transação Principal e Itens

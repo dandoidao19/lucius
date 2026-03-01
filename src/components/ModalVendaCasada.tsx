@@ -329,6 +329,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
           }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
+          // Fallback legacy (Obrigatório número)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
         } else {
           const { data: v } = await supabase.from('vendas').insert({
@@ -370,6 +372,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             desconto
           }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq(idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idSaida)
+          // Fallback legacy (Obrigatório número)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { [idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idSaida }, true)
         } else {
           const { data: p } = await supabase.from('pedidos_loja').insert({
@@ -408,6 +412,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
           }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
+          // Fallback legacy (Obrigatório número)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
         } else {
           const { data: c } = await supabase.from('compras').insert({
@@ -449,6 +455,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             desconto
           }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq(idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idEntrada)
+          // Fallback legacy (Obrigatório número)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { [idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idEntrada }, true)
         } else {
           const { data: p } = await supabase.from('pedidos_loja').insert({
