@@ -1,13 +1,15 @@
-# 🚀 Guia de Deploy na Vercel - Sistema LUCIUS
+# 🚀 Guia de Deploy na Vercel - Sistema LUCIUS v5.8
 
-Siga estes passos para colocar o sistema em produção.
+Siga estes passos para colocar a versão mais estável do sistema em produção.
 
 ## 1. Preparação do Banco de Dados (Supabase)
 
-Antes de fazer o deploy, certifique-se de que o seu banco de dados está atualizado.
+Antes de fazer o deploy, certifique-se de que o seu banco de dados está atualizado com as últimas migrações:
 
 1.  Acesse o **SQL Editor** no painel do seu projeto Supabase.
-2.  Execute o conteúdo do arquivo `sql/MASTER_INSTALL_V5_4.sql`. Este script garante que todas as colunas necessárias (v5.0+) existam e recalibra todos os saldos e contagens do sistema.
+2.  **Passo A:** Execute o conteúdo do arquivo `sql/MASTER_INSTALL_V5_4.sql`.
+3.  **Passo B:** Execute o conteúdo do arquivo `sql/UPDATE_CONDICIONAL_V5_6.sql`.
+    *(Este passo é essencial para o novo funcionamento do estoque de condicionais).*
 
 ## 2. Configuração das Variáveis de Ambiente
 
