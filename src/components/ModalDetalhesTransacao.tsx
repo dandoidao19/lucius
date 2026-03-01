@@ -205,29 +205,23 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       }
 
       // 2. Deletar Financeiro (transacoes_loja)
+      // v5.8: Proteção absoluta contra deleção por nome (ilike).
+      // Usar UUID específico ou combinação estrita de Numero + Tipo.
       let queryDel = supabase.from('transacoes_loja').delete()
       if (tipo === 'vendas') queryDel = queryDel.eq('id_venda', transacaoId)
       else if (tipo === 'compras') queryDel = queryDel.eq('id_compra', transacaoId)
       else if (tipo === 'pedidos_loja') queryDel = queryDel.eq('id_pedido', transacaoId)
       else queryDel = queryDel.eq('id_condicional', transacaoId)
 
-      const { error: errorDel } = await queryDel
+      await queryDel
 
-      // Fallback de segurança para registros legados (v5.8: Obrigatório filtrar por número da transação)
+      // Fallback de segurança para registros legados (v5.8: Obrigatório Numero E Tipo Financeiro)
       if (dadosResumo.numero) {
-        const prefixo = tipo === 'vendas' ? 'Venda' : (tipo === 'compras' ? 'Compra' : '')
-        if (prefixo) {
-          await supabase.from('transacoes_loja')
-            .delete()
-            .eq('numero_transacao', dadosResumo.numero)
-            .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
-        } else {
-          // Para pedidos e condicionais, buscar pelo vínculo na observação
-          await supabase.from('transacoes_loja')
-            .delete()
-            .eq('numero_transacao', dadosResumo.numero)
-            .ilike('observacao', `%Ref. #${dadosResumo.numero}%`)
-        }
+        const tipoFin = isVenda ? 'entrada' : 'saida'
+        await supabase.from('transacoes_loja')
+          .delete()
+          .eq('numero_transacao', dadosResumo.numero)
+          .eq('tipo', tipoFin)
       }
 
       // 3. Deletar a Transação Principal e Itens

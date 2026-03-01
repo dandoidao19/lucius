@@ -32,7 +32,7 @@ interface ModalVendaCasadaProps {
 
 export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVendaCasadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.9 - MODAL VENDA CASADA RESTAURADO')
+    if (aberto) console.log('🚀 LUCIUS v5.8 - MODAL VENDA CASADA RESTAURADO')
   }, [aberto])
 
   const { triggerRefresh } = useDadosFinanceiros()
@@ -329,8 +329,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             data_vencimento: prepararDataParaInsert(pagVenda.vencimento)
           }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq('id_venda', idSaida)
-          // Fallback legacy (Obrigatório número)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
+          // Fallback legacy (Obrigatório número e tipo)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).eq('tipo', 'entrada')
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, pagVenda.status, pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { id_venda: idSaida })
         } else {
           const { data: v } = await supabase.from('vendas').insert({
@@ -372,8 +372,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             desconto
           }).eq('id', idSaida)
           await supabase.from('transacoes_loja').delete().eq(idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idSaida)
-          // Fallback legacy (Obrigatório número)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).ilike('descricao', `%${cliente}%`)
+          // Fallback legacy (Obrigatório número e tipo)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numSaida).eq('tipo', 'entrada')
           await criarFinanceiro(totalFinal, cliente, 'entrada', numSaida, 'pendente', pagVenda.parcelas, pagVenda.vencimento, pagVenda.prazo, { [idSaidaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idSaida }, true)
         } else {
           const { data: p } = await supabase.from('pedidos_loja').insert({
@@ -412,8 +412,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             data_vencimento: prepararDataParaInsert(pagCompra.vencimento)
           }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq('id_compra', idEntrada)
-          // Fallback legacy (Obrigatório número)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
+          // Fallback legacy (Obrigatório número e tipo)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).eq('tipo', 'saida')
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, pagCompra.status, pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { id_compra: idEntrada })
         } else {
           const { data: c } = await supabase.from('compras').insert({
@@ -455,8 +455,8 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
             desconto
           }).eq('id', idEntrada)
           await supabase.from('transacoes_loja').delete().eq(idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional', idEntrada)
-          // Fallback legacy (Obrigatório número)
-          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).ilike('descricao', `%${fornecedor}%`)
+          // Fallback legacy (Obrigatório número e tipo)
+          await supabase.from('transacoes_loja').delete().eq('numero_transacao', numEntrada).eq('tipo', 'saida')
           await criarFinanceiro(totalFinal, fornecedor, 'saida', numEntrada, 'pendente', pagCompra.parcelas, pagCompra.vencimento, pagCompra.prazo, { [idEntradaAnexarIsNovo ? 'id_pedido' : 'id_condicional']: idEntrada }, true)
         } else {
           const { data: p } = await supabase.from('pedidos_loja').insert({
@@ -536,7 +536,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
         <div className="bg-slate-900 text-white px-4 py-2 flex justify-between items-center rounded-t-xl sticky top-0 z-20">
           <h2 className="text-sm font-semibold flex items-center gap-2 uppercase tracking-widest">
             <ShoppingBag className="text-pink-400" size={18} />
-            Venda Casada (LUCIUS v5.4)
+            Venda Casada (LUCIUS v5.8)
           </h2>
           <button onClick={onClose} className="hover:bg-white/20 p-1 rounded text-white">
             <X size={20} />
@@ -710,7 +710,7 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
           </div>
 
           <div className="bg-slate-900 p-4 rounded-lg text-white shadow-xl flex flex-col md:flex-row justify-between items-center gap-4 border-t border-pink-500 relative">
-            <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.4</div>
+            <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">CORE ENGINE v5.8</div>
             <div className="flex flex-col sm:flex-row gap-4 sm:gap-8 items-center w-full sm:w-auto">
               <div className="flex flex-col"><p className="text-[8px] uppercase font-bold text-pink-400">Venda { (totalSaidaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalSaidaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalSaidaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalSaidaAnterior + totalVenda).toFixed(2)}</p></div></div>
               <div className="flex flex-col border-l border-white/10 pl-8"><p className="text-[8px] uppercase font-bold text-blue-400">Compra { (totalEntradaAnterior > 0) ? '(Ant. + Novo)' : '' }</p><div className="flex items-center gap-2">{totalEntradaAnterior > 0 && <span className="text-[10px] text-slate-400 font-mono">R$ {totalEntradaAnterior.toFixed(2)} + </span>}<p className="text-base font-black font-mono">R$ {(totalEntradaAnterior + totalCompra).toFixed(2)}</p></div></div>

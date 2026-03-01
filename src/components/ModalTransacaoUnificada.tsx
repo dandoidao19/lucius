@@ -58,7 +58,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.9 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS v5.8 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -411,21 +411,23 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       }
 
       // 2. Deletar Financeiro (v5.8: Proteção contra deleção em massa de mesma entidade)
-      let queryDel = supabase.from('transacoes_loja').delete()
+      // Usar UUID específico se disponível
+      if (transacaoInicial.id) {
+        let queryDel = supabase.from('transacoes_loja').delete()
+        if (transacaoInicial.tipo === 'venda') queryDel = queryDel.eq('id_venda', transacaoInicial.id)
+        else if (transacaoInicial.tipo === 'compra') queryDel = queryDel.eq('id_compra', transacaoInicial.id)
+        else if (transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'pedido_compra') queryDel = queryDel.eq('id_pedido', transacaoInicial.id)
+        else queryDel = queryDel.eq('id_condicional', transacaoInicial.id)
+        await queryDel
+      }
 
-      if (transacaoInicial.tipo === 'venda') queryDel = queryDel.eq('id_venda', transacaoInicial.id)
-      else if (transacaoInicial.tipo === 'compra') queryDel = queryDel.eq('id_compra', transacaoInicial.id)
-      else if (transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'pedido_compra') queryDel = queryDel.eq('id_pedido', transacaoInicial.id)
-      else queryDel = queryDel.eq('id_condicional', transacaoInicial.id)
-
-      await queryDel
-
-      // Fallback de segurança para registros legados (Obrigatório filtrar por número da transação)
+      // Fallback de segurança para registros legados (Obrigatório filtrar por número E tipo financeiro)
       if (transacaoInicial.numero_transacao) {
+        const tipoFin = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 'entrada' : 'saida'
         await supabase.from('transacoes_loja')
           .delete()
           .eq('numero_transacao', transacaoInicial.numero_transacao)
-          .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          .eq('tipo', tipoFin)
       }
 
       // 3. Deletar Itens (Garante exclusão da tabela correta para evitar duplicidade na re-inserção)
@@ -532,14 +534,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = novaVenda.id
         }
 
-        // Deletar financeiro anterior se for edição
-        if (transacaoInicial) {
+        // Deletar financeiro anterior se for edição (v5.8: Proteção Extra)
+        if (transacaoInicial && transacaoPrincipalId) {
           await supabase.from('transacoes_loja').delete().eq('id_venda', transacaoPrincipalId)
-          // Fallback para legado (v3.8 ou anterior)
           if (transacaoInicial.numero_transacao) {
             await supabase.from('transacoes_loja').delete()
               .eq('numero_transacao', transacaoInicial.numero_transacao)
-              .ilike('descricao', `%${transacaoInicial.entidade}%`)
+              .eq('tipo', 'entrada')
           }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
@@ -643,14 +644,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = compra.id
         }
 
-        // Deletar financeiro anterior se for edição
-        if (transacaoInicial) {
+        // Deletar financeiro anterior se for edição (v5.8: Proteção Extra)
+        if (transacaoInicial && transacaoPrincipalId) {
           await supabase.from('transacoes_loja').delete().eq('id_compra', transacaoPrincipalId)
-          // Fallback para legado (v3.8 ou anterior)
           if (transacaoInicial.numero_transacao) {
             await supabase.from('transacoes_loja').delete()
               .eq('numero_transacao', transacaoInicial.numero_transacao)
-              .ilike('descricao', `%${transacaoInicial.entidade}%`)
+              .eq('tipo', 'saida')
           }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
@@ -915,12 +915,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoId = pedido.id
         }
 
-        if (idPedidoAnexarIsNovo || !idPedidoAnexar) {
-           await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
-           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
-        } else {
-           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
-           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
+        if (transacaoId) {
+          if (idPedidoAnexarIsNovo || !idPedidoAnexar) {
+             await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
+             await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
+          } else {
+             await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
+             await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
+          }
         }
 
         for (const item of itensValidos) {
@@ -1007,7 +1009,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoId = transacao.id
         }
 
-        if (isPedidoTipo) {
+        if (isPedidoTipo && transacaoId) {
           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
           await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
         }
@@ -1745,7 +1747,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-3 sm:p-4 border-t bg-slate-900 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v5.4
+              CORE ENGINE v5.8
             </div>
             <button
               onClick={handleCancelar}

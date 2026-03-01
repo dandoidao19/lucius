@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '5.4'
+  const VERSAO_ATUAL = '5.8'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
@@ -47,7 +47,18 @@ export default function ModalNotasAtualizacao() {
         <div className="p-6 overflow-y-auto space-y-8 bg-slate-50">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* 1. Estabilização v5.4 */}
+            {/* 1. Hotfix Financeiro v5.8 */}
+            <div className="bg-white p-4 rounded-xl border border-red-200 shadow-sm hover:border-red-400 transition-all group">
+              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 mb-3 group-hover:scale-110 transition-transform">
+                <ShieldCheck size={24} />
+              </div>
+              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Hotfix Colisão Financeira</h3>
+              <p className="text-xs text-slate-600 leading-relaxed font-semibold">
+                Corrigido bug crítico onde a edição de uma transação poderia excluir todo o histórico financeiro da entidade. Agora as limpezas são restritas apenas ao ID único da transação.
+              </p>
+            </div>
+
+            {/* 2. Estabilização v5.7 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-blue-300 transition-all group">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 mb-3 group-hover:scale-110 transition-transform">
                 <ShieldCheck size={24} />
@@ -55,17 +66,6 @@ export default function ModalNotasAtualizacao() {
               <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Sincronização de Totais</h3>
               <p className="text-xs text-slate-600 leading-relaxed">
                 Corrigido erro no cálculo de saldos ao anexar itens em pedidos existentes. O Total Geral e Financeiro agora se mantêm 100% sincronizados.
-              </p>
-            </div>
-
-            {/* 2. Integridade v5.4 */}
-            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-green-300 transition-all group">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center text-green-600 mb-3 group-hover:scale-110 transition-transform">
-                <ShieldCheck size={24} />
-              </div>
-              <h3 className="font-bold text-slate-800 text-lg mb-1 uppercase tracking-tighter">Categorização Automática</h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Produtos cadastrados "na hora" durante uma transação agora herdam e salvam a categoria corretamente no histórico de itens.
               </p>
             </div>
 
