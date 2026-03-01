@@ -69,7 +69,7 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 3. Métricas v5.4 */}
+            {/* 3. Métricas v5.7 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-orange-300 transition-all group">
               <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center text-orange-600 mb-3 group-hover:scale-110 transition-transform">
                 <Package size={24} />
@@ -80,7 +80,7 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 4. Limpeza v5.4 */}
+            {/* 4. Limpeza v5.5 */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-purple-300 transition-all group">
               <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 mb-3 group-hover:scale-110 transition-transform">
                 <ShieldCheck size={24} />
@@ -91,7 +91,7 @@ export default function ModalNotasAtualizacao() {
               </p>
             </div>
 
-            {/* 5. Manutenção v5.4 */}
+            {/* 5. Manutenção v5.4 (Recalibragem) */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm hover:border-red-300 transition-all group">
               <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center text-red-600 mb-3 group-hover:scale-110 transition-transform">
                 <BarChart3 size={24} />
