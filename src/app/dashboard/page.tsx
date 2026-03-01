@@ -97,9 +97,9 @@ export default function Dashboard() {
     <DadosFinanceirosProvider>
       <ModalNotasAtualizacao />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-        <div className="container mx-auto px-3 py-2">
+        <div className="container mx-auto px-1.5 py-1 sm:px-3 sm:py-2">
           {/* Header com Usuário e Logout - COMPACTADO */}
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex justify-between items-center mb-1 sm:mb-2">
             <div>
               <h1 className="text-base md:text-xl font-bold text-gray-800">
                 {getTitleBySection()}
@@ -117,7 +117,7 @@ export default function Dashboard() {
           </div>
 
           {/* Menu de Navegação com Ícones - COMPACTADO */}
-          <div className="bg-white rounded-lg shadow-md p-0.5 md:p-1 mb-2 border border-gray-100">
+          <div className="bg-white rounded-lg shadow-md p-0.5 md:p-1 mb-1 sm:mb-2 border border-gray-100">
             <div className="flex flex-wrap gap-1">
               {menuItems.map((item) => (
                 <button

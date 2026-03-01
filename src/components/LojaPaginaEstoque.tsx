@@ -279,7 +279,7 @@ export default function LojaPaginaEstoque() {
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {/* FILTRO MINIMIZADO NO TOPO */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-red-700">
         <button
@@ -378,21 +378,21 @@ export default function LojaPaginaEstoque() {
       </div>
 
       {/* Cabeçalho com Botão e Valores do Estoque - COMPACTO */}
-      <div className="bg-white rounded shadow-sm px-3 py-1 border border-gray-200">
-        <div className="flex justify-between items-center mb-1 h-8">
+      <div className="bg-white rounded shadow-sm px-1.5 py-0.5 sm:px-3 sm:py-1 border border-gray-200">
+        <div className="flex justify-between items-center mb-0.5 h-7 sm:h-8">
           <button
             onClick={() => {
               setProdutoSelecionado(null)
               setModalEditarAberto(true)
             }}
-            className="bg-red-700 hover:bg-red-800 text-white px-3 h-6 flex items-center justify-center rounded text-xs font-semibold transition-colors shadow-sm"
+            className="bg-red-700 hover:bg-red-800 text-white px-2 sm:px-3 h-5 sm:h-6 flex items-center justify-center rounded text-[9px] sm:text-xs font-semibold transition-colors shadow-sm"
           >
-            + CADASTRAR ITEM
+            + CADASTRAR
           </button>
 
           <div className="text-right">
-            <p className="text-xs font-semibold text-gray-500 uppercase">Total de Produtos</p>
-            <p className="text-sm font-semibold text-gray-800">
+            <p className="text-[9px] sm:text-xs font-semibold text-gray-500 uppercase leading-none">Total</p>
+            <p className="text-xs sm:text-sm font-semibold text-gray-800 leading-none">
               {produtosFiltrados.length}
             </p>
           </div>
@@ -442,29 +442,29 @@ export default function LojaPaginaEstoque() {
 
       {/* Tabela de Estoque */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
-        <div className="bg-red-700 flex justify-between items-center px-3 py-1 text-white border-b border-red-800 h-8">
-          <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">Lista de Produtos ({produtosFiltrados.length})</h2>
+        <div className="bg-red-700 flex justify-between items-center px-1.5 py-0.5 sm:px-3 sm:py-1 text-white border-b border-red-800 h-7 sm:h-8">
+          <h2 className="text-[10px] sm:text-xs font-semibold uppercase tracking-tight sm:tracking-widest flex items-center">Estoque ({produtosFiltrados.length})</h2>
         </div>
         {produtosFiltrados.length === 0 ? (
           <div className="p-2 text-center text-gray-500">
-            <p className="text-xs">Nenhum produto encontrado com os filtros aplicados</p>
+            <p className="text-[10px] sm:text-xs">Vazio</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-[9px] sm:text-xs">
               <thead className="bg-red-700 text-white border-b border-red-800">
                 <tr>
-                <th className="px-1.5 py-1 text-left font-semibold uppercase">Código</th>
-                <th className="px-1.5 py-1 text-left font-semibold uppercase">Descrição</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase">Categoria</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase">Status</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Cond.</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase">Qtd Efet.</th>
-                <th className="px-1.5 py-1 text-right font-semibold uppercase">Custo</th>
-                <th className="px-1.5 py-1 text-right font-semibold uppercase">Repasse</th>
-                <th className="px-1.5 py-1 text-right font-semibold uppercase">Venda</th>
-                <th className="px-1.5 py-1 text-left font-semibold uppercase">Ult. Compra</th>
-                <th className="px-1.5 py-1 text-center font-semibold uppercase">Ações</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase w-[50px] sm:w-auto">Cód.</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase min-w-[100px]">Descrição</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase hidden sm:table-cell">Categoria</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase w-[50px] sm:w-auto">Status</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase w-[35px] sm:w-auto">Cond.</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase w-[35px] sm:w-auto">Efet.</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right font-semibold uppercase hidden md:table-cell">Custo</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right font-semibold uppercase hidden md:table-cell">Repasse</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right font-semibold uppercase w-[60px] sm:w-auto">Venda</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase hidden lg:table-cell">Ult. Compra</th>
+                <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase w-[50px] sm:w-auto">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -480,15 +480,15 @@ export default function LojaPaginaEstoque() {
                         temEstoqueNegativo ? 'bg-red-50' : (produto.status_item || 'resolvido') === 'condicional' ? 'bg-yellow-50' : ''
                       }`}
                     >
-                      <td className="px-1.5 py-1 text-gray-800 font-medium text-xs">{produto.codigo}</td>
-                      <td className="px-1.5 py-1 text-gray-800 text-xs">{produto.descricao}</td>
-                      <td className="px-1.5 py-1 text-center text-xs">
-                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-medium">
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-gray-800 font-medium">{produto.codigo}</td>
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-gray-800 truncate max-w-[100px] sm:max-w-none">{produto.descricao}</td>
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center hidden sm:table-cell">
+                        <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-medium text-[10px]">
                           {produto.categoria || 'Sem categoria'}
                         </span>
                       </td>
-                      <td className="px-1.5 py-1 text-center">
-                        <span className={`inline-block px-1 py-0.5 rounded-full font-medium ${
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center">
+                        <span className={`inline-block px-1 py-0.5 rounded-full font-medium text-[8px] sm:text-[10px] ${
                           (produto.status_item || 'resolvido') === 'resolvido' 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-yellow-100 text-yellow-800'
@@ -496,41 +496,41 @@ export default function LojaPaginaEstoque() {
                           {(produto.status_item || 'resolvido') === 'resolvido' ? '✓ Res.' : '⏳ Cond.'}
                         </span>
                       </td>
-                      <td className={`px-1.5 py-1 text-center font-semibold text-xs ${
+                      <td className={`px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold ${
                         qtdCondicional !== 0 ? 'bg-yellow-100 text-yellow-800' : 'text-gray-500'
                       }`}>
                         {qtdCondicional}
                       </td>
-                      <td className={`px-1.5 py-1 text-center font-semibold text-xs ${
+                      <td className={`px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold ${
                         temEstoqueNegativo ? 'bg-red-200 text-red-900 font-bold' : 'bg-blue-100 text-blue-800'
                       }`}>
                         {qtdEfetiva}
                       </td>
-                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs">
-                        R$ {produto.preco_custo.toFixed(2)}
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right text-gray-700 hidden md:table-cell">
+                        {produto.preco_custo.toFixed(2)}
                       </td>
-                      <td className="px-1.5 py-1 text-right text-gray-700 text-xs">
-                        R$ {(Number(produto.valor_repasse) || 0).toFixed(2)}
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right text-gray-700 hidden md:table-cell">
+                        {(Number(produto.valor_repasse) || 0).toFixed(2)}
                       </td>
-                      <td className="px-1.5 py-1 text-right text-gray-700 font-semibold text-xs">
-                        R$ {(Number(produto.preco_venda) || 0).toFixed(2)}
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right text-gray-700 font-semibold">
+                        {(Number(produto.preco_venda) || 0).toFixed(2)}
                       </td>
-                      <td className="px-1.5 py-1 text-gray-600 text-xs">
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-gray-600 hidden lg:table-cell">
                         {formatarDataParaExibicao(produto.data_ultima_compra)}
                       </td>
-                      <td className="px-1.5 py-1 text-center">
+                      <td className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center">
                         <div className="flex gap-0.5 justify-center">
                           <button
                             onClick={() => abrirModalEditar(produto)}
-                            className="bg-red-700 hover:bg-red-800 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
-                            title="Editar produto"
+                            className="bg-red-700 hover:bg-red-800 text-white px-1 sm:px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors"
+                            title="Editar"
                           >
                             ✏️
                           </button>
                           <button
                             onClick={() => abrirModalLog(produto)}
-                            className="bg-gray-500 hover:bg-gray-600 text-white px-1.5 py-0.5 rounded text-xs font-medium transition-colors"
-                            title="Ver log de entradas e saídas"
+                            className="bg-gray-500 hover:bg-gray-600 text-white px-1 sm:px-1.5 py-0.5 rounded text-[10px] font-medium transition-colors"
+                            title="Log"
                           >
                             📋
                           </button>
