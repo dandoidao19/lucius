@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { formatarErro } from '@/lib/errorUtils'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
@@ -1671,8 +1671,10 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                           const valorBase = Math.ceil((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
+                          const dataBaseValida = isDataValida(dataVencimento)
+
                           for (let i = 0; i < Math.min(quantidadeParcelas, 72); i++) {
-                            const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, prazoParcelas)
+                            const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, prazoParcelas) : dataPreview)
                             if (i > 0) dataPreview = dtP
 
                             parcelasPreview.push(

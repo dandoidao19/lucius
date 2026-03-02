@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 
 interface ItemPedido {
@@ -430,8 +430,10 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                         const valorBase = Math.ceil((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
                         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
+                        const dataBaseValida = isDataValida(dataVencimento)
+
                         for (let i = 0; i < Math.min(quantidadeParcelas, 60); i++) {
-                          const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, prazoParcelas)
+                          const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, prazoParcelas) : dataPreview)
                           if (i > 0) dataPreview = dtP
 
                           parcelasPreview.push(

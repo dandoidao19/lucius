@@ -7,7 +7,7 @@ import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
-import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { formatarErro } from '@/lib/errorUtils'
 
 interface ItemVendaCasada {
@@ -645,8 +645,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       const valorBase = Math.ceil(((totalVenda + pagVenda.acrescimoDesconto) / pagVenda.parcelas) * 100) / 100
                       const valorUltima = Number(((totalVenda + pagVenda.acrescimoDesconto) - (valorBase * (pagVenda.parcelas - 1))).toFixed(2))
 
+                      const dataBaseValida = isDataValida(pagVenda.vencimento)
+
                       for (let i = 0; i < Math.min(pagVenda.parcelas, 48); i++) {
-                        const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, pagVenda.prazo)
+                        const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, pagVenda.prazo) : dataPreview)
                         if (i > 0) dataPreview = dtP
 
                         parcelasPreview.push(
@@ -689,8 +691,10 @@ export default function ModalVendaCasada({ aberto, onClose, onSucesso }: ModalVe
                       const valorBase = Math.ceil(((totalCompra + pagCompra.acrescimoDesconto) / pagCompra.parcelas) * 100) / 100
                       const valorUltima = Number(((totalCompra + pagCompra.acrescimoDesconto) - (valorBase * (pagCompra.parcelas - 1))).toFixed(2))
 
+                      const dataBaseValida = isDataValida(pagCompra.vencimento)
+
                       for (let i = 0; i < Math.min(pagCompra.parcelas, 48); i++) {
-                        const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, pagCompra.prazo)
+                        const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, pagCompra.prazo) : dataPreview)
                         if (i > 0) dataPreview = dtP
 
                         parcelasPreview.push(

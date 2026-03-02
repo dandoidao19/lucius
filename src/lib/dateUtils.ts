@@ -112,6 +112,17 @@ export function formatarDataParaExibicao(dataISO: string): string {
 }
 
 /**
+ * Verifica se uma string de data (YYYY-MM-DD) é válida e real.
+ */
+export function isDataValida(dateString: string): boolean {
+  if (!dateString || typeof dateString !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
+  const [y, m, d] = dateString.split('-').map(Number);
+  const data = new Date(y, m - 1, d, 12, 0, 0);
+  return data.getFullYear() === y && data.getMonth() === (m - 1) && data.getDate() === d;
+}
+
+/**
  * Retorna ano-mês (YYYY-MM) do mês atual no Brasil.
  */
 export function getMesAtualParaInput(): string {
@@ -131,6 +142,7 @@ export function getMesAtualParaInput(): string {
  * Garante o fuso horário de Brasília.
  */
 export function addMonths(dateString: string, months: number): string {
+  if (!isDataValida(dateString)) return dateString;
   const [ano, mes, dia] = dateString.split('-').map(Number);
   // Usamos meio-dia para evitar problemas de fuso
   const date = new Date(ano, mes - 1 + months, dia, 12, 0, 0);
@@ -155,6 +167,7 @@ export function addMonths(dateString: string, months: number): string {
  * Garante o fuso horário de Brasília.
  */
 export function getDataNDias(dataBase: string, dias: number): string {
+  if (!isDataValida(dataBase)) return dataBase;
   const [ano, mes, dia] = dataBase.split('-').map(Number);
   const data = new Date(ano, mes - 1, dia + dias, 12, 0, 0);
 
@@ -172,6 +185,7 @@ export function getDataNDias(dataBase: string, dias: number): string {
  * Calcula a próxima data baseada em um prazo/recorrência.
  */
 export function calcularDataPorPrazo(dataBase: string, prazo: string): string {
+  if (!isDataValida(dataBase)) return dataBase;
   switch (prazo) {
     case 'diaria':
       return getDataNDias(dataBase, 1);

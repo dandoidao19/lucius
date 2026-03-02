@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { formatarErro } from '@/lib/errorUtils'
 import { useFormDraft } from '@/context/FormDraftContext'
 import SeletorEntidade from './SeletorEntidade'
@@ -305,8 +305,10 @@ export default function FormularioLancamentoLoja({ onLancamentoAdicionado, onCan
                   const vBase = Math.ceil((valorFinal / quantidadeParcelas) * 100) / 100
                   const vUlt = Number((valorFinal - (vBase * (quantidadeParcelas - 1))).toFixed(2))
 
+                  const dataBaseValida = isDataValida(data)
+
                   for (let i = 0; i < Math.min(quantidadeParcelas, 12); i++) {
-                    const dtP = i === 0 ? dataPreview : calcularDataPorPrazo(dataPreview, prazoParcelas)
+                    const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, prazoParcelas) : dataPreview)
                     if (i > 0) dataPreview = dtP
 
                     parcelasPreview.push(

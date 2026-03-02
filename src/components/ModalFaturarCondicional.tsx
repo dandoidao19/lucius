@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { formatarErro } from '@/lib/errorUtils'
 
@@ -190,7 +190,7 @@ export default function ModalFaturarCondicional({ aberto, onClose, onSucesso, tr
         for (let i = 1; i <= quantidadeParcelas; i++) {
             let dataParc = dataAtualParcela
             if (i > 1) {
-                dataParc = calcularDataPorPrazo(dataAtualParcela, prazoParcelas)
+                dataParc = isDataValida(dataAtualParcela) ? calcularDataPorPrazo(dataAtualParcela, prazoParcelas) : dataAtualParcela
                 dataAtualParcela = dataParc
             }
             const valorFinalParcela = i === quantidadeParcelas ? valorUltima : valorBase
