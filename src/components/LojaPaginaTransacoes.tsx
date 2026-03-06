@@ -317,8 +317,25 @@ export default function LojaPaginaTransacoes() {
                   <td colSpan={10} className="px-1 py-4 text-center text-gray-500">Nenhuma transação encontrada.</td>
                 </tr>
               ) : (
-                transacoesFiltradas.map((t) => (
-                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
+                transacoesFiltradas.map((t) => {
+                  // Lógica de realce visual v5.8.2
+                  const isPedido = t.tipo_slug === 'pedido_venda' || t.tipo_slug === 'pedido_compra';
+                  const isFinalizado = t.status === 'faturado' || t.status === 'cancelado';
+
+                  let bgClass = 'hover:bg-gray-50'; // Padrão
+
+                  if (isPedido) {
+                    if (isFinalizado) {
+                      bgClass = 'bg-slate-100/50 hover:bg-slate-200/50';
+                    } else if (t.tipo_slug === 'pedido_venda') {
+                      bgClass = 'bg-blue-50/50 hover:bg-blue-100/50';
+                    } else if (t.tipo_slug === 'pedido_compra') {
+                      bgClass = 'bg-orange-50/50 hover:bg-orange-100/50';
+                    }
+                  }
+
+                  return (
+                  <tr key={`${t.tabela}-${t.id}`} className={`${bgClass} transition-colors`}>
                     <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
                     <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center">
                       <span className={`inline-block px-1 py-0.5 rounded font-semibold text-[8px] sm:text-[9px] leading-tight uppercase ${t.cor}`}>
@@ -360,7 +377,7 @@ export default function LojaPaginaTransacoes() {
                       </button>
                     </td>
                   </tr>
-                ))
+                )})
               )}
             </tbody>
           </table>
