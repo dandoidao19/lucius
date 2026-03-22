@@ -337,8 +337,14 @@ export default function LojaPaginaTransacoes() {
                   <td colSpan={10} className="px-1 py-4 text-center text-gray-500">Nenhuma transação encontrada.</td>
                 </tr>
               ) : (
-                transacoesFiltradas.map((t) => (
-                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
+                transacoesFiltradas.map((t: TransacaoUnificada) => (
+                  <tr key={`${t.tabela}-${t.id}`} className={`${
+                    t.tipo_slug === 'venda' ? 'bg-green-100' :
+                    t.tipo_slug === 'compra' ? 'bg-red-100' :
+                    t.tipo_slug.includes('condicional') ? 'bg-purple-100' :
+                    t.tipo_slug.includes('pedido') ? 'bg-blue-100' :
+                    ''
+                  } hover:bg-gray-200 transition-colors`}>
                     <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
                     <td className="px-1 py-1 text-center">
                       <span className={`inline-block px-1.5 py-0.5 rounded font-semibold text-[10px] leading-tight uppercase ${t.cor}`}>

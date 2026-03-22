@@ -491,7 +491,7 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {lancamentos.map((lancamento) => (
-                <tr key={lancamento.id} className={selecionados.includes(lancamento.id) ? 'bg-red-50' : 'hover:bg-gray-50'}>
+                <tr key={lancamento.id} className={selecionados.includes(lancamento.id) ? 'bg-red-100' : 'hover:bg-gray-50'}>
                   <td className="px-3 py-2">
                     <input
                       type="checkbox"

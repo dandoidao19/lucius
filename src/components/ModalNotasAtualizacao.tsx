@@ -5,7 +5,7 @@ import { X, Rocket, Package, CreditCard, BarChart3, MousePointer2, ShieldCheck, 
 
 export default function ModalNotasAtualizacao() {
   const [aberto, setAberto] = useState(false)
-  const VERSAO_ATUAL = '4.9'
+  const VERSAO_ATUAL = '5.9'
 
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')

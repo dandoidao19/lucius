@@ -307,7 +307,7 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                   </thead>
                   <tbody className="divide-y">
                     {itens.map(item => (
-                      <tr key={item.id} className={item.acao === 'efetuar' ? 'bg-green-50' : item.acao === 'cancelar' ? 'bg-red-50' : ''}>
+                      <tr key={item.id} className={item.acao === 'efetuar' ? 'bg-green-100' : item.acao === 'cancelar' ? 'bg-red-100' : ''}>
                         <td className="px-3 py-2">
                           <div className="font-bold">{item.descricao}</div>
                           <div className="text-[10px] text-gray-500">{item.categoria}</div>
