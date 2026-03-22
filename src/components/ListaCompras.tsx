@@ -419,9 +419,9 @@ export default function ListaCompras({ compras, onAtualizar, onEditar }: ListaCo
               <React.Fragment key={compra.id}>
                 <tr
                   onClick={() => toggleExpandir(compra.id)}
-                  className={`border-b border-gray-200 hover:bg-blue-50 cursor-pointer transition-colors ${
+                  className={`border-b border-gray-200 hover:bg-blue-100 cursor-pointer transition-colors ${
                     expandidos.has(compra.id) 
-                      ? 'bg-blue-100 border-l-4 border-l-blue-600 shadow-sm' 
+                      ? 'bg-blue-200 border-l-4 border-l-blue-600 shadow-sm'
                       : ''
                   }`}
                 >
@@ -482,7 +482,7 @@ export default function ListaCompras({ compras, onAtualizar, onEditar }: ListaCo
                 </tr>
 
                 {expandidos.has(compra.id) && (
-                  <tr className="bg-blue-50">
+                  <tr className="bg-blue-100">
                     <td colSpan={8} className="px-3 py-2">
                       <div className="space-y-2 border-2 border-blue-300 rounded-lg p-2 bg-white shadow-inner">
                         {compra.itens && compra.itens.length > 0 ? (

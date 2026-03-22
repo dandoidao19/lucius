@@ -436,9 +436,9 @@ export default function ListaVendas({ vendas, onAtualizar, onEditar }: ListaVend
               <React.Fragment key={venda.id}>
                 <tr
                   onClick={() => toggleExpandir(venda.id)}
-                  className={`border-b border-gray-200 hover:bg-green-50 cursor-pointer transition-colors ${
+                  className={`border-b border-gray-200 hover:bg-green-100 cursor-pointer transition-colors ${
                     expandidos.has(venda.id) 
-                      ? 'bg-green-100 border-l-4 border-l-green-600 shadow-sm' 
+                      ? 'bg-green-200 border-l-4 border-l-green-600 shadow-sm'
                       : ''
                   }`}
                 >
@@ -499,7 +499,7 @@ export default function ListaVendas({ vendas, onAtualizar, onEditar }: ListaVend
                 </tr>
 
                 {expandidos.has(venda.id) && (
-                  <tr className="bg-green-50">
+                  <tr className="bg-green-100">
                     <td colSpan={8} className="px-3 py-2">
                       <div className="space-y-2 border-2 border-green-300 rounded-lg p-2 bg-white shadow-inner">
                         <div>

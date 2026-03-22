@@ -987,10 +987,14 @@ export default function CasaModulo() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+      <div className="flex flex-col lg:flex-row gap-0 lg:gap-3 items-start relative">
         {/* Barra Lateral do Caixa (Retrátil) */}
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            caixaMinimizado
+              ? 'w-0 max-h-0 lg:max-h-none lg:w-0 opacity-0'
+              : 'w-full max-h-[2000px] lg:max-h-none lg:w-1/4 opacity-100'
+          }`}
         >
           <div className="min-w-[250px]">
             <CaixaCasaDetalhado titulo="CAIXA CASA" />
@@ -1046,7 +1050,9 @@ export default function CasaModulo() {
                     {lancamentosFiltrados.map((lancamento) => (
                       <tr 
                         key={lancamento.id} 
-                        className="border-b hover:bg-gray-50 transition-colors bg-white"
+                        className={`border-b ${
+                          lancamento.tipo === 'entrada' ? 'bg-green-100' : 'bg-red-100'
+                        } hover:bg-gray-200 transition-colors`}
                       >
                         <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
                           {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}
