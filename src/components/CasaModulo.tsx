@@ -990,7 +990,11 @@ export default function CasaModulo() {
       <div className="flex flex-col lg:flex-row gap-3 items-start relative">
         {/* Barra Lateral do Caixa (Retrátil) */}
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            caixaMinimizado
+              ? 'w-0 h-0 lg:h-auto opacity-0'
+              : 'w-full h-auto lg:w-1/4 opacity-100'
+          }`}
         >
           <div className="min-w-[250px]">
             <CaixaCasaDetalhado titulo="CAIXA CASA" />
@@ -1046,7 +1050,7 @@ export default function CasaModulo() {
                     {lancamentosFiltrados.map((lancamento) => (
                       <tr 
                         key={lancamento.id} 
-                        className="border-b hover:bg-gray-50 transition-colors bg-white"
+                        className="border-b hover:bg-gray-100 transition-colors bg-white"
                       >
                         <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
                           {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}

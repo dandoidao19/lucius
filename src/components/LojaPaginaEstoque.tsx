@@ -406,14 +406,14 @@ export default function LojaPaginaEstoque() {
           <div className="grid grid-cols-2 gap-2">
             {/* Coluna Esquerda - Realizado (Destaque Principal) */}
             <div className="space-y-1">
-              <div className="bg-green-50 border border-green-300 rounded p-1 shadow-sm">
+              <div className="bg-green-100 border border-green-300 rounded p-1 shadow-sm">
                 <p className="text-xs text-green-800 font-medium uppercase">Realizado (Venda)</p>
                 <p className="text-lg font-bold text-green-700">
                   R$ {calcularValorRealizadoVenda().toFixed(2)}
                 </p>
               </div>
               
-              <div className="bg-blue-50 border border-blue-300 rounded p-1">
+              <div className="bg-blue-100 border border-blue-300 rounded p-1">
                 <p className="text-xs text-blue-800 font-medium uppercase">Realizado (Repasse)</p>
                 <p className="text-sm font-semibold text-blue-700">
                   R$ {calcularValorRealizadoRepasse().toFixed(2)}
@@ -423,14 +423,14 @@ export default function LojaPaginaEstoque() {
             
             {/* Coluna Direita - Condicional (Menor Destaque) */}
             <div className="space-y-1">
-              <div className="bg-yellow-50 border border-yellow-300 rounded p-1">
+              <div className="bg-yellow-100 border border-yellow-300 rounded p-1">
                 <p className="text-xs text-yellow-800 font-medium uppercase">Condicional (Venda)</p>
                 <p className="text-sm font-semibold text-yellow-700">
                   R$ {calcularValorCondicionalVenda().toFixed(2)}
                 </p>
               </div>
               
-              <div className="bg-orange-50 border border-orange-300 rounded p-1">
+              <div className="bg-orange-100 border border-orange-300 rounded p-1">
                 <p className="text-xs text-orange-800 font-medium uppercase">Condicional (Repasse)</p>
                 <p className="text-sm font-semibold text-orange-700">
                   R$ {calcularValorCondicionalRepasse().toFixed(2)}
@@ -478,7 +478,7 @@ export default function LojaPaginaEstoque() {
                     <tr
                       key={produto.id}
                       className={`border-b border-gray-100 hover:bg-gray-50 transition-colors ${
-                        temEstoqueNegativo ? 'bg-red-50' : (produto.status_item || 'resolvido') === 'condicional' ? 'bg-yellow-50' : ''
+                        temEstoqueNegativo ? 'bg-red-100' : (produto.status_item || 'resolvido') === 'condicional' ? 'bg-yellow-100' : ''
                       }`}
                     >
                       <td className="px-1.5 py-1 text-gray-800 font-medium text-xs">{produto.codigo}</td>

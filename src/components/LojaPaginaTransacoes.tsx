@@ -338,7 +338,7 @@ export default function LojaPaginaTransacoes() {
                 </tr>
               ) : (
                 transacoesFiltradas.map((t) => (
-                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-50 transition-colors">
+                  <tr key={`${t.tabela}-${t.id}`} className="hover:bg-gray-100 transition-colors">
                     <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(t.data)}</td>
                     <td className="px-1 py-1 text-center">
                       <span className={`inline-block px-1.5 py-0.5 rounded font-semibold text-[10px] leading-tight uppercase ${t.cor}`}>

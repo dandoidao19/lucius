@@ -503,7 +503,11 @@ export default function LojaPaginaFinanceiro() {
       <div className="flex flex-col lg:flex-row gap-3 items-start relative">
         {/* Barra Lateral do Caixa (Retrátil) */}
         <div
-          className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
+          className={`transition-all duration-300 ease-in-out overflow-hidden ${
+            caixaMinimizado
+              ? 'w-0 h-0 lg:h-auto opacity-0'
+              : 'w-full h-auto lg:w-1/4 opacity-100'
+          }`}
         >
           <div className="min-w-[250px]">
             <CaixaLojaDetalhado onMostrarTudo={setVerTodas} />
@@ -570,7 +574,7 @@ export default function LojaPaginaFinanceiro() {
                       const diferenca = getDiferenca(transacao)
                       const temPag = temPagamento(transacao)
                       return (
-                        <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-100 transition-colors">
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
                           <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
                           <td className="px-0.5 py-1 text-gray-500">#{transacao.numero_transacao || '—'}</td>
