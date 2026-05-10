@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import { formatarDataParaExibicao, getDataAtualBrasil } from '@/lib/dateUtils'
 import FiltrosLancamentos from './FiltrosLancamentos'
@@ -37,42 +37,10 @@ interface Transacao {
   id_pedido?: string
 }
 
-// Definição explícita para o tipo de dado bruto vindo do Supabase
-interface SupabaseTransacaoLoja {
-  id: string;
-  numero_transacao?: number;
-  data: string;
-  data_pagamento?: string;
-  data_original?: string;
-  tipo: 'entrada' | 'saida';
-  descricao?: string;
-  total: number;
-  valor_pago?: number;
-  juros_descontos?: number;
-  status_pagamento?: string;
-  quantidade_parcelas?: number;
-  observacao?: string;
-  id_venda?: string;
-  id_compra?: string;
-  id_condicional?: string;
-  id_pedido?: string;
-}
-
-
-let cacheGlobalTransacoes: Transacao[] = []
-let cacheGlobalUltimaAtualizacao: number = 0
-const CACHE_TEMPO_VIDA = 30000
-
 export default function LojaPaginaFinanceiro() {
-  const { versaoRefresh } = useDadosFinanceiros()
+  const { triggerRefresh, dados, carregando } = useDadosFinanceiros()
   const { filtersLojaFinanceiro, setFiltersLojaFinanceiro } = useFilters()
-  const [transacoes, setTransacoes] = useState<Transacao[]>(cacheGlobalTransacoes)
-  const [transacoesFiltradas, setTransacoesFiltradas] = useState<Transacao[]>([])
-  const [loading, setLoading] = useState(false)
   
-  const ultimaBuscaRef = useRef<number>(cacheGlobalUltimaAtualizacao)
-  const buscaEmAndamentoRef = useRef<boolean>(false)
-
   // Atalhos para os filtros do contexto
   const verTodas = filtersLojaFinanceiro.verTodas
   const setVerTodas = (v: boolean) => setFiltersLojaFinanceiro(prev => ({ ...prev, verTodas: v }))
@@ -97,8 +65,6 @@ export default function LojaPaginaFinanceiro() {
   const [lancamentoParaEditar, setLancamentoParaEditar] = useState<Transacao | null>(null)
   const [caixaMinimizado, setCaixaMinimizado] = useState(true)
 
-  const { triggerRefresh } = useDadosFinanceiros()
-
   // Helpers locais para cálculo de datas
   const addDias = useCallback((dataStr: string, dias: number) => {
     const dt = new Date(`${dataStr}T12:00:00`)
@@ -106,11 +72,22 @@ export default function LojaPaginaFinanceiro() {
     return dt.toISOString().slice(0, 10)
   }, [])
 
-  // Processar transações
-  const processarTransacoes = useCallback(async (transacoesLoja: SupabaseTransacaoLoja[]) => {
-    if (!transacoesLoja || transacoesLoja.length === 0) return []
+  const estaNoPeriodo = useCallback((dataString: string, inicio: string, fim: string) => {
+    try {
+      const data = new Date(dataString + 'T12:00:00')
+      const dataInicio = new Date(inicio + 'T00:00:00')
+      const dataFim = new Date(fim + 'T23:59:59')
+      return data >= dataInicio && data <= dataFim
+    } catch {
+      return false
+    }
+  }, [])
 
-    return transacoesLoja.map((trans): Transacao => {
+  // Processar transações provenientes do contexto
+  const transacoesFormatadas = useMemo(() => {
+    const transacoesLoja = dados.transacoesLoja || []
+
+    return transacoesLoja.map((trans: any): Transacao => {
       let parcela_numero = 1
       let parcela_total = 1
       let descricaoLimpa = trans.descricao || ''
@@ -146,122 +123,16 @@ export default function LojaPaginaFinanceiro() {
         id_condicional: trans.id_condicional,
         id_pedido: trans.id_pedido,
       }
+    }).sort((a, b) => {
+      const dataA = a.data_pagamento || a.data
+      const dataB = b.data_pagamento || b.data
+      return new Date(dataA).getTime() - new Date(dataB).getTime()
     })
-  }, [])
+  }, [dados.transacoesLoja])
 
-  const buscarTransacoes = useCallback(async (forcarAtualizacao = false) => {
-    if (buscaEmAndamentoRef.current) {
-      console.log('⏭️ Busca já em andamento')
-      return
-    }
-
-    const agora = Date.now()
-    if (!forcarAtualizacao && cacheGlobalTransacoes.length > 0 && (agora - cacheGlobalUltimaAtualizacao < CACHE_TEMPO_VIDA)) {
-      setTransacoes(cacheGlobalTransacoes)
-      return
-    }
-    if (!forcarAtualizacao && agora - ultimaBuscaRef.current < 5000) return
-
-    buscaEmAndamentoRef.current = true
-    setLoading(true)
-
-    try {
-      console.log('📊 Buscando transações da loja...')
-      const { data: transacoesLoja, error: fetchError } = await supabase
-        .from('transacoes_loja')
-        .select('*')
-        .order('data', { ascending: true })
-
-      if (fetchError) throw fetchError
-
-      if (!transacoesLoja || transacoesLoja.length === 0) {
-        console.log('📭 Nenhuma transação encontrada')
-        setTransacoes([])
-        cacheGlobalTransacoes = []
-        cacheGlobalUltimaAtualizacao = agora
-        return
-      }
-
-      console.log(`🔍 Processando ${transacoesLoja.length} transações...`)
-      const transacoesFormatadas = await processarTransacoes(transacoesLoja)
-      
-      console.log(`✅ ${transacoesFormatadas.length} transações processadas`)
-
-      // Ordenação: Por data de pagamento, se não houver, por data de vencimento
-      transacoesFormatadas.sort((a, b) => {
-        const dataA = a.data_pagamento || a.data
-        const dataB = b.data_pagamento || b.data
-        return new Date(dataA).getTime() - new Date(dataB).getTime()
-      })
-      
-      setTransacoes(transacoesFormatadas)
-      cacheGlobalTransacoes = transacoesFormatadas
-      cacheGlobalUltimaAtualizacao = agora
-      ultimaBuscaRef.current = agora
-      
-    } catch (error) {
-      console.error('Erro ao buscar transações:', error)
-    } finally {
-      setLoading(false)
-      buscaEmAndamentoRef.current = false
-    }
-  }, [processarTransacoes])
-
-  useEffect(() => {
-    if (versaoRefresh > 0) {
-      console.log('🔄 Refresh solicitado via Contexto')
-      buscarTransacoes(true)
-    }
-  }, [versaoRefresh, buscarTransacoes])
-
-  useEffect(() => {
-    const agora = Date.now()
-    
-    if (cacheGlobalTransacoes.length > 0 && (agora - cacheGlobalUltimaAtualizacao < CACHE_TEMPO_VIDA)) {
-      console.log('🚀 Inicializando com cache válido')
-      setTransacoes(cacheGlobalTransacoes)
-    } else {
-      console.log('🚀 Cache expirado ou vazio, buscando...')
-      buscarTransacoes()
-    }
-    
-    const channel = supabase
-      .channel('transacoes-loja-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transacoes_loja'
-        },
-        (payload) => {
-          console.log('🔄 Mudança detectada na tabela transacoes_loja:', payload.eventType)
-          cacheGlobalUltimaAtualizacao = 0
-          buscarTransacoes(true)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [buscarTransacoes])
-
-  // Verifica período e mês
-  const estaNoPeriodo = useCallback((dataString: string, inicio: string, fim: string) => {
-    try {
-      const data = new Date(dataString + 'T12:00:00')
-      const dataInicio = new Date(inicio + 'T00:00:00')
-      const dataFim = new Date(fim + 'T23:59:59')
-      return data >= dataInicio && data <= dataFim
-    } catch {
-      return false
-    }
-  }, [])
-
-  // APLICAR FILTROS — padrão: 30 dias a partir de ontem quando não há filtros e verTodas=false
-  const aplicarFiltros = useCallback(() => {
-    let resultado = [...transacoes]
+  // Aplicar filtros
+  const transacoesFiltradas = useMemo(() => {
+    let resultado = [...transacoesFormatadas]
 
     const temFiltros =
       !!filtroDataInicio ||
@@ -315,13 +186,8 @@ export default function LojaPaginaFinanceiro() {
       resultado = resultado.filter(transacao => estaNoPeriodo(transacao.data, primeiroDia, ultimoDiaStr))
     }
 
-    console.log(`✅ Filtros aplicados: ${resultado.length} transações`)
-    setTransacoesFiltradas(resultado)
-  }, [transacoes, filtroDataInicio, filtroDataFim, filtroMes, filtroNumeroTransacao, filtroDescricao, filtroTipo, filtroStatus, verTodas, addDias, estaNoPeriodo])
-
-  useEffect(() => {
-    aplicarFiltros()
-  }, [aplicarFiltros])
+    return resultado
+  }, [transacoesFormatadas, filtroDataInicio, filtroDataFim, filtroMes, filtroNumeroTransacao, filtroDescricao, filtroTipo, filtroStatus, verTodas, addDias, estaNoPeriodo])
 
   const gerarPDFFinanceiroFiltrado = () => {
     try {
@@ -403,20 +269,17 @@ export default function LojaPaginaFinanceiro() {
 
   const handlePagamentoRealizado = useCallback(() => {
     triggerRefresh()
-    buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
-  }, [triggerRefresh, buscarTransacoes])
+  }, [triggerRefresh])
 
   const handleEstornoRealizado = useCallback(() => {
     triggerRefresh()
-    buscarTransacoes(true) // Mantém a busca local para consistência da UI imediata
-  }, [triggerRefresh, buscarTransacoes])
+  }, [triggerRefresh])
 
   const handleLancamentoAdicionado = useCallback(() => {
     setExibirFormularioLancamento(false)
-    setLancamentoParaEditar(null) // Limpa o estado de edição
+    setLancamentoParaEditar(null)
     triggerRefresh()
-    buscarTransacoes(true)
-  }, [triggerRefresh, buscarTransacoes])
+  }, [triggerRefresh])
 
   const handleExcluirLancamento = async (id: string) => {
     if (!window.confirm('⚠️ Tem certeza que deseja excluir este lançamento financeiro AVULSO? Esta ação não pode ser desfeita.')) return
@@ -431,7 +294,6 @@ export default function LojaPaginaFinanceiro() {
 
       alert('✅ Lançamento excluído com sucesso!')
       triggerRefresh()
-      buscarTransacoes(true)
     } catch (err) {
       console.error('Erro ao excluir lançamento:', err)
       alert('❌ Erro ao excluir lançamento.')
@@ -501,7 +363,6 @@ export default function LojaPaginaFinanceiro() {
       )}
 
       <div className="flex flex-col lg:flex-row gap-3 items-start relative">
-        {/* Barra Lateral do Caixa (Retrátil) */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
         >
@@ -510,7 +371,6 @@ export default function LojaPaginaFinanceiro() {
           </div>
         </div>
 
-        {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
             <div className="bg-purple-600 flex justify-between items-center px-3 py-1 text-white border-b border-purple-700">
@@ -524,7 +384,7 @@ export default function LojaPaginaFinanceiro() {
                 </button>
                 <h3 className="text-xs font-semibold uppercase tracking-widest flex items-center">
                   {tituloLista}
-                  {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
+                  {transacoesFiltradas.length !== transacoesFormatadas.length && ` (${transacoesFiltradas.length} de ${transacoesFormatadas.length} filtradas)`}
                 </h3>
                 <button
                   onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
@@ -541,7 +401,7 @@ export default function LojaPaginaFinanceiro() {
               </button>
             </div>
 
-            {loading && transacoes.length === 0 ? (
+            {carregando && transacoesFormatadas.length === 0 ? (
               <div className="text-center py-4 text-gray-500 text-xs">Carregando transações...</div>
             ) : transacoesFiltradas.length === 0 ? (
               <div className="text-center py-4 text-gray-500 text-xs">{verTodas ? 'Nenhuma transação encontrada' : 'Nenhuma parcela encontrada para o período selecionado'}</div>
@@ -590,7 +450,6 @@ export default function LojaPaginaFinanceiro() {
                           <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
                           <td className="px-0.5 py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
-                              {/* Só exibe ações se for lançamento AVULSO (sem vínculo com venda/compra/condicional/pedido) */}
                               {(!transacao.id_venda && !transacao.id_compra && !transacao.id_condicional && !transacao.id_pedido) ? (
                                 transacao.status_pagamento === 'pago' ? (
                                   <button onClick={() => setModalEstornarTransacao({ aberto: true, transacao: { ...transacao, status_pagamento: transacao.status_pagamento || 'pendente' } })} className="text-yellow-500 hover:text-yellow-700 font-medium text-xs px-1.5 py-0.5 bg-yellow-50 rounded hover:bg-yellow-100 transition-colors" title="Estornar">
@@ -621,7 +480,6 @@ export default function LojaPaginaFinanceiro() {
                                   </>
                                 )
                               ) : (
-                                /* Se for vinculado, exibe apenas cadeado ou dica de que deve ser editado na transação */
                                 <span className="text-[10px] text-gray-400 font-semibold" title="Vínculo com Transação: Edite no módulo de Transações">
                                   🔒
                                 </span>

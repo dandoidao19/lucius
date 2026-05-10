@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useCentrosDeCusto } from '@/hooks/useCentrosDeCusto'
 import { useLancamentosFinanceiros } from '@/hooks/useLancamentosFinanceiros'
 import { useTransacoesLoja } from '@/hooks/useTransacoesLoja'
+import { TransacaoLoja } from '@/types'
 
 // Tipos unificados para servir o contexto e os módulos consumidores (como CasaModulo)
 export interface CentroCusto {
@@ -29,8 +30,8 @@ export interface LancamentoFinanceiro {
   data_prevista?: string;
   data_lancamento?: string;
   centros_de_custo?: { nome: string };
-  parcelamento?: any;
-  recorrencia?: any;
+  parcelamento?: unknown;
+  recorrencia?: unknown;
   origem?: string;
 }
 
@@ -41,6 +42,7 @@ interface DadosCache {
   lancamentosLoja: LancamentoFinanceiro[]
   todosLancamentosCasa: LancamentoFinanceiro[]
   todosLancamentosLoja: LancamentoFinanceiro[]
+  transacoesLoja: TransacaoLoja[]
   caixaRealCasa: number
   caixaRealLoja: number
   ultimaAtualizacao: number
@@ -95,6 +97,7 @@ export function DadosFinanceirosProvider({ children }: { children: ReactNode }) 
       lancamentosLoja,
       todosLancamentosCasa: lancamentosCasa, // Adicionado para compatibilidade
       todosLancamentosLoja: lancamentosLoja, // Adicionado para compatibilidade
+      transacoesLoja: todasTransacoesLoja,
       caixaRealCasa,
       caixaRealLoja,
       ultimaAtualizacao: Math.max(centrosAtualizadoEm, lancamentosAtualizadoEm, transacoesAtualizadoEm),

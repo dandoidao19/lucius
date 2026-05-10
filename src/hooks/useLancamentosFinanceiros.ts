@@ -2,11 +2,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { LancamentoFinanceiro } from '@/types';
+import { subDays, format } from 'date-fns';
 
 const fetchLancamentosFinanceiros = async (): Promise<LancamentoFinanceiro[]> => {
   const pageSize = 1000;
   let offset = 0;
   const allLancamentos: LancamentoFinanceiro[] = [];
+
+  // Limita a busca inicial aos últimos 120 dias para performance
+  const dataLimite = format(subDays(new Date(), 120), 'yyyy-MM-dd');
 
   while (true) {
     const { data, error } = await supabase
@@ -15,6 +19,7 @@ const fetchLancamentosFinanceiros = async (): Promise<LancamentoFinanceiro[]> =>
         *,
         centros_de_custo(nome)
       `)
+      .gte('data_prevista', dataLimite)
       .order('data_prevista', { ascending: false })
       .range(offset, offset + pageSize - 1);
 
@@ -27,7 +32,8 @@ const fetchLancamentosFinanceiros = async (): Promise<LancamentoFinanceiro[]> =>
       break;
     }
 
-    allLancamentos.push(...data);
+    // Cast seguro para LancamentoFinanceiro[] considerando que centros_de_custo(nome) está presente
+    allLancamentos.push(...(data as unknown as LancamentoFinanceiro[]));
 
     if (data.length < pageSize) {
       break;

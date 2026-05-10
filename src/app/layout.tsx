@@ -2,12 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { QueryProvider } from "@/providers/QueryProvider";
-import { RealtimeSubscriber } from "@/components/RealtimeSubscriber";
 import CabecalhoSistema from "@/components/CabecalhoSistema";
-import AtalhosGlobais from "@/components/AtalhosGlobais";
-import { DadosFinanceirosProvider } from "@/context/DadosFinanceirosContext";
-import { FormDraftProvider } from "@/context/FormDraftContext";
-import { FilterProvider } from "@/context/FilterContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,21 +30,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <QueryProvider>
-          <DadosFinanceirosProvider>
-            <FilterProvider>
-            <FormDraftProvider>
-            <RealtimeSubscriber />
-            {/* Cabeçalho do Sistema LUCIUS com Logos */}
-            <CabecalhoSistema />
+          {/* Cabeçalho do Sistema LUCIUS com Logos */}
+          <CabecalhoSistema />
 
-            {/* Conteúdo das páginas */}
-            {children}
-
-            {/* Atalhos Globais (Balões Flutuantes) */}
-            <AtalhosGlobais />
-            </FormDraftProvider>
-            </FilterProvider>
-          </DadosFinanceirosProvider>
+          {/* Conteúdo das páginas */}
+          {children}
         </QueryProvider>
       </body>
     </html>

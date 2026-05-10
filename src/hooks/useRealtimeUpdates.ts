@@ -1,17 +1,28 @@
 // src/hooks/useRealtimeUpdates.ts
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 
 export function useRealtimeUpdates() {
   const queryClient = useQueryClient();
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     console.log('📡 Assinando atualizações em tempo real do Supabase...');
 
     const handleChanges = (queryKey: string) => {
-      console.log(`🔔 Alteração detectada, invalidando query: ${queryKey}`);
-      queryClient.invalidateQueries({ queryKey: [queryKey] });
+      console.log(`🔔 Alteração detectada para: ${queryKey}`);
+
+      // Debounce para evitar múltiplas invalidações simultâneas
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        console.log(`🔄 Invalidando queries após debounce: ${queryKey}`);
+        queryClient.invalidateQueries({ queryKey: [queryKey] });
+        debounceTimerRef.current = null;
+      }, 500); // Aguarda 500ms de silêncio antes de invalidar
     };
 
     // Canal para 'centros_de_custo'
@@ -50,6 +61,9 @@ export function useRealtimeUpdates() {
       supabase.removeChannel(centrosChannel);
       supabase.removeChannel(lancamentosChannel);
       supabase.removeChannel(transacoesChannel);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
   }, [queryClient]);
 }
