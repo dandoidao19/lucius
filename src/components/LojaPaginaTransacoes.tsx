@@ -197,8 +197,10 @@ export default function LojaPaginaTransacoes() {
       supabase.channel(`loja-transacoes-${tabela}`)
         .on('postgres_changes', { event: '*', schema: 'public', table: tabela }, (payload) => {
           console.log(`🔄 [Realtime] Change detected in ${tabela}:`, payload.eventType)
-          // Forçamos o refresh global
-          triggerRefresh()
+          // Pequeno atraso para garantir consistência em operações assíncronas do Supabase
+          setTimeout(() => {
+            triggerRefresh()
+          }, 300)
         })
         .subscribe((status) => {
           console.log(`📡 [Realtime] Subscription status for ${tabela}:`, status)
