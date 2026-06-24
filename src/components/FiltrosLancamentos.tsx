@@ -136,7 +136,7 @@ export default function FiltrosLancamentos({
   }
 
   return (
-    <div className="bg-white rounded shadow-sm mb-1 border border-purple-600 overflow-hidden">
+    <div className="bg-white rounded shadow-sm mb-0.5 border border-purple-600 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-purple-600 uppercase tracking-widest hover:bg-purple-50 transition-colors"

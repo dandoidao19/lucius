@@ -85,7 +85,7 @@ export default function FiltrosCasa({
   }
 
   return (
-    <div className="bg-white rounded shadow-sm mb-1 border border-blue-600 overflow-hidden">
+    <div className="bg-white rounded shadow-sm mb-0.5 border border-blue-600 overflow-hidden">
       {/* Cabeçalho Minimizado */}
       <button
         onClick={() => setAberto(!aberto)}

@@ -56,7 +56,7 @@ export default function FiltrosTransacoes({
   ]
 
   return (
-    <div className="bg-white rounded shadow-sm mb-1 border border-pink-700 overflow-hidden">
+    <div className="bg-white rounded shadow-sm mb-0.5 border border-pink-700 overflow-hidden">
       <button
         onClick={() => setAberto(!aberto)}
         className="w-full px-3 py-1 flex items-center justify-between text-xs font-semibold text-pink-700 uppercase tracking-widest hover:bg-pink-50 transition-colors"

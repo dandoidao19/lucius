@@ -10,7 +10,7 @@ import ModalEstornarTransacao from './ModalEstornarTransacao'
 import FormularioLancamentoLoja from './FormularioLancamentoLoja'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import { useFilters } from '@/context/FilterContext'
-import { GeradorPDF, obterConfigLogos } from '@/lib/gerador-pdf-utils'
+import { GeradorPDFProfissional, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 interface Transacao {
   id: string
@@ -328,32 +328,44 @@ export default function LojaPaginaFinanceiro() {
   const gerarPDFFinanceiroFiltrado = () => {
     try {
       const logoConfig = obterConfigLogos()
-      const transacoesPDF = transacoesFiltradas.map(transacao => ({
-        vencimento: transacao.data,
-        transacao: transacao.numero_transacao,
-        clienteFornecedor: transacao.descricao,
-        valor: transacao.valor_pago || transacao.valor,
-        parcela: `${transacao.parcela_numero || 1}/${transacao.parcela_total || transacao.quantidade_parcelas || 1}`,
-        tipo: transacao.tipo === 'entrada' ? 'VENDA' : 'COMPRA' as 'VENDA' | 'COMPRA',
-        status: transacao.status_pagamento || 'pendente'
-      }))
-      const totalGeral = transacoesFiltradas.reduce((total, transacao) => total + (transacao.valor_pago || transacao.valor), 0)
-      const filtrosAplicados = []
-      if (filtroDataInicio && filtroDataFim) filtrosAplicados.push(`Período: ${filtroDataInicio} até ${filtroDataFim}`)
-      if (filtroMes) filtrosAplicados.push(`Mês: ${filtroMes}`)
-      if (filtroNumeroTransacao) filtrosAplicados.push(`Transação: ${filtroNumeroTransacao}`)
-      if (filtroDescricao) filtrosAplicados.push(`Cliente/Fornecedor: ${filtroDescricao}`)
-      if (filtroTipo !== 'todos') filtrosAplicados.push(`Tipo: ${filtroTipo}`)
-      if (filtroStatus !== 'todos') filtrosAplicados.push(`Status: ${filtroStatus}`)
-      const dadosRelatorio = { tipo: 'financeiro' as const, transacoes: transacoesPDF, filtrosAplicados: filtrosAplicados.length > 0 ? filtrosAplicados : undefined, totalGeral }
-      const gerador = new GeradorPDF(logoConfig)
-      gerador.gerarRelatorioFinanceiro(dadosRelatorio)
+      const gerador = new GeradorPDFProfissional(logoConfig)
+
+      const filtros: string[] = []
+      if (filtroDataInicio && filtroDataFim) filtros.push(`PERÍODO: ${formatarDataParaExibicao(filtroDataInicio)} ATÉ ${formatarDataParaExibicao(filtroDataFim)}`)
+      if (filtroMes) filtros.push(`MÊS: ${filtroMes}`)
+      if (filtroNumeroTransacao) filtros.push(`Nº: ${filtroNumeroTransacao}`)
+      if (filtroDescricao) filtros.push(`BUSCA: ${filtroDescricao.toUpperCase()}`)
+      if (filtroTipo !== 'todos') filtros.push(`TIPO: ${filtroTipo.toUpperCase()}`)
+      if (filtroStatus !== 'todos') filtros.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+
+      const totalGeral = transacoesFiltradas.reduce((total, t) => total + (t.valor_pago || t.valor), 0)
+
+      gerador.gerarRelatorioTabular({
+        titulo: 'Relatório Financeiro de Parcelas',
+        subtitulo: `Extrato detalhado do contas a receber/pagar`,
+        corTema: [124, 58, 237], // Violet-600
+        filtros: filtros,
+        colunas: ['Vencimento', 'Nº', 'Entidade', 'Parcela', 'Tipo', 'Valor', 'Status'],
+        linhas: transacoesFiltradas.map(t => [
+          formatarDataParaExibicao(t.data),
+          `#${t.numero_transacao}`,
+          t.descricao.toUpperCase(),
+          `${t.parcela_numero}/${t.parcela_total}`,
+          t.tipo === 'entrada' ? 'VENDA' : 'COMPRA',
+          (t.valor_pago || t.valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+          (t.status_pagamento || 'PENDENTE').toUpperCase()
+        ]),
+        resumo: [
+          { label: 'TOTAL FILTRADO', valor: totalGeral }
+        ]
+      })
+
       const nomeArquivo = `relatorio_financeiro_${new Date().toISOString().split('T')[0]}.pdf`
       gerador.salvar(nomeArquivo)
-      alert(`✅ Relatório financeiro gerado com sucesso! ${transacoesFiltradas.length} transação(ões) no relatório.`)
+      alert(`✅ Relatório profissional gerado!`)
     } catch (error) {
       console.error('Erro ao gerar relatório financeiro:', error)
-      alert('❌ Erro ao gerar relatório financeiro.')
+      alert('❌ Erro ao gerar PDF.')
     }
   }
 
@@ -462,7 +474,7 @@ export default function LojaPaginaFinanceiro() {
   }, [verTodas, filtroNumeroTransacao, filtroDescricao, filtroTipo, filtroStatus, filtroDataInicio, filtroDataFim, filtroMes, addDias])
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-0.5">
       <FiltrosLancamentos
         filtroDataInicio={filtroDataInicio}
         setFiltroDataInicio={setFiltroDataInicio}
@@ -501,7 +513,7 @@ export default function LojaPaginaFinanceiro() {
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+      <div className="flex flex-col lg:flex-row gap-1 sm:gap-3 items-start relative">
         {/* Barra Lateral do Caixa (Retrátil) */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
@@ -513,56 +525,55 @@ export default function LojaPaginaFinanceiro() {
 
         {/* Lista de Transações (Expandida) */}
         <div className="flex-1 min-h-0 w-full">
-          <div className="bg-white rounded shadow-md overflow-hidden border border-gray-200">
-            <div className="bg-purple-600 flex justify-between items-center px-3 py-1 text-white border-b border-purple-700">
-               <div className="flex items-center gap-4 h-full">
+          <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
+            <div className="bg-purple-600 flex justify-between items-center px-1 py-0.5 sm:px-3 sm:py-1 text-white border-b border-purple-700">
+               <div className="flex items-center gap-1 sm:gap-4 h-full">
                 <button
                   onClick={() => setCaixaMinimizado(!caixaMinimizado)}
-                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-1.5 h-4 sm:h-5 rounded text-[9px] sm:text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
                   title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
                 >
-                  <span className="text-xs">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
+                  <span className="text-[10px] sm:text-xs">📊</span> {caixaMinimizado ? 'CAIXAS' : 'RECOLHER'}
                 </button>
-                <h3 className="text-xs font-semibold uppercase tracking-widest flex items-center">
+                <h3 className="text-[10px] sm:text-xs font-semibold uppercase tracking-tight sm:tracking-widest flex items-center">
                   {tituloLista}
-                  {transacoesFiltradas.length !== transacoes.length && ` (${transacoesFiltradas.length} de ${transacoes.length} filtradas)`}
                 </h3>
                 <button
                   onClick={() => setExibirFormularioLancamento(!exibirFormularioLancamento)}
-                  className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
+                  className="bg-white text-purple-600 hover:bg-purple-50 px-1.5 h-4 sm:h-5 rounded text-[9px] sm:text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
                 >
-                  {exibirFormularioLancamento ? 'FECHAR' : '+ LANÇAMENTO AVULSO'}
+                  {exibirFormularioLancamento ? 'FECHAR' : '+ NOVO'}
                 </button>
               </div>
               <button
                 onClick={() => setVerTodas(!verTodas)}
-                className="bg-white text-purple-600 hover:bg-purple-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
+                className="bg-white text-purple-600 hover:bg-purple-50 px-1.5 h-4 sm:h-5 rounded text-[9px] sm:text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center justify-center"
               >
-                {verTodas ? 'MÊS ATUAL' : 'VER TODAS'}
+                {verTodas ? 'MÊS' : 'TODAS'}
               </button>
             </div>
 
             {loading && transacoes.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 text-xs">Carregando transações...</div>
+              <div className="text-center py-4 text-gray-500 text-[10px]">Carregando...</div>
             ) : transacoesFiltradas.length === 0 ? (
-              <div className="text-center py-4 text-gray-500 text-xs">{verTodas ? 'Nenhuma transação encontrada' : 'Nenhuma parcela encontrada para o período selecionado'}</div>
+              <div className="text-center py-4 text-gray-500 text-[10px]">{verTodas ? 'Vazio' : 'Nenhuma parcela no período'}</div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-xs">
+                <table className="w-full border-collapse text-[9px] sm:text-xs">
                   <thead>
                     <tr className="bg-purple-600 text-white border-b border-purple-500">
-                      <th className="px-1 py-1 text-left font-semibold uppercase w-[80px] sm:w-[85px]">Venc.</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase hidden sm:table-cell w-[85px]">Pagto.</th>
-                      <th className="px-0.5 py-1 text-left font-semibold uppercase w-[35px] sm:w-[45px]">Nº</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase min-w-[80px] sm:min-w-[90px]">Cliente/Forn.</th>
-                      <th className="px-1 py-1 text-left font-semibold uppercase hidden lg:table-cell min-w-[150px]">Observações</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase w-[55px] sm:w-[60px]">Valor</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase hidden md:table-cell w-[60px]">Pago</th>
-                      <th className="px-0.5 py-1 text-right font-semibold uppercase hidden md:table-cell w-[40px]">Dif.</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px]">P.</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[70px] sm:w-[80px]">Tipo</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[60px] sm:w-[65px]">Status</th>
-                      <th className="px-0.5 py-1 text-center font-semibold uppercase w-[30px] sm:w-[35px]">Ação</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-left font-semibold uppercase w-[65px] sm:w-[85px]">Venc.</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-left font-semibold uppercase hidden sm:table-cell w-[85px]">Pagto.</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-left font-semibold uppercase w-[35px] sm:w-[45px]">Nº</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-left font-semibold uppercase min-w-[90px] sm:min-w-[140px]">Cliente/Forn.</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-left font-semibold uppercase hidden lg:table-cell min-w-[150px]">Observações</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right font-semibold uppercase w-[55px] sm:w-[60px]">Valor</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right font-semibold uppercase hidden md:table-cell w-[60px]">Pago</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right font-semibold uppercase hidden md:table-cell w-[40px]">Dif.</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center font-semibold uppercase w-[30px]">P.</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center font-semibold uppercase w-[65px] sm:w-[80px]">Tipo</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center font-semibold uppercase w-[55px] sm:w-[65px]">Status</th>
+                      <th className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center font-semibold uppercase w-[30px] sm:w-[35px]">Ação</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -572,22 +583,22 @@ export default function LojaPaginaFinanceiro() {
                       const temPag = temPagamento(transacao)
                       return (
                         <tr key={`${transacao.id}-${index}`} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
-                          <td className="px-1 py-1 text-gray-700 whitespace-nowrap hidden sm:table-cell">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
-                          <td className="px-0.5 py-1 text-gray-500 text-center">#{transacao.numero_transacao || '—'}</td>
-                          <td className="px-1 py-1 text-gray-800 truncate max-w-[100px] sm:max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
-                          <td className="px-1 py-1 text-gray-500 italic truncate max-w-[350px] hidden lg:table-cell" title={transacao.observacao}>{transacao.observacao || '—'}</td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap font-bold text-gray-700">
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-700 whitespace-nowrap">{formatarDataParaExibicao(transacao.data)}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-700 whitespace-nowrap hidden sm:table-cell">{transacao.data_pagamento ? <span className="text-green-600 font-bold">{formatarDataParaExibicao(transacao.data_pagamento)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-500 text-center">#{transacao.numero_transacao || '—'}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-800 truncate max-w-[100px] sm:max-w-[140px]" title={transacao.descricao}>{transacao.descricao}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-500 italic truncate max-w-[350px] hidden lg:table-cell" title={transacao.observacao}>{transacao.observacao || '—'}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right whitespace-nowrap font-bold text-gray-700">
                             {transacao.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap hidden md:table-cell">
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right whitespace-nowrap hidden md:table-cell">
                             {temPag ? <span>R$ {valorExibicao.toFixed(2)}</span> : <span className="text-gray-400">—</span>}
                           </td>
-                          <td className="px-0.5 py-1 text-right whitespace-nowrap hidden md:table-cell">{temPag && diferenca !== 0 ? <span className={diferenca > 0 ? 'text-green-600' : 'text-red-600'}>{diferenca > 0 ? '+' : ''}{Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
-                          <td className="px-0.5 py-1 text-center text-gray-500 text-[10px]"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
-                          <td className="px-0.5 py-1 text-center whitespace-nowrap"><span className={`px-1 py-0.5 rounded text-white font-bold text-[9px] ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
-                          <td className="px-0.5 py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase text-[9px] ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
-                          <td className="px-0.5 py-1 text-center">
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-right whitespace-nowrap hidden md:table-cell">{temPag && diferenca !== 0 ? <span className={diferenca > 0 ? 'text-green-600' : 'text-red-600'}>{diferenca > 0 ? '+' : ''}{Math.abs(diferenca).toFixed(2)}</span> : <span className="text-gray-400">—</span>}</td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center text-gray-500 text-[8px] sm:text-[10px]"><span>{transacao.parcela_numero || 1}/{transacao.parcela_total || transacao.quantidade_parcelas || 1}</span></td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center whitespace-nowrap"><span className={`px-1 py-0.5 rounded text-white font-bold text-[8px] sm:text-[9px] ${getTipoColor(transacao)}`}>{getTipoLabel(transacao)}</span></td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center"><span className={`px-1 py-0.5 rounded font-bold uppercase text-[8px] sm:text-[9px] ${getStatusColor(transacao.status_pagamento)}`}>{getStatusLabel(transacao.status_pagamento)}</span></td>
+                          <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center">
                             <div className="flex items-center justify-center space-x-1">
                               {/* Ações permitidas para TODOS os tipos de parcelas (Pagar e Estornar) */}
                               {transacao.status_pagamento === 'pago' ? (

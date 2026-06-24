@@ -6,10 +6,11 @@ import ModalPagarAvancado from './ModalPagarAvancado'
 import { useEffect, useState, useMemo } from 'react'
 import { useDadosFinanceiros, CentroCusto, LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 import { useFilters } from '@/context/FilterContext'
-import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
+import { getDataAtualBrasil, formatarDataParaExibicao, calcularDataPorPrazo } from '@/lib/dateUtils'
 import CaixaCasaDetalhado from './CaixaCasaDetalhado'
 import FiltrosCasa from './FiltrosCasa'
 import { GeradorPDFLancamentos } from '@/lib/gerador-pdf-lancamentos'
+import { obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 // As interfaces CentroCusto e Lancamento agora são importadas do DadosFinanceirosContext
 type Lancamento = LancamentoFinanceiro;
@@ -50,55 +51,8 @@ const getOntemBrasil = () => {
   return formatter.format(dataOntem);
 }
 
-// ✅ Função auxiliar para calcular a data N dias à frente
-const getDataNDias = (dataBase: string, dias: number) => {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    timeZone: 'America/Sao_Paulo'
-  });
-  
-  const [ano, mes, dia] = dataBase.split('-').map(Number);
-  const data = new Date(ano, mes - 1, dia + dias);
-  return formatter.format(data);
-}
-
-// Função auxiliar para adicionar meses a uma data
-const addMonths = (dateString: string, months: number): string => {
-  const [ano, mes, dia] = dateString.split('-').map(Number);
-  const date = new Date(ano, mes - 1 + months, dia);
-  
-  if (date.getDate() !== dia) {
-    date.setDate(0);
-  }
-
-  const novoAno = date.getFullYear();
-  const novoMes = String(date.getMonth() + 1).padStart(2, '0');
-  const novoDia = String(date.getDate()).padStart(2, '0');
-  
-  return `${novoAno}-${novoMes}-${novoDia}`;
-}
-
-// Função para calcular data baseada no prazo
-const calcularDataPorPrazo = (dataBase: string, prazo: string): string => {
-  switch (prazo) {
-    case 'diaria':
-      return getDataNDias(dataBase, 2);
-    case 'semanal':
-      return getDataNDias(dataBase, 8);
-    case '10dias':
-      return getDataNDias(dataBase, 11);
-    case 'quinzenal':
-      return getDataNDias(dataBase, 16);
-    case '20dias':
-      return getDataNDias(dataBase, 21);
-    case 'mensal':
-      return addMonths(dataBase, 1);
-    default:
-      return dataBase;
-  }
-}
+// ✅ Função auxiliar para calcular a data N dias à frente (usando dateUtils)
+import { getDataNDias } from '@/lib/dateUtils'
 
 // Função para validar se todos os campos estão preenchidos
 const validarFormulario = (form: FormLancamento): boolean => {
@@ -720,8 +674,16 @@ export default function CasaModulo() {
       alert('❌ Nenhum lançamento para gerar PDF com os filtros aplicados')
       return
     }
+
+    const filtrosAplicados: string[] = []
+    if (filtroMes) filtrosAplicados.push(`MÊS: ${filtroMes}`)
+    if (filtroDescricao) filtrosAplicados.push(`BUSCA: ${filtroDescricao.toUpperCase()}`)
+    if (filtroStatus && filtroStatus !== 'todos') filtrosAplicados.push(`STATUS: ${filtroStatus.toUpperCase()}`)
+    if (mostrarTodos) filtrosAplicados.push("VISUALIZAÇÃO COMPLETA")
+    else if (!filtroDataInicio && !filtroDataFim && !filtroMes) filtrosAplicados.push("VISUALIZAÇÃO 11 DIAS")
+
     const gerador = new GeradorPDFLancamentos()
-    gerador.gerarPDFLancamentosCasa(lancamentosFiltrados, centrosCusto)
+    gerador.gerarPDFLancamentosCasa(lancamentosFiltrados, centrosCusto, filtrosAplicados)
   }
 
   const ModalExcluir = () => {
@@ -767,7 +729,7 @@ export default function CasaModulo() {
   const tituloTabela = getTituloTabela()
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {/* ✅ FILTROS CASA */}
       <FiltrosCasa
         filtroDataInicio={filtroDataInicio}
@@ -986,7 +948,7 @@ export default function CasaModulo() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-3 items-start relative">
+      <div className="flex flex-col lg:flex-row gap-1 sm:gap-3 items-start relative">
         {/* Barra Lateral do Caixa (Retrátil) */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${caixaMinimizado ? 'w-0 opacity-0' : 'w-full lg:w-1/4 opacity-100'}`}
@@ -1000,45 +962,45 @@ export default function CasaModulo() {
         <div className="flex-1 min-h-0 w-full">
           <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200">
             {/* ✅ CABEÇALHO COM BOTÃO "VER TUDO / 11 DIAS" E EXPANSÃO */}
-            <div className="bg-blue-600 flex justify-between items-center px-3 py-1 text-white border-b border-blue-700">
-               <div className="flex items-center gap-4 h-full">
+            <div className="bg-blue-600 flex justify-between items-center px-1 py-0.5 sm:px-3 sm:py-1 text-white border-b border-blue-700">
+               <div className="flex items-center gap-1 sm:gap-4 h-full">
                 <button
                   onClick={() => setCaixaMinimizado(!caixaMinimizado)}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
+                  className="bg-white text-blue-600 hover:bg-blue-50 px-1.5 h-4 sm:h-5 rounded text-[9px] sm:text-[10px] font-semibold uppercase transition-all shadow-sm flex items-center gap-1"
                   title={caixaMinimizado ? "Mostrar Caixa" : "Esconder Caixa"}
                 >
-                  <span className="text-xs">📊</span> {caixaMinimizado ? 'EXIBIR CAIXAS' : 'RECOLHER'}
+                  <span className="text-[10px] sm:text-xs">📊</span> {caixaMinimizado ? 'CAIXAS' : 'RECOLHER'}
                 </button>
-                <h2 className="text-xs font-semibold uppercase tracking-widest flex items-center">{tituloTabela}</h2>
+                <h2 className="text-[10px] sm:text-xs font-semibold uppercase tracking-tight sm:tracking-widest flex items-center">{tituloTabela}</h2>
               </div>
               <div className="flex gap-1">
                 <button
                   onClick={() => setMostrarTodos(!mostrarTodos)}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-2 h-5 rounded text-[10px] font-semibold uppercase transition-all shadow-sm"
+                  className="bg-white text-blue-600 hover:bg-blue-50 px-1.5 h-4 sm:h-5 rounded text-[9px] sm:text-[10px] font-semibold uppercase transition-all shadow-sm"
                 >
                   {mostrarTodos ? '11 DIAS' : 'VER TUDO'}
                 </button>
                 {carregandoInicial && (
-                  <span className="text-[10px] text-gray-500 px-2 py-0.5">Carregando...</span>
+                  <span className="text-[9px] text-gray-500 px-1 py-0.5">...</span>
                 )}
               </div>
             </div>
 
             {carregandoInicial ? (
-              <p className="text-xs text-gray-500 text-center py-4">⏳ Carregando lançamentos...</p>
+              <p className="text-[10px] text-gray-500 text-center py-4">⏳ Carregando...</p>
             ) : lancamentosFiltrados.length === 0 ? (
-              <p className="text-xs text-gray-500 text-center py-2">📭 Nenhum lançamento encontrado</p>
+              <p className="text-[10px] text-gray-500 text-center py-2">📭 Vazio</p>
             ) : (
-              <div className="overflow-x-auto p-0.5 sm:p-1">
-                <table className="min-w-full table-auto text-xs border-collapse">
+              <div className="overflow-x-auto">
+                <table className="min-w-full table-auto text-[9px] sm:text-xs border-collapse">
                   <thead className="bg-blue-600 text-white border-b border-blue-500">
                     <tr>
-                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs w-[75px] sm:w-auto">Data</th>
-                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs w-[80px] sm:w-auto">Status</th>
-                      <th className="px-1.5 py-1 text-right font-semibold uppercase text-[10px] sm:text-xs w-[90px] sm:w-auto">Valor</th>
-                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs min-w-[120px]">Descrição</th>
-                      <th className="px-1.5 py-1 text-left font-semibold uppercase text-[10px] sm:text-xs hidden md:table-cell">CDC</th>
-                      <th className="px-1.5 py-1 text-center font-semibold uppercase text-[10px] sm:text-xs w-[80px] sm:w-auto">Ações</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase w-[65px] sm:w-auto">Data</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase w-[65px] sm:w-auto">Status</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-right font-semibold uppercase w-[70px] sm:w-auto">Valor</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase min-w-[100px]">Descrição</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-left font-semibold uppercase hidden md:table-cell">CDC</th>
+                      <th className="px-0.5 py-0.5 sm:px-1.5 sm:py-1 text-center font-semibold uppercase w-[60px] sm:w-auto">Ações</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1047,21 +1009,21 @@ export default function CasaModulo() {
                         key={lancamento.id} 
                         className="border-b hover:bg-gray-50 transition-colors bg-white"
                       >
-                        <td className="px-1 py-1 whitespace-nowrap text-xs text-gray-700">
+                        <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 whitespace-nowrap text-gray-700">
                           {formatarDataParaExibicao(lancamento.data_prevista || lancamento.data_lancamento || getDataAtualBrasil())}
                         </td>
-                        <td className="px-1 py-1">
+                        <td className="px-0.5 py-0.5 sm:px-1 sm:py-1">
                           {lancamento.status === 'realizado' ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-bold text-white bg-green-600">
+                            <span className="inline-flex items-center px-1 py-0.5 rounded text-[10px] sm:text-[11px] font-bold text-white bg-green-600">
                               ✓ Pago
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[12px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
+                            <span className="inline-flex items-center px-1 py-0.5 rounded text-[10px] sm:text-[11px] font-medium bg-yellow-100 text-yellow-800 border border-yellow-300">
                               Previsto
                             </span>
                           )}
                         </td>
-                        <td className={`px-1 py-1 text-right font-medium whitespace-nowrap text-xs ${
+                        <td className={`px-0.5 py-0.5 sm:px-1 sm:py-1 text-right font-medium whitespace-nowrap ${
                           lancamento.status === 'realizado' 
                             ? lancamento.tipo === 'entrada'
                               ? 'text-white font-bold bg-green-600'
@@ -1072,13 +1034,13 @@ export default function CasaModulo() {
                         }`}>
                           {lancamento.tipo === 'entrada' ? '+' : '-'} R$ {lancamento.valor.toFixed(2)}
                         </td>
-                        <td className="px-1 py-1 text-xs text-gray-700 truncate">
+                        <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-700 truncate max-w-[100px] sm:max-w-none">
                           {lancamento.descricao}
                         </td>
-                        <td className="px-1 py-1 text-xs text-gray-600 truncate hidden md:table-cell">
+                        <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-gray-600 truncate hidden md:table-cell">
                           {lancamento.centros_de_custo?.nome || '-'}
                         </td>
-                        <td className="px-1 py-1 text-center">
+                        <td className="px-0.5 py-0.5 sm:px-1 sm:py-1 text-center">
                           <div className="flex gap-1 justify-center">
                             <button
                               onClick={() => iniciarEdicao(lancamento)}

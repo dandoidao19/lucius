@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
+import { formatarErro } from '@/lib/errorUtils'
 import SeletorProduto from './SeletorProduto'
 import SeletorEntidade from './SeletorEntidade'
 import { useFormDraft } from '@/context/FormDraftContext'
@@ -57,7 +58,7 @@ interface ModalTransacaoUnificadaProps {
 
 export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, transacaoInicial }: ModalTransacaoUnificadaProps) {
   useEffect(() => {
-    if (aberto) console.log('🚀 LUCIUS V4.9 - MODAL UNIFICADO CARREGADO')
+    if (aberto) console.log('🚀 LUCIUS v5.8 - MODAL UNIFICADO CARREGADO')
   }, [aberto])
 
   const { getDraft, setDraft, clearDraft } = useFormDraft()
@@ -336,15 +337,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       ? `[PEDIDO] ${observacao.replace('[PEDIDO]', '').trim()}`.trim()
       : observacao.trim()
 
+    let dataAtualParcela = vencimento
     for (let i = 1; i <= qtdParcelas; i++) {
-      let dataParcela = vencimento
+      let dataParcela = dataAtualParcela
 
       if (i > 1) {
-        const dt = new Date(vencimento + 'T12:00:00')
-        if (prazo === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-        else if (prazo === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-        else if (prazo === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
-        dataParcela = dt.toISOString().split('T')[0]
+        dataParcela = calcularDataPorPrazo(dataAtualParcela, prazo)
+        dataAtualParcela = dataParcela
       }
 
       let statusParcela = 'pendente'
@@ -379,29 +378,6 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
     }
   }
 
-  const formatarErro = (err: any): string => {
-    if (!err) return 'Erro desconhecido'
-    if (typeof err === 'string') return err
-
-    if (err.code === 'PGRST204' || err.code === '23505' || err.code === '23502') {
-      return `ERRO DE SCHEMA OU CONSTRAINT: ${err.message}. Detalhes: ${err.details || ''}. POR FAVOR, EXECUTE O SCRIPT SQL V4.8 NO SEU SUPABASE (SQL EDITOR).`
-    }
-
-    let mensagem = err.message || 'Erro interno'
-    if (err.details) mensagem += ` (Detalhes: ${err.details})`
-    if (err.code) mensagem += ` [Código: ${err.code}]`
-    if (err.hint) mensagem += ` - Dica: ${err.hint}`
-
-    if (mensagem === 'Erro interno' && typeof err === 'object') {
-      try {
-        const str = JSON.stringify(err)
-        return str !== '{}' ? str : 'Erro não catalogado (Objeto vazio)'
-      } catch {
-        return 'Erro ao processar objeto de erro'
-      }
-    }
-    return mensagem
-  }
 
   const reverterImpactosOld = async () => {
     if (!transacaoInicial) return;
@@ -413,10 +389,13 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       const afetaEstoque = !isPedidoNovo && !isPedidoLegado
 
       if (afetaEstoque) {
+        const isCondicional = transacaoInicial.tipo === 'condicional_cliente' || transacaoInicial.tipo === 'condicional_fornecedor'
+        const rpcName = isCondicional ? 'atualizar_estoque_condicional' : 'atualizar_estoque'
+
         for (const item of transacaoInicial.itens) {
           if (item.produto_id) {
             const multiplicador = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 1 : -1
-            await supabase.rpc('atualizar_estoque', {
+            await supabase.rpc(rpcName, {
               produto_id_param: item.produto_id,
               quantidade_param: item.quantidade * multiplicador
             })
@@ -431,15 +410,24 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         }
       }
 
-      // 2. Deletar Financeiro
-      const prefixo = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 'Venda' : 'Compra'
-      const { data: parcelasLoja } = await supabase
-        .from('transacoes_loja')
-        .select('id')
-        .ilike('descricao', `${prefixo}%${transacaoInicial.entidade}%`)
+      // 2. Deletar Financeiro (v5.8: Proteção contra deleção em massa de mesma entidade)
+      // Usar UUID específico se disponível
+      if (transacaoInicial.id) {
+        let queryDel = supabase.from('transacoes_loja').delete()
+        if (transacaoInicial.tipo === 'venda') queryDel = queryDel.eq('id_venda', transacaoInicial.id)
+        else if (transacaoInicial.tipo === 'compra') queryDel = queryDel.eq('id_compra', transacaoInicial.id)
+        else if (transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'pedido_compra') queryDel = queryDel.eq('id_pedido', transacaoInicial.id)
+        else queryDel = queryDel.eq('id_condicional', transacaoInicial.id)
+        await queryDel
+      }
 
-      if (parcelasLoja && parcelasLoja.length > 0) {
-        await supabase.from('transacoes_loja').delete().in('id', parcelasLoja.map(p => p.id))
+      // Fallback de segurança para registros legados (Obrigatório filtrar por número E tipo financeiro)
+      if (transacaoInicial.numero_transacao) {
+        const tipoFin = (transacaoInicial.tipo === 'venda' || transacaoInicial.tipo === 'pedido_venda' || transacaoInicial.tipo === 'condicional_cliente') ? 'entrada' : 'saida'
+        await supabase.from('transacoes_loja')
+          .delete()
+          .eq('numero_transacao', transacaoInicial.numero_transacao)
+          .eq('tipo', tipoFin)
       }
 
       // 3. Deletar Itens (Garante exclusão da tabela correta para evitar duplicidade na re-inserção)
@@ -546,13 +534,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = novaVenda.id
         }
 
-        // Deletar financeiro anterior se for edição
-        if (transacaoInicial) {
+        // Deletar financeiro anterior se for edição (v5.8: Proteção Extra)
+        if (transacaoInicial && transacaoPrincipalId) {
           await supabase.from('transacoes_loja').delete().eq('id_venda', transacaoPrincipalId)
-          // Fallback para legado (v3.8 ou anterior)
-          await supabase.from('transacoes_loja').delete()
-            .eq('numero_transacao', transacaoInicial.numero_transacao)
-            .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          if (transacaoInicial.numero_transacao) {
+            await supabase.from('transacoes_loja').delete()
+              .eq('numero_transacao', transacaoInicial.numero_transacao)
+              .eq('tipo', 'entrada')
+          }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'entrada', { id_venda: transacaoPrincipalId || undefined }, numTransacao, false)
 
@@ -655,13 +644,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoPrincipalId = compra.id
         }
 
-        // Deletar financeiro anterior se for edição
-        if (transacaoInicial) {
+        // Deletar financeiro anterior se for edição (v5.8: Proteção Extra)
+        if (transacaoInicial && transacaoPrincipalId) {
           await supabase.from('transacoes_loja').delete().eq('id_compra', transacaoPrincipalId)
-          // Fallback para legado (v3.8 ou anterior)
-          await supabase.from('transacoes_loja').delete()
-            .eq('numero_transacao', transacaoInicial.numero_transacao)
-            .ilike('descricao', `%${transacaoInicial.entidade}%`)
+          if (transacaoInicial.numero_transacao) {
+            await supabase.from('transacoes_loja').delete()
+              .eq('numero_transacao', transacaoInicial.numero_transacao)
+              .eq('tipo', 'saida')
+          }
         }
         await criarTransacoesParceladas(totalCalculado, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, 'saida', { id_compra: transacaoPrincipalId || undefined }, numTransacao, false)
 
@@ -798,6 +788,8 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
       return
     }
 
+    const isCondicional = tipo === 'condicional_cliente' || tipo === 'condicional_fornecedor'
+
     const itensValidos = itens.filter(i => (i.descricao || '').trim())
     if (itensValidos.length === 0) {
       setErro('Adicione pelo menos um item')
@@ -923,12 +915,14 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoId = pedido.id
         }
 
-        if (idPedidoAnexarIsNovo || !idPedidoAnexar) {
-           await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
-           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
-        } else {
-           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
-           await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
+        if (transacaoId) {
+          if (idPedidoAnexarIsNovo || !idPedidoAnexar) {
+             await supabase.from('transacoes_loja').delete().eq('id_pedido', transacaoId)
+             await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_pedido: transacaoId || undefined }, numTransacao, true)
+          } else {
+             await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
+             await criarTransacoesParceladas(totalFinanceiroFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
+          }
         }
 
         for (const item of itensValidos) {
@@ -1015,7 +1009,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
           transacaoId = transacao.id
         }
 
-        if (isPedidoTipo) {
+        if (isPedidoTipo && transacaoId) {
           await supabase.from('transacoes_loja').delete().eq('id_condicional', transacaoId)
           await criarTransacoesParceladas(totalFinal, entidade, dataVencimento, quantidadeParcelas, prazoParcelas, isVendaPedido ? 'entrada' : 'saida', { id_condicional: transacaoId || undefined }, numTransacao, true)
         }
@@ -1051,12 +1045,16 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
 
           if (prodId && !isPedidoTipo) {
             const multiplicadorEstoque = isVendaPedido ? -1 : 1
-            await supabase.rpc('atualizar_estoque', { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade * multiplicadorEstoque) })
+            // v5.6: Condicionais agora afetam a coluna específica de estoque condicional
+            const rpcName = isCondicional ? 'atualizar_estoque_condicional' : 'atualizar_estoque'
+
+            await supabase.rpc(rpcName, { produto_id_param: prodId, quantidade_param: Math.round(item.quantidade * multiplicadorEstoque) })
+
             await supabase.from('movimentacoes_estoque').insert({
               produto_id: prodId,
               tipo: isVendaPedido ? 'saida' : 'entrada',
               quantidade: item.quantidade,
-              observacao: `Condicional #${numTransacao}`
+              observacao: `${isCondicional ? 'Condicional' : 'Pedido'} #${numTransacao}`
             })
           }
         }
@@ -1590,9 +1588,9 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                </div>
 
                {/* Informações de Pagamento (Apenas para Transações e se não for anexo) */}
-               <div className={`border-t pt-2 border-gray-100 ${idPedidoAnexar ? 'opacity-50 pointer-events-none grayscale' : ''}`}>
+               <div className={`border-t pt-2 border-gray-100 ${(idPedidoAnexar || tipo?.startsWith('condicional')) ? 'hidden' : ''}`}>
                  <h3 className="font-bold text-gray-700 text-xs mb-1 uppercase tracking-tight">
-                   Pagamento / Condições {idPedidoAnexar && '(Já definido no pedido original)'}
+                   Pagamento / Condições
                  </h3>
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                    <div>
@@ -1666,38 +1664,33 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
                         <span className="text-[9px] font-black bg-purple-200 text-purple-700 px-2 py-0.5 rounded-full uppercase">Visualização Prévia</span>
                       </div>
                       <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 sm:max-h-48 overflow-y-auto pr-1 custom-scrollbar pb-2">
-                        {Array.from({ length: Math.min(quantidadeParcelas, 72) }).map((_, i) => {
+                        {(() => {
+                          const parcelasPreview = []
+                          let dataPreview = dataVencimento
                           const totalFinal = calcularTotal()
                           const valorBase = Math.ceil((totalFinal / quantidadeParcelas) * 100) / 100
                           const valorUltima = Number((totalFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
-                          let dataParcela = dataVencimento
-                          if (i > 0 && dataVencimento) {
-                            try {
-                              const dt = new Date(dataVencimento + 'T12:00:00')
-                              if (!isNaN(dt.getTime())) {
-                                if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                                else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                                else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                                dataParcela = dt.toISOString().split('T')[0]
-                              }
-                            } catch (e) {
-                              console.error('Erro ao calcular data da parcela:', e)
-                            }
-                          }
+                          const dataBaseValida = isDataValida(dataVencimento)
 
-                          return (
-                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm transition-all hover:border-purple-400 group min-w-[100px]">
-                              <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-1.5">
-                                <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 transition-colors uppercase italic">{i + 1}ª Parcela</span>
-                                <span className="text-xs font-bold text-slate-600">{dataParcela ? dataParcela.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                          for (let i = 0; i < Math.min(quantidadeParcelas, 72); i++) {
+                            const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, prazoParcelas) : dataPreview)
+                            if (i > 0) dataPreview = dtP
+
+                            parcelasPreview.push(
+                              <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm transition-all hover:border-purple-400 group min-w-[100px]">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-1.5 mb-1.5">
+                                  <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 transition-colors uppercase italic">{i + 1}ª Parcela</span>
+                                  <span className="text-xs font-bold text-slate-600">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-sm font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                </div>
                               </div>
-                              <div className="text-right">
-                                <span className="text-sm font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-                              </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          }
+                          return parcelasPreview
+                        })()}
                       </div>
                     </div>
                  )}
@@ -1756,7 +1749,7 @@ export default function ModalTransacaoUnificada({ aberto, onClose, onSucesso, tr
         {tipo && (
           <div className="p-3 sm:p-4 border-t bg-slate-900 flex flex-col sm:flex-row justify-between items-center gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.1)] relative">
             <div className="hidden sm:block absolute top-0 left-4 -translate-y-1/2 bg-slate-800 text-[8px] px-2 py-0.5 rounded text-slate-400 font-mono border border-slate-700">
-              CORE ENGINE v5.4
+              CORE ENGINE v5.8
             </div>
             <button
               onClick={handleCancelar}

@@ -43,7 +43,7 @@ export default function LojaModulo() {
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-0.5">
       {/* Menu Horizontal Compacto */}
       <div className="bg-white rounded shadow-sm overflow-hidden border border-gray-200 p-0.5">
         <nav className="flex flex-nowrap overflow-x-auto gap-0.5 custom-scrollbar">

@@ -35,10 +35,6 @@ export interface LancamentoValidado {
   dadosOriginais: Record<string, unknown>
 }
 
-// Valores permitidos
-const TIPOS_PERMITIDOS = ['ENTRADA', 'SAIDA', 'RECEITA', 'DESPESA']
-const STATUS_PERMITIDOS = ['PAGO', 'PREVISTO', 'REALIZADO', 'PENDENTE']
-
 /**
  * Converte string DD/MM/YYYY para Date
  */

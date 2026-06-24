@@ -112,6 +112,17 @@ export function formatarDataParaExibicao(dataISO: string): string {
 }
 
 /**
+ * Verifica se uma string de data (YYYY-MM-DD) é válida e real.
+ */
+export function isDataValida(dateString: string): boolean {
+  if (!dateString || typeof dateString !== 'string') return false;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateString)) return false;
+  const [y, m, d] = dateString.split('-').map(Number);
+  const data = new Date(y, m - 1, d, 12, 0, 0);
+  return data.getFullYear() === y && data.getMonth() === (m - 1) && data.getDate() === d;
+}
+
+/**
  * Retorna ano-mês (YYYY-MM) do mês atual no Brasil.
  */
 export function getMesAtualParaInput(): string {
@@ -124,4 +135,71 @@ export function getMesAtualParaInput(): string {
   const [ano, mes] = formatter.format(new Date()).split('-');
   
   return `${ano}-${mes}`;
+}
+
+/**
+ * Adiciona meses a uma data (YYYY-MM-DD), ajustando para meses com menos dias.
+ * Garante o fuso horário de Brasília.
+ */
+export function addMonths(dateString: string, months: number): string {
+  if (!isDataValida(dateString)) return dateString;
+  const [ano, mes, dia] = dateString.split('-').map(Number);
+  // Usamos meio-dia para evitar problemas de fuso
+  const date = new Date(ano, mes - 1 + months, dia, 12, 0, 0);
+
+  // Ajuste para meses com menos dias (ex: 31/01 + 1 mês = 28/02)
+  if (date.getDate() !== dia) {
+    date.setDate(0);
+  }
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+  });
+
+  return formatter.format(date);
+}
+
+/**
+ * Adiciona N dias a uma data (YYYY-MM-DD).
+ * Garante o fuso horário de Brasília.
+ */
+export function getDataNDias(dataBase: string, dias: number): string {
+  if (!isDataValida(dataBase)) return dataBase;
+  const [ano, mes, dia] = dataBase.split('-').map(Number);
+  const data = new Date(ano, mes - 1, dia + dias, 12, 0, 0);
+
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    timeZone: 'America/Sao_Paulo'
+  });
+
+  return formatter.format(data);
+}
+
+/**
+ * Calcula a próxima data baseada em um prazo/recorrência.
+ */
+export function calcularDataPorPrazo(dataBase: string, prazo: string): string {
+  if (!isDataValida(dataBase)) return dataBase;
+  switch (prazo) {
+    case 'diaria':
+      return getDataNDias(dataBase, 1);
+    case 'semanal':
+      return getDataNDias(dataBase, 7);
+    case '10dias':
+      return getDataNDias(dataBase, 10);
+    case 'quinzenal':
+      return getDataNDias(dataBase, 15);
+    case '20dias':
+      return getDataNDias(dataBase, 20);
+    case 'mensal':
+      return addMonths(dataBase, 1);
+    default:
+      return dataBase;
+  }
 }

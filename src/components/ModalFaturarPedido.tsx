@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { getDataAtualBrasil, prepararDataParaInsert } from '@/lib/dateUtils'
+import { getDataAtualBrasil, prepararDataParaInsert, calcularDataPorPrazo, isDataValida } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 
 interface ItemPedido {
@@ -179,14 +179,12 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
         const valorBase = Math.ceil((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
+        let dataAtualParcela = dataVencimento || getDataAtualBrasil()
         for (let i = 1; i <= quantidadeParcelas; i++) {
-            let dataParc = dataVencimento || getDataAtualBrasil()
+            let dataParc = dataAtualParcela
             if (i > 1) {
-                const dt = new Date(dataParc + 'T12:00:00')
-                if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + (i - 1))
-                else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + (i - 1) * 7)
-                else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + (i - 1))
-                dataParc = dt.toISOString().split('T')[0]
+                dataParc = calcularDataPorPrazo(dataAtualParcela, prazoParcelas)
+                dataAtualParcela = dataParc
             }
 
             const valorFinalParcela = i === quantidadeParcelas ? valorUltima : valorBase
@@ -425,38 +423,33 @@ export default function ModalFaturarPedido({ aberto, onClose, onSucesso, pedidoI
                        <p className="text-[9px] font-bold text-purple-900 uppercase tracking-widest">Cronograma de Faturamento</p>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-40 overflow-y-auto pr-1 custom-scrollbar">
-                      {Array.from({ length: Math.min(quantidadeParcelas, 60) }).map((_, i) => {
+                      {(() => {
+                        const parcelasPreview = []
+                        let dataPreview = dataVencimento
                         const totalFaturadoFinal = (itens.filter(i => i.acao === 'efetuar').reduce((acc, i) => acc + (i.quantidade * (pedido?.tipo === 'venda' ? i.preco_venda : i.valor_repasse)), 0)) + acrescimoDesconto
                         const valorBase = Math.ceil((totalFaturadoFinal / quantidadeParcelas) * 100) / 100
                         const valorUltima = Number((totalFaturadoFinal - (valorBase * (quantidadeParcelas - 1))).toFixed(2))
 
-                        let dataP = dataVencimento
-                        if (i > 0 && dataVencimento) {
-                          try {
-                            const dt = new Date(dataVencimento + 'T12:00:00')
-                            if (!isNaN(dt.getTime())) {
-                              if (prazoParcelas === 'diaria') dt.setDate(dt.getDate() + i)
-                              else if (prazoParcelas === 'semanal') dt.setDate(dt.getDate() + i * 7)
-                              else if (prazoParcelas === 'mensal') dt.setMonth(dt.getMonth() + i)
-                              dataP = dt.toISOString().split('T')[0]
-                            }
-                          } catch (e) {
-                            console.error('Erro data faturamento:', e)
-                          }
-                        }
+                        const dataBaseValida = isDataValida(dataVencimento)
 
-                        return (
-                          <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm group hover:border-purple-400 transition-all">
-                            <div className="flex justify-between items-center mb-1.5 border-b border-slate-50 pb-1.5">
-                               <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 uppercase tracking-tighter italic">{i + 1}ª Parc.</span>
-                               <span className="text-xs font-bold text-slate-600">{dataP ? dataP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                        for (let i = 0; i < Math.min(quantidadeParcelas, 60); i++) {
+                          const dtP = i === 0 ? dataPreview : (dataBaseValida ? calcularDataPorPrazo(dataPreview, prazoParcelas) : dataPreview)
+                          if (i > 0) dataPreview = dtP
+
+                          parcelasPreview.push(
+                            <div key={i} className="bg-white border border-slate-200 rounded-lg p-2.5 flex flex-col shadow-sm group hover:border-purple-400 transition-all">
+                              <div className="flex justify-between items-center mb-1.5 border-b border-slate-50 pb-1.5">
+                                 <span className="text-[10px] font-black text-slate-400 group-hover:text-purple-600 uppercase tracking-tighter italic">{i + 1}ª Parc.</span>
+                                 <span className="text-xs font-bold text-slate-600">{dtP ? dtP.split('-').reverse().slice(0, 2).join('/') : '--/--'}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs font-black text-purple-800">R$ {(i === quantidadeParcelas - 1 ? valorUltima : valorBase).toFixed(2)}</span>
-                            </div>
-                          </div>
-                        )
-                      })}
+                          )
+                        }
+                        return parcelasPreview
+                      })()}
                     </div>
                   </div>
                 )}

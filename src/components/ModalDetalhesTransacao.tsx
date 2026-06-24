@@ -6,6 +6,8 @@ import { formatarDataParaExibicao } from '@/lib/dateUtils'
 import { useDadosFinanceiros } from '@/context/DadosFinanceirosContext'
 import ModalTransacaoUnificada from './ModalTransacaoUnificada'
 import ModalFaturarPedido from './ModalFaturarPedido'
+import ModalFaturarCondicional from './ModalFaturarCondicional'
+import { GeradorPDFProfissional, obterConfigLogos } from '@/lib/gerador-pdf-utils'
 
 interface ItemDetalhe {
   id: string
@@ -54,6 +56,7 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
   const [transacaoFull, setTransacaoFull] = useState<any>(null)
   const [editAberto, setEditAberto] = useState(false)
   const [faturarAberto, setFaturarAberto] = useState(false)
+  const [faturarCondAberto, setFaturarCondAberto] = useState(false)
 
   const buscarFull = useCallback(async () => {
     try {
@@ -202,27 +205,23 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       }
 
       // 2. Deletar Financeiro (transacoes_loja)
+      // v5.8: Proteção absoluta contra deleção por nome (ilike).
+      // Usar UUID específico ou combinação estrita de Numero + Tipo.
       let queryDel = supabase.from('transacoes_loja').delete()
       if (tipo === 'vendas') queryDel = queryDel.eq('id_venda', transacaoId)
       else if (tipo === 'compras') queryDel = queryDel.eq('id_compra', transacaoId)
       else if (tipo === 'pedidos_loja') queryDel = queryDel.eq('id_pedido', transacaoId)
       else queryDel = queryDel.eq('id_condicional', transacaoId)
 
-      const { error: errorDel } = await queryDel
+      await queryDel
 
-      // Fallback agressivo para garantir que nada sobrou
-      const prefixo = tipo === 'vendas' ? 'Venda' : (tipo === 'compras' ? 'Compra' : '')
-      if (prefixo) {
+      // Fallback de segurança para registros legados (v5.8: Obrigatório Numero E Tipo Financeiro)
+      if (dadosResumo.numero) {
+        const tipoFin = isVenda ? 'entrada' : 'saida'
         await supabase.from('transacoes_loja')
           .delete()
           .eq('numero_transacao', dadosResumo.numero)
-          .ilike('descricao', `${prefixo}%${dadosResumo.entidade}%`)
-      } else {
-        // Para pedidos e condicionais, buscar pela observação que contém o vínculo
-        await supabase.from('transacoes_loja')
-          .delete()
-          .eq('numero_transacao', dadosResumo.numero)
-          .ilike('observacao', `%Ref. #${dadosResumo.numero}%`)
+          .eq('tipo', tipoFin)
       }
 
       // 3. Deletar a Transação Principal e Itens
@@ -301,6 +300,61 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
 
   if (!aberto) return null
 
+  const gerarPDF = () => {
+    try {
+      const config = obterConfigLogos()
+      const gerador = new GeradorPDFProfissional(config)
+
+      const isPedido = tipo === 'pedidos_loja'
+      const isCondicional = tipo === 'transacoes_condicionais'
+      const labelEntidade = (tipo === 'compras' || (isPedido && transacaoFull?.tipo === 'compra')) ? 'FORNECEDOR' : 'CLIENTE'
+
+      let titulo = 'ORDEM DE VENDA'
+      let cor: [number, number, number] = [22, 101, 52] // Green-700
+
+      if (tipo === 'compras') {
+        titulo = 'ORDEM DE COMPRA'
+        cor = [185, 28, 28] // Red-700
+      } else if (isPedido) {
+        titulo = transacaoFull?.tipo === 'venda' ? 'PEDIDO DE VENDA' : 'PEDIDO DE COMPRA'
+        cor = transacaoFull?.tipo === 'venda' ? [37, 99, 235] : [234, 88, 12] // Blue-600 ou Orange-600
+      } else if (isCondicional) {
+        titulo = transacaoFull?.tipo === 'enviado' ? 'CONDICIONAL (ENVIO)' : 'CONDICIONAL (RECEBIMENTO)'
+        cor = [79, 70, 229] // Indigo-600
+      }
+
+      gerador.gerarDocumento({
+        tipo: tipo === 'vendas' ? 'venda' : (tipo === 'compras' ? 'compra' : (isPedido ? 'pedido' : 'condicional')),
+        titulo: titulo,
+        numero: dadosResumo.numero,
+        data: dadosResumo.data,
+        entidade: `${labelEntidade}: ${dadosResumo.entidade}`,
+        corTema: cor,
+        itens: itens.map(i => ({
+          codigo: '-',
+          descricao: i.descricao,
+          quantidade: i.quantidade,
+          valorUnitario: (tipo === 'compras' || (isPedido && transacaoFull?.tipo === 'compra') || (isCondicional && transacaoFull?.tipo === 'recebido')) ? i.valor_repasse : i.preco_venda,
+          valorTotal: i.quantidade * ((tipo === 'compras' || (isPedido && transacaoFull?.tipo === 'compra') || (isCondicional && transacaoFull?.tipo === 'recebido')) ? i.valor_repasse : i.preco_venda)
+        })),
+        parcelas: parcelas.map((p, idx) => ({
+          numero: idx + 1,
+          data: p.data,
+          valor: p.valor,
+          status: p.status
+        })),
+        total: transacaoFull?.total_geral || transacaoFull?.total || dadosResumo.total,
+        totalSecundario: isPedido ? dadosResumo.total_financeiro : undefined,
+        observacoes: dadosResumo.observacao
+      })
+
+      gerador.salvar(`${titulo}_${dadosResumo.numero}.pdf`)
+    } catch (err) {
+      console.error('Erro PDF:', err)
+      alert('Erro ao gerar PDF')
+    }
+  }
+
   const handleEditClick = () => {
     setEditAberto(true)
   }
@@ -373,11 +427,19 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
       <div className="bg-white rounded shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[95vh] border border-purple-200">
         {/* Cabeçalho */}
         <div className="bg-purple-900 text-white px-4 py-1 flex justify-between items-center">
-          <div>
-            <h2 className="text-base font-bold flex items-center gap-2">
-              <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : tipo === 'pedidos_loja' ? 'Pedido' : 'Transação'}
-            </h2>
-            <p className="text-xs text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h2 className="text-base font-bold flex items-center gap-2">
+                <span className="text-blue-400">#{dadosResumo.numero}</span> Detalhes da {tipo === 'vendas' ? 'Venda' : tipo === 'compras' ? 'Compra' : tipo === 'pedidos_loja' ? 'Pedido' : 'Transação'}
+              </h2>
+              <p className="text-xs text-gray-400">{formatarDataParaExibicao(dadosResumo.data)}</p>
+            </div>
+            <button
+              onClick={() => gerarPDF()}
+              className="bg-white/10 hover:bg-white/20 px-2 py-1 rounded text-[10px] font-bold uppercase transition-all flex items-center gap-1 border border-white/20"
+            >
+              📄 PDF
+            </button>
           </div>
           <button onClick={onClose} className="hover:bg-gray-700 p-1 rounded transition-colors text-lg">✕</button>
         </div>
@@ -550,6 +612,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
                 Faturar
               </button>
             )}
+            {tipo === 'transacoes_condicionais' && dadosResumo.status === 'pendente' && !dadosResumo.observacao?.includes('[PEDIDO]') && (
+              <button
+                onClick={() => setFaturarCondAberto(true)}
+                className="flex-1 sm:flex-none px-4 py-1.5 bg-indigo-600 text-white rounded font-bold hover:bg-indigo-700 transition-all text-xs uppercase"
+              >
+                Resolver
+              </button>
+            )}
             <button
               onClick={handleEditClick}
               disabled={loadingExcluir || !transacaoFull}
@@ -579,6 +649,14 @@ export default function ModalDetalhesTransacao({ aberto, onClose, onSucesso, tra
           onClose={() => setFaturarAberto(false)}
           onSucesso={handleEditSucesso}
           pedidoId={transacaoId}
+        />
+      )}
+      {faturarCondAberto && (
+        <ModalFaturarCondicional
+          aberto={faturarCondAberto}
+          onClose={() => setFaturarCondAberto(false)}
+          onSucesso={handleEditSucesso}
+          transacaoId={transacaoId}
         />
       )}
     </div>
