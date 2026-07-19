@@ -10,6 +10,7 @@ import ImportacaoExcelLoja from './ImportacaoExcelLoja'
 import EdicaoEmLote from './EdicaoEmLote'
 import LogAuditoria from './LogAuditoria'
 import ManutencaoEstoque from './ManutencaoEstoque'
+import ConfigDashboard from './ConfigDashboard'
 
 // Define os grupos e submenus - REORGANIZADO
 const gruposConfig = [
@@ -31,6 +32,7 @@ const gruposConfig = [
       { id: 'categorias', title: 'Categorias', component: MenuCategorias },
       { id: 'importacao-loja', title: 'Importar Dados', component: ImportacaoExcelLoja },
       { id: 'manutencao-estoque', title: 'Manutenção de Estoque', component: ManutencaoEstoque },
+      { id: 'config-dashboard', title: 'Personalizar Dashboard', component: ConfigDashboard },
     ]
   },
   {
@@ -76,6 +78,8 @@ export default function ModuloConfiguracoes() {
         return <ImportacaoExcelLoja onImportacaoConcluida={handleImportacaoConcluida} />
       case 'manutencao-estoque':
         return <ManutencaoEstoque />
+      case 'config-dashboard':
+        return <ConfigDashboard />
       case 'auditoria':
         return <LogAuditoria />
       default:

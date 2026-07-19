@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import LojaPaginaFinanceiro from './LojaPaginaFinanceiro'
 import LojaPaginaEstoque from './LojaPaginaEstoque'
 import LojaPaginaTransacoes from './LojaPaginaTransacoes'
+import LojaPaginaDashboard from './LojaPaginaDashboard'
 
-type AbaLoja = 'financeiro' | 'transacoes' | 'estoque'
+type AbaLoja = 'financeiro' | 'transacoes' | 'dashboard' | 'estoque'
 
 export default function LojaModulo() {
   const [abaAtiva, setAbaAtiva] = useState<AbaLoja>('financeiro')
@@ -13,7 +14,7 @@ export default function LojaModulo() {
   // ✅ PERSISTÊNCIA DA ABA ATIVA
   useEffect(() => {
     const salva = localStorage.getItem('lucius_aba_ativa_loja')
-    if (salva && (salva === 'financeiro' || salva === 'transacoes' || salva === 'estoque')) {
+    if (salva && (salva === 'financeiro' || salva === 'transacoes' || salva === 'dashboard' || salva === 'estoque')) {
       setAbaAtiva(salva as AbaLoja)
     }
   }, [])
@@ -26,6 +27,7 @@ export default function LojaModulo() {
   const abas: { id: AbaLoja; titulo: string; icone: string; corAtiva: string }[] = [
     { id: 'financeiro', titulo: 'Financeiro', icone: '💳', corAtiva: 'bg-purple-600 text-white shadow-md' },
     { id: 'transacoes', titulo: 'Transações', icone: '🔄', corAtiva: 'bg-pink-700 text-white shadow-md' },
+    { id: 'dashboard', titulo: 'Dashboard', icone: '📊', corAtiva: 'bg-blue-600 text-white shadow-md' },
     { id: 'estoque', titulo: 'Estoque', icone: '📦', corAtiva: 'bg-red-700 text-white shadow-md' },
   ]
 
@@ -37,6 +39,8 @@ export default function LojaModulo() {
         return <LojaPaginaEstoque />
       case 'transacoes':
         return <LojaPaginaTransacoes />
+      case 'dashboard':
+        return <LojaPaginaDashboard />
       default:
         return null
     }
