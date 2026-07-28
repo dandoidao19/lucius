@@ -20,7 +20,7 @@ import ModalNotasAtualizacao from '@/components/ModalNotasAtualizacao'
 export default function Dashboard() {
   const [, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'transacoes' | 'dashboard' | 'configuracoes'>('transacoes')
+  const [activeTab, setActiveTab] = useState<'caixa' | 'transacoes' | 'dashboard' | 'configuracoes'>('caixa')
   const [showDashboardDesktop, setShowDashboardDesktop] = useState(false)
   const [showConfigDesktop, setShowConfigDesktop] = useState(false)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
@@ -47,7 +47,7 @@ export default function Dashboard() {
     router.push('/')
   }
 
-  const tabsOrder = ['transacoes', 'dashboard', 'configuracoes'] as const
+  const tabsOrder = ['caixa', 'transacoes', 'dashboard', 'configuracoes'] as const
 
   const handleSwipe = (direction: 'left' | 'right') => {
     const currentIndex = tabsOrder.indexOf(activeTab)
@@ -86,6 +86,7 @@ export default function Dashboard() {
   }
 
   const tabs = [
+    { id: 'caixa', label: 'Caixa', icon: '💰' },
     { id: 'transacoes', label: 'Transações', icon: '📋' },
     { id: 'dashboard', label: 'Dashboard', icon: '📊' },
     { id: 'configuracoes', label: 'Config', icon: '⚙️' }
@@ -179,6 +180,13 @@ export default function Dashboard() {
               {/* DADOS ROLAM APENAS AQUI */}
               <div className="flex-1 min-h-0 overflow-y-auto mt-1 lg:overflow-hidden">
                 <div className="bg-white rounded-md shadow-sm border border-gray-200 p-1 lg:h-full lg:min-h-0 lg:overflow-hidden">
+                  {/* Mobile: Abas Exclusivas - Caixa */}
+                  {activeTab === 'caixa' && (
+                    <div className="block lg:hidden flex flex-col">
+                      <CaixaMobileTab />
+                    </div>
+                  )}
+
                   {/* Mobile: Abas Exclusivas - Transações */}
                   {activeTab === 'transacoes' && (
                     <div className="block lg:hidden flex flex-col">
