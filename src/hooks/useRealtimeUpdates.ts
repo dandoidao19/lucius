@@ -10,8 +10,9 @@ export function useRealtimeUpdates() {
   useEffect(() => {
     console.log('📡 Assinando atualizações em tempo real do Supabase...');
 
-    const handleChanges = (queryKey: string) => {
-      console.log(`🔔 Alteração detectada para: ${queryKey}`);
+    const handleChanges = (queryKeys: string[]) => {
+      const label = queryKeys.join(', ');
+      console.log(`🔔 Alteração detectada para: ${label}`);
 
       // Debounce para evitar múltiplas invalidações simultâneas
       if (debounceTimerRef.current) {
@@ -19,8 +20,10 @@ export function useRealtimeUpdates() {
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        console.log(`🔄 Invalidando queries após debounce: ${queryKey}`);
-        queryClient.invalidateQueries({ queryKey: [queryKey] });
+        console.log(`🔄 Invalidando queries após debounce: ${label}`);
+        queryKeys.forEach(queryKey => {
+          queryClient.invalidateQueries({ queryKey: [queryKey] });
+        });
         debounceTimerRef.current = null;
       }, 500); // Aguarda 500ms de silêncio antes de invalidar
     };
@@ -31,7 +34,7 @@ export function useRealtimeUpdates() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'centros_de_custo' },
-        () => handleChanges('centros_de_custo')
+        () => handleChanges(['centros_de_custo', 'lancamentos_financeiros_para_caixa', 'caixa_previsto_calculado_casa'])
       )
       .subscribe();
 
@@ -41,17 +44,7 @@ export function useRealtimeUpdates() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'lancamentos_financeiros' },
-        () => handleChanges('lancamentos_financeiros')
-      )
-      .subscribe();
-
-    // Canal para 'transacoes_loja'
-    const transacoesChannel = supabase
-      .channel('public:transacoes_loja')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'transacoes_loja' },
-        () => handleChanges('transacoes_loja')
+        () => handleChanges(['lancamentos_financeiros', 'lancamentos_financeiros_para_caixa', 'caixa_previsto_calculado_casa'])
       )
       .subscribe();
 
@@ -60,7 +53,6 @@ export function useRealtimeUpdates() {
       console.log('📡 Cancelando assinatura das atualizações em tempo real...');
       supabase.removeChannel(centrosChannel);
       supabase.removeChannel(lancamentosChannel);
-      supabase.removeChannel(transacoesChannel);
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }

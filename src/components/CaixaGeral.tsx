@@ -4,8 +4,6 @@ import { useCaixaUniversal } from '@/hooks/useCaixaUniversal'
 
 export default function CaixaGeral() {
   const {
-    caixaRealGeral,
-    caixaRealLoja,
     caixaRealCasa,
     caixaPrevistoGeral,
     entradasHoje,
@@ -16,7 +14,9 @@ export default function CaixaGeral() {
     mesFiltro,
     setMesFiltro,
     getTituloPrevisao
-  } = useCaixaUniversal('geral')
+  } = useCaixaUniversal('casa')
+
+  const caixaReal = caixaRealCasa
 
   const handleMudarParaMes = () => setFiltro('mes')
   const handleVoltar30Dias = () => setFiltro('30dias')
@@ -61,19 +61,17 @@ export default function CaixaGeral() {
 
   return (
     <div className="bg-white rounded shadow-sm p-1 space-y-1 border border-gray-200" style={{ minWidth: 0 }}>
-      <h2 className="font-semibold text-gray-800 flex items-center" style={{ fontSize: '12px' }}>Caixa Geral</h2>
+      <h2 className="font-semibold text-gray-800 flex items-center" style={{ fontSize: '12px' }}>Caixa Casa</h2>
 
-      <div className={`rounded p-1.5 ${caixaRealGeral < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>
+      <div className={`rounded p-1.5 ${caixaReal < 0 ? 'bg-red-500 border border-red-600' : 'bg-white border border-blue-200'}`} style={{ minWidth: 0 }}>
         <div>
-          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaRealGeral < 0 ? 'text-red-100' : 'text-gray-600'}`}>
+          <div style={{...caixaTituloStyle, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className={`${caixaReal < 0 ? 'text-red-100' : 'text-gray-600'}`}>
             <span>Caixa Real:</span>
             <span style={{ fontSize: '12px', fontWeight: '600' }}>
-              <span className={caixaRealLoja >= 0 ? 'text-green-600' : 'text-red-600'}>L: {formatarMoeda(caixaRealLoja)}</span>
-              <span className="mx-1.5 text-gray-300">|</span>
-              <span className={caixaRealCasa >= 0 ? 'text-green-600' : 'text-red-600'}>C: {formatarMoeda(caixaRealCasa)}</span>
+              <span className={caixaReal >= 0 ? 'text-green-600' : 'text-red-600'}>{formatarMoeda(caixaReal)}</span>
             </span>
           </div>
-          <p style={caixaValorStyle} className={`${caixaRealGeral < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatarMoeda(caixaRealGeral)}</p>
+          <p style={caixaValorStyle} className={`${caixaReal < 0 ? 'text-red-600' : 'text-blue-600'}`}>{formatarMoeda(caixaReal)}</p>
           <div style={caixaSubContainerStyle} className="mt-0.5">
             <div style={{ display: 'inline-flex', gap: 8, alignItems: 'center' }}>
               <span className="text-green-600">↑ {formatarMoedaCompacta(entradasHoje)}</span>

@@ -1,52 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { obterConfigLogos } from '@/lib/gerador-pdf-utils'
+import Image from 'next/image'
 
 export default function CabecalhoSistema() {
-  const [logos, setLogos] = useState<{ empresa?: string; cliente?: string }>({})
-
-  useEffect(() => {
-    const config = obterConfigLogos()
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLogos({
-      empresa: config.logoEmpresa,
-      cliente: config.logoCliente
-    })
-  }, [])
-
   return (
-    <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white py-1.5 px-4 shadow-lg border-b-2 border-blue-600">
-      <div className="container mx-auto flex items-center justify-center gap-8">
-        {/* Logo Empresa (Esquerda) */}
-        {logos.empresa && (
-          <div className="flex-shrink-0">
-            <img 
-              src={logos.empresa}
-              alt="Logo Empresa" 
-              className="h-8 object-contain"
-            />
+    <div className="sticky top-0 z-50 bg-slate-950/95 text-white py-1 px-2 shadow-sm border-b border-slate-800 backdrop-blur-sm">
+      <div className="mx-auto flex items-center justify-between gap-2 max-w-full">
+        <div className="flex items-center gap-2">
+          <div className="rounded-md bg-white/10 p-1">
+            <Image src="/lucius_icon.svg" alt="Lucius" width={20} height={20} className="h-5 w-5" priority />
           </div>
-        )}
-
-        {/* Nome do Sistema (Centro) */}
-        <div className="text-center">
-          <h1 className="text-2xl font-black tracking-widest bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent italic relative">
-            LUCIUS
-            <span className="absolute -top-1 -right-8 text-[9px] font-normal tracking-normal text-blue-400/80 not-italic">v4.9</span>
-          </h1>
+          <span className="text-xs font-semibold tracking-[0.12em] text-white">Lucius</span>
         </div>
-
-        {/* Logo Cliente (Direita) */}
-        {logos.cliente && (
-          <div className="flex-shrink-0">
-            <img 
-              src={logos.cliente}
-              alt="Logo Cliente" 
-              className="h-8 object-contain"
-            />
-          </div>
-        )}
+        <span className="text-[10px] uppercase tracking-[0.18em] text-slate-400">v5.0</span>
       </div>
     </div>
   )

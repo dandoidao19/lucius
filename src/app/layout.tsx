@@ -16,7 +16,14 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "LUCIUS - Sistema de Controle Financeiro",
-  description: "Sistema completo de controle financeiro para casa e loja",
+  description: "Sistema completo de controle financeiro para casa",
+  icons: {
+    icon: [
+      { url: '/lucius_icon.svg', type: 'image/svg+xml' },
+      { url: '/lucius_icon.svg', sizes: 'any' }
+    ],
+    apple: '/lucius_icon.svg',
+  },
 };
 
 export default function RootLayout({

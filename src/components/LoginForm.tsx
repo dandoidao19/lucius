@@ -13,26 +13,14 @@ export default function LoginForm() {
     setLoading(true)
 
     try {
-      // Tenta fazer login direto (se usuário já existe)
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
       if (error) {
-        // Se não conseguiu login, tenta cadastrar
-        const { error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        })
-
-        if (signUpError) {
-          alert('Erro: ' + signUpError.message)
-        } else {
-          alert('Cadastrado com sucesso! Faça login agora.')
-        }
+        alert('Falha ao autenticar: ' + error.message)
       } else {
-        // Login bem-sucedido
         window.location.href = '/dashboard'
       }
     } catch (error) {
@@ -44,7 +32,7 @@ export default function LoginForm() {
 
   return (
     <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Login - Loja Maju</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Login - Maju Casa</h2>
       
       {/* BOTÃO DE TESTE RÁPIDO */}
       <div className="mb-4">
@@ -91,7 +79,7 @@ export default function LoginForm() {
           disabled={loading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
         >
-          {loading ? 'Carregando...' : 'Entrar / Cadastrar'}
+          {loading ? 'Carregando...' : 'Entrar'}
         </button>
       </form>
     </div>

@@ -78,16 +78,5 @@ export interface LancamentoFinanceiro {
 export interface CentroCusto {
   id: string;
   nome: string;
-  contexto: 'casa' | 'loja';
-}
-
-export interface TransacaoLoja {
-  id: string;
-  data: string;
-  descricao: string;
-  total: number;
-  tipo: 'entrada' | 'saida';
-  status_pagamento: string;
-  valor_pago?: number;
-  data_pagamento?: string;
+  contexto: 'casa';
 }

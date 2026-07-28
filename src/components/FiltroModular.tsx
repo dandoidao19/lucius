@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 interface FiltroModularProps {
-  modulo: 'compra' | 'venda' | 'condicional' | 'estoque' | 'casa' | 'loja'
+  modulo: 'compra' | 'venda' | 'condicional' | 'estoque' | 'casa'
   filtroAberto: boolean
   onToggleFiltro: (aberto: boolean) => void
   filtroDescricao?: string
@@ -82,15 +82,6 @@ export default function FiltroModular({
       botao: 'bg-indigo-500 hover:bg-indigo-600',
       icone: '🏠',
       titulo: 'Filtros Casa'
-    },
-    loja: {
-      bg: 'bg-rose-50',
-      border: 'border-rose-300',
-      header: 'bg-rose-100 hover:bg-rose-200',
-      texto: 'text-rose-800',
-      botao: 'bg-rose-500 hover:bg-rose-600',
-      icone: '🏪',
-      titulo: 'Filtros Loja'
     }
   }
 

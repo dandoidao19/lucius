@@ -1,6 +1,39 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+type LancamentoPDF = {
+  tipo?: string
+  valor?: number
+  descricao?: string
+  centro_custo_id?: string
+  data_prevista?: string
+  data_lancamento?: string
+  status?: string
+}
+
+type CentroCustoPDF = {
+  id: string
+  nome?: string
+}
+
+type VendaPDF = {
+  data_venda?: string
+  cliente?: string
+  numero_transacao?: string
+  total?: number
+  status_pagamento?: string
+  quantidade_parcelas?: number
+}
+
+type CompraPDF = {
+  data_compra?: string
+  fornecedor?: string
+  numero_transacao?: string
+  total?: number
+  status_pagamento?: string
+  quantidade_parcelas?: number
+}
+
 export class GeradorPDFLancamentos {
   private doc: jsPDF
 
@@ -22,8 +55,18 @@ export class GeradorPDFLancamentos {
     }
   }
 
+  private formatarMoedaPDF(valor: number | undefined): string {
+    const numero = Number(valor ?? 0)
+    return numero.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }
+
   // Gerar PDF de lançamentos da casa
-  gerarPDFLancamentosCasa(lancamentos: any[], centrosCusto: any[]) {
+  gerarPDFLancamentosCasa(lancamentos: LancamentoPDF[], centrosCusto: CentroCustoPDF[]) {
     this.doc = new jsPDF()
     
     // Cabeçalho
@@ -36,53 +79,71 @@ export class GeradorPDFLancamentos {
     
     // Calcular totais
     const totalEntradas = lancamentos
-      .filter(l => l.tipo === 'entrada')
-      .reduce((sum: number, l: any) => sum + (l.valor || 0), 0)
+      .filter((l) => l.tipo === 'entrada')
+      .reduce((sum: number, l) => sum + (l.valor || 0), 0)
     
     const totalSaidas = lancamentos
-      .filter(l => l.tipo === 'saida')
-      .reduce((sum: number, l: any) => sum + (l.valor || 0), 0)
+      .filter((l) => l.tipo === 'saida')
+      .reduce((sum: number, l) => sum + (l.valor || 0), 0)
     
     const saldo = totalEntradas - totalSaidas
     
     this.doc.setFontSize(11)
     this.doc.setTextColor(34, 139, 34)
-    this.doc.text(`Total Entradas: R$ ${totalEntradas.toFixed(2)}`, 14, 34)
+    this.doc.text(`Total Entradas: ${this.formatarMoedaPDF(totalEntradas)}`, 14, 34)
     
     this.doc.setTextColor(220, 20, 60)
-    this.doc.text(`Total Saídas: R$ ${totalSaidas.toFixed(2)}`, 14, 40)
+    this.doc.text(`Total Saídas: ${this.formatarMoedaPDF(totalSaidas)}`, 14, 40)
     
     this.doc.setTextColor(0, 0, 0)
-    this.doc.text(`Saldo: R$ ${saldo.toFixed(2)}`, 14, 46)
+    this.doc.text(`Saldo: ${this.formatarMoedaPDF(saldo)}`, 14, 46)
     
     // Tabela de lançamentos
-    const dados = lancamentos.map(lanc => {
-      const cdc = centrosCusto.find(c => c.id === lanc.centro_custo_id)
+    const dados = lancamentos.map((lanc) => {
+      const cdc = centrosCusto.find((c) => c.id === lanc.centro_custo_id)
       const dataFormatada = this.formatarData(lanc.data_prevista || lanc.data_lancamento)
-      
-      return [
-        dataFormatada,
-        (lanc.descricao || '-').substring(0, 30),
-        cdc?.nome || '-',
-        lanc.tipo === 'entrada' ? 'Entrada' : 'Saída',
-        `R$ ${(lanc.valor || 0).toFixed(2)}`,
-        lanc.status || 'pendente'
-      ]
+
+      return {
+        data: dataFormatada,
+        descricao: (lanc.descricao || '-').substring(0, 30),
+        centroCusto: cdc?.nome || '-',
+        tipo: lanc.tipo === 'entrada' ? 'Entrada' : 'Saída',
+        valor: this.formatarMoedaPDF(lanc.valor),
+        status: lanc.status || 'pendente',
+        tipoRaw: lanc.tipo ?? '',
+      }
     })
 
     autoTable(this.doc, {
-      head: [['Data', 'Descrição', 'Centro de Custo', 'Tipo', 'Valor', 'Status']],
+      columns: [
+        { header: 'Data', dataKey: 'data' },
+        { header: 'Descrição', dataKey: 'descricao' },
+        { header: 'Centro de Custo', dataKey: 'centroCusto' },
+        { header: 'Tipo', dataKey: 'tipo' },
+        { header: 'Valor', dataKey: 'valor' },
+        { header: 'Status', dataKey: 'status' },
+      ],
       body: dados,
       startY: 52,
       theme: 'grid',
-      styles: { fontSize: 9 }
+      styles: { fontSize: 9 },
+      columnStyles: {
+        valor: { halign: 'right' },
+      },
+      didParseCell: (data) => {
+        const dataKey = (data.column as { dataKey?: string }).dataKey
+        if (data.section === 'body' && dataKey === 'valor') {
+          const tipoRaw = (data.row.raw as { tipoRaw?: string }).tipoRaw
+          data.cell.styles.textColor = tipoRaw === 'entrada' ? [34, 139, 34] : [220, 20, 60]
+        }
+      },
     })
 
     this.doc.save('lancamentos_casa.pdf')
   }
 
   // Gerar PDF de vendas
-  gerarPDFVendas(vendas: any[]) {
+  gerarPDFVendas(vendas: VendaPDF[]) {
     this.doc = new jsPDF()
     
     this.doc.setFontSize(16)
@@ -92,7 +153,7 @@ export class GeradorPDFLancamentos {
     this.doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22)
     this.doc.text(`Total de vendas: ${vendas.length}`, 14, 28)
     
-    const totalVendas = vendas.reduce((sum: number, v: any) => sum + (v.total || 0), 0)
+    const totalVendas = vendas.reduce((sum: number, v) => sum + (v.total || 0), 0)
     
     this.doc.setFontSize(11)
     this.doc.setTextColor(34, 139, 34)
@@ -120,7 +181,7 @@ export class GeradorPDFLancamentos {
   }
 
   // Gerar PDF de compras
-  gerarPDFCompras(compras: any[]) {
+  gerarPDFCompras(compras: CompraPDF[]) {
     this.doc = new jsPDF()
     
     this.doc.setFontSize(16)
@@ -130,7 +191,7 @@ export class GeradorPDFLancamentos {
     this.doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22)
     this.doc.text(`Total de compras: ${compras.length}`, 14, 28)
     
-    const totalCompras = compras.reduce((sum: number, c: any) => sum + (c.total || 0), 0)
+    const totalCompras = compras.reduce((sum: number, c) => sum + (c.total || 0), 0)
     
     this.doc.setFontSize(11)
     this.doc.setTextColor(220, 20, 60)
@@ -157,63 +218,4 @@ export class GeradorPDFLancamentos {
     this.doc.save('compras.pdf')
   }
 
-  // Gerar PDF de transações da loja (CORRIGIDO)
-  gerarPDFTransacoesLoja(transacoes: any[], titulo: string = 'Transações Loja') {
-    this.doc = new jsPDF()
-    
-    this.doc.setFontSize(16)
-    this.doc.text(titulo, 14, 15)
-    
-    this.doc.setFontSize(10)
-    this.doc.text(`Data: ${new Date().toLocaleDateString('pt-BR')}`, 14, 22)
-    this.doc.text(`Total de transações: ${transacoes.length}`, 14, 28)
-    
-    // Calcular totais
-    const totalEntradas = transacoes
-      .filter(t => t.tipo === 'entrada' || t.tipo === 'venda')
-      .reduce((sum: number, t: any) => sum + (t.valor || t.total || 0), 0)
-    
-    const totalSaidas = transacoes
-      .filter(t => t.tipo === 'saida' || t.tipo === 'compra')
-      .reduce((sum: number, t: any) => sum + (t.valor || t.total || 0), 0)
-    
-    const saldo = totalEntradas - totalSaidas
-    
-    this.doc.setFontSize(11)
-    this.doc.setTextColor(34, 139, 34)
-    this.doc.text(`Total Entradas: R$ ${totalEntradas.toFixed(2)}`, 14, 34)
-    
-    this.doc.setTextColor(220, 20, 60)
-    this.doc.text(`Total Saídas: R$ ${totalSaidas.toFixed(2)}`, 14, 40)
-    
-    this.doc.setTextColor(0, 0, 0)
-    this.doc.text(`Saldo: R$ ${saldo.toFixed(2)}`, 14, 46)
-    
-    // Tabela de transações - CORRIGIDO COM VALIDAÇÃO
-    const dados = transacoes.map(trans => {
-      // Validação segura da data
-      const dataFormatada = this.formatarData(
-        trans.data_venda || trans.data_compra || trans.data || trans.descricao
-      )
-      
-      return [
-        dataFormatada,
-        (trans.cliente || trans.fornecedor || trans.cliente_fornecedor || '-').substring(0, 25),
-        trans.numero_transacao || '-',
-        trans.tipo === 'venda' || trans.tipo === 'entrada' ? 'Venda' : 'Compra',
-        `R$ ${(trans.total || trans.valor || 0).toFixed(2)}`,
-        trans.status_pagamento || trans.status || 'pendente'
-      ]
-    })
-
-    autoTable(this.doc, {
-      head: [['Data', 'Cliente/Fornecedor', 'Nº Trans.', 'Tipo', 'Valor', 'Status']],
-      body: dados,
-      startY: 52,
-      theme: 'grid',
-      styles: { fontSize: 9 }
-    })
-
-    this.doc.save('transacoes_loja.pdf')
-  }
 }

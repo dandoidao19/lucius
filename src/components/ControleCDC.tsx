@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
+import { User } from '@supabase/supabase-js'
 
 interface CentroCusto {
   id: string
@@ -19,13 +20,13 @@ interface ControleCDCProps {
 export default function ControleCDC({ onDataChange }: ControleCDCProps) {
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([])
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [editandoId, setEditandoId] = useState<string | null>(null)
   
   // Estado do formulário
   const [formCentroCusto, setFormCentroCusto] = useState({
     nome: '',
-    contexto: 'casa' as 'casa' | 'loja',
+    contexto: 'casa',
     tipo: 'DESPESA' as 'RECEITA' | 'DESPESA',
     categoria: '',
     recorrencia: 'VARIAVEL' as 'FIXO' | 'VARIAVEL'
@@ -96,9 +97,9 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
       onDataChange()
       alert('✅ Centro de custo adicionado com sucesso!')
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro detalhado:', error)
-      alert('❌ Erro ao adicionar: ' + error.message)
+      alert('❌ Erro ao adicionar: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
     } finally {
       setLoading(false)
     }
@@ -108,7 +109,7 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
     setEditandoId(centro.id)
     setFormCentroCusto({
       nome: centro.nome,
-      contexto: centro.contexto as 'casa' | 'loja',
+      contexto: 'casa',
       tipo: centro.tipo as 'RECEITA' | 'DESPESA',
       categoria: centro.categoria,
       recorrencia: centro.recorrencia as 'FIXO' | 'VARIAVEL'
@@ -157,9 +158,9 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
       onDataChange()
       alert('✅ Centro de custo atualizado com sucesso!')
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro detalhado:', error)
-      alert('❌ Erro ao atualizar: ' + error.message)
+      alert('❌ Erro ao atualizar: ' + (error instanceof Error ? error.message : 'Erro desconhecido'))
     } finally {
       setLoading(false)
     }
@@ -199,7 +200,6 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
   const estatisticas = {
     total: centrosCusto.length,
     casa: centrosCusto.filter(c => c.contexto === 'casa').length,
-    loja: centrosCusto.filter(c => c.contexto === 'loja').length,
     receitas: centrosCusto.filter(c => c.tipo === 'RECEITA').length,
     despesas: centrosCusto.filter(c => c.tipo === 'DESPESA').length
   }
@@ -215,10 +215,6 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
         <div className="bg-green-50 p-2 rounded border border-green-200">
           <h3 className="text-xs font-medium text-green-800">Casa</h3>
           <p className="text-base font-bold text-green-600">{estatisticas.casa}</p>
-        </div>
-        <div className="bg-purple-50 p-2 rounded border border-purple-200">
-          <h3 className="text-xs font-medium text-purple-800">Loja</h3>
-          <p className="text-base font-bold text-purple-600">{estatisticas.loja}</p>
         </div>
         <div className="bg-emerald-50 p-2 rounded border border-emerald-200">
           <h3 className="text-xs font-medium text-emerald-800">Receitas</h3>
@@ -254,19 +250,6 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Contexto *</label>
-                  <select
-                    value={formCentroCusto.contexto}
-                    onChange={(e) => setFormCentroCusto({...formCentroCusto, contexto: e.target.value as 'casa' | 'loja'})}
-                    className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="casa">Casa</option>
-                    <option value="loja">Loja</option>
-                  </select>
-                </div>
-
-                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-0.5">Tipo *</label>
                   <select
                     value={formCentroCusto.tipo}
@@ -278,9 +261,6 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
                     <option value="DESPESA">Despesa</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-0.5">Categoria *</label>
                   <input
@@ -292,19 +272,19 @@ export default function ControleCDC({ onDataChange }: ControleCDCProps) {
                     placeholder="EX: ALIMENTAÇÃO..."
                   />
                 </div>
+              </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-0.5">Recorrência *</label>
-                  <select
-                    value={formCentroCusto.recorrencia}
-                    onChange={(e) => setFormCentroCusto({...formCentroCusto, recorrencia: e.target.value as 'FIXO' | 'VARIAVEL'})}
-                    className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                    required
-                  >
-                    <option value="FIXO">Fixo</option>
-                    <option value="VARIAVEL">Variável</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-700 mb-0.5">Recorrência *</label>
+                <select
+                  value={formCentroCusto.recorrencia}
+                  onChange={(e) => setFormCentroCusto({...formCentroCusto, recorrencia: e.target.value as 'FIXO' | 'VARIAVEL'})}
+                  className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="FIXO">Fixo</option>
+                  <option value="VARIAVEL">Variável</option>
+                </select>
               </div>
 
               <div className="flex gap-2 pt-1">

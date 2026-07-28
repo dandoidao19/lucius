@@ -1,27 +1,30 @@
-// app/dashboard/page.tsx - VERSÃO COM CONTROLE DE AMBIENTE
+// app/dashboard/page.tsx - VERSÃO MÓVEL-FIRST MODULO CASA
 'use client'
 
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
-import dynamic from 'next/dynamic'
+import { useEffect, useState, type TouchEvent as ReactTouchEvent } from 'react'
+import { User } from '@supabase/supabase-js'
 import { DadosFinanceirosProvider } from '@/context/DadosFinanceirosContext'
 import { FilterProvider } from '@/context/FilterContext'
 import { FormDraftProvider } from '@/context/FormDraftContext'
 import { RealtimeSubscriber } from '@/components/RealtimeSubscriber'
 import AtalhosGlobais from '@/components/AtalhosGlobais'
 import { isDevFeaturesEnabled } from '@/lib/envUtils'
-
-const ResumoCaixas = dynamic(() => import('@/components/ResumoCaixas'), { ssr: false })
-const CasaModulo = dynamic(() => import('@/components/CasaModulo'), { ssr: false })
-const ModuloConfiguracoes = dynamic(() => import('@/components/ModuloConfiguracoes'), { ssr: false })
-const LojaModulo = dynamic(() => import('@/components/LojaModulo'), { ssr: false })
-const ModalNotasAtualizacao = dynamic(() => import('@/components/ModalNotasAtualizacao'), { ssr: false })
+import CaixaMobileTab from '@/components/CaixaMobileTab'
+import TransacoesTab from '@/components/TransacoesTab'
+import DashboardFinanceiroTab from '@/components/DashboardFinanceiroTab'
+import ModuloConfiguracoes from '@/components/ModuloConfiguracoes'
+import ModalNotasAtualizacao from '@/components/ModalNotasAtualizacao'
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null)
+  const [, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeSection, setActiveSection] = useState('dashboard') // Inicia em 'dashboard' por padrão
+  const [activeTab, setActiveTab] = useState<'transacoes' | 'dashboard' | 'configuracoes'>('transacoes')
+  const [showDashboardDesktop, setShowDashboardDesktop] = useState(false)
+  const [showConfigDesktop, setShowConfigDesktop] = useState(false)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchStartY, setTouchStartY] = useState<number | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -44,6 +47,36 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  const tabsOrder = ['transacoes', 'dashboard', 'configuracoes'] as const
+
+  const handleSwipe = (direction: 'left' | 'right') => {
+    const currentIndex = tabsOrder.indexOf(activeTab)
+    if (direction === 'left' && currentIndex < tabsOrder.length - 1) {
+      setActiveTab(tabsOrder[currentIndex + 1])
+    }
+    if (direction === 'right' && currentIndex > 0) {
+      setActiveTab(tabsOrder[currentIndex - 1])
+    }
+  }
+
+  const onTouchStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    setTouchStartX(event.touches[0].clientX)
+    setTouchStartY(event.touches[0].clientY)
+  }
+
+  const onTouchEnd = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (touchStartX === null || touchStartY === null) return
+    const deltaX = event.changedTouches[0].clientX - touchStartX
+    const deltaY = event.changedTouches[0].clientY - touchStartY
+
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      handleSwipe(deltaX < 0 ? 'left' : 'right')
+    }
+
+    setTouchStartX(null)
+    setTouchStartY(null)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
@@ -52,51 +85,11 @@ export default function Dashboard() {
     )
   }
 
-  // Define itens do menu
-  const menuItems = [
-    { id: 'dashboard', label: '📊 Dashboard', icon: '📊', color: 'blue' },
-    { id: 'casa', label: '🏠 Casa', icon: '🏠', color: 'green' },
-    { id: 'loja', label: '🏪 Loja', icon: '🏪', color: 'purple' },
-    { id: 'configuracoes', label: '⚙️ Configurações', icon: '⚙️', color: 'gray' }
-  ]
-
-  const getButtonStyle = (id: string, color: string) => {
-    const isActive = activeSection === id
-    const colors: Record<string, { active: string; inactive: string }> = {
-      blue: {
-        active: 'bg-blue-600 text-white shadow-lg shadow-blue-500/50',
-        inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-blue-300'
-      },
-      green: {
-        active: 'bg-green-600 text-white shadow-lg shadow-green-500/50',
-        inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-green-300'
-      },
-      purple: {
-        active: 'bg-purple-600 text-white shadow-lg shadow-purple-500/50',
-        inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-purple-300'
-      },
-      gray: {
-        active: 'bg-gray-600 text-white shadow-lg shadow-gray-500/50',
-        inactive: 'bg-white text-gray-700 border border-gray-200 hover:border-gray-300'
-      }
-    }
-    return isActive ? colors[color].active : colors[color].inactive
-  }
-
-  const getTitleBySection = () => {
-    switch (activeSection) {
-      case 'dashboard':
-        return '📊 Dashboard Principal'
-      case 'casa':
-        return '🏠 Módulo Casa'
-      case 'loja':
-        return '🏪 Módulo Loja'
-      case 'configuracoes':
-        return '⚙️ Configurações'
-      default:
-        return '🏠 Módulo Casa'
-    }
-  }
+  const tabs = [
+    { id: 'transacoes', label: 'Transações', icon: '📋' },
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'configuracoes', label: 'Config', icon: '⚙️' }
+  ] as const
 
   return (
     <DadosFinanceirosProvider>
@@ -104,75 +97,165 @@ export default function Dashboard() {
         <FormDraftProvider>
           <RealtimeSubscriber />
           <ModalNotasAtualizacao />
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-            <div className="container mx-auto px-3 py-2">
-              {/* Header com Usuário e Logout - COMPACTADO */}
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <h1 className="text-lg md:text-xl font-bold text-gray-800">
-                    {getTitleBySection()}
-                  </h1>
-                  <p className="text-xs text-gray-600 mt-0.5">
-                    Bem-vindo, <span className="font-semibold text-gray-800">{user?.email}</span>
-                  </p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium transition-colors shadow-md text-xs"
-                >
-                  🚪 Sair
-                </button>
-              </div>
 
-              {/* Menu de Navegação com Ícones - COMPACTADO */}
-              <div className="bg-white rounded-lg shadow-md p-1 mb-2 border border-gray-100">
-                <div className="flex flex-wrap gap-1">
-                  {menuItems.map((item) => (
+          <div className="min-h-[calc(100dvh-30px)] bg-gradient-to-br from-gray-50 via-white to-gray-50">
+            {/* 
+              Estrutura para “congelar topo”:
+              - layout do dashboard ocupa toda a altura
+              - topo (tabs/menu/filtros) fica fixo “no container”
+              - rolagem acontece só na área de dados
+            */}
+            <div className="max-w-full mx-auto px-1 py-1 flex flex-col h-[calc(100dvh-30px)] overflow-hidden" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+              <div className="bg-white/95 backdrop-blur-md border-b border-slate-200 py-1 z-40">
+                <div className="flex flex-wrap items-center justify-between gap-1 px-1">
+                  {/* Mobile: Abas Normais */}
+                  <div className="flex-1 min-w-0 flex flex-wrap items-center gap-1 overflow-x-auto lg:hidden">
+                    {tabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id as typeof activeTab)}
+                        className={`px-2 py-1 rounded-md font-semibold text-[11px] transition-all whitespace-nowrap flex items-center gap-1 ${
+                          activeTab === tab.id
+                            ? 'bg-blue-600 text-white shadow-lg'
+                            : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-300'
+                        }`}
+                      >
+                        <span>{tab.icon}</span>
+                        <span className="hidden sm:inline">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Desktop: Apenas Configurações */}
+                  <div className="hidden lg:flex flex-1 items-center gap-1">
                     <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`px-3 py-1.5 rounded-lg font-semibold transition-all duration-200 flex items-center gap-2 text-xs ${getButtonStyle(item.id, item.color)}`}
+                      onClick={() => setShowDashboardDesktop(false)}
+                      className={`px-2 py-1 rounded-md font-semibold text-xs transition-all flex items-center gap-1.5 ${
+                        !showDashboardDesktop
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-300'
+                      }`}
                     >
-                      <span>{item.icon}</span>
-                      <span className="hidden sm:inline">{item.label.split(' ')[1]}</span>
+                      <span>📋</span>
+                      <span>Transações</span>
                     </button>
-                  ))}
+                    <button
+                      onClick={() => setShowDashboardDesktop(!showDashboardDesktop)}
+                      className={`px-2 py-1 rounded-md font-semibold text-xs transition-all flex items-center gap-1.5 ${
+                        showDashboardDesktop
+                          ? 'bg-blue-600 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:border-blue-300'
+                      }`}
+                    >
+                      <span>📊</span>
+                      <span>Dashboard</span>
+                    </button>
+                    <button
+                      onClick={() => setShowConfigDesktop(!showConfigDesktop)}
+                      className={`px-2 py-1 rounded-md font-semibold text-xs transition-all flex items-center gap-1.5 ${
+                        showConfigDesktop
+                          ? 'bg-purple-600 text-white shadow-lg'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:border-purple-300'
+                      }`}
+                    >
+                      <span>⚙️</span>
+                      <span>Configurações</span>
+                    </button>
+                  </div>
+
+                  {/* Globais */}
+                  <div className="flex items-center gap-1.5">
+                    <AtalhosGlobais inline />
+                    <button
+                      onClick={handleLogout}
+                      className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-md font-medium transition-colors shadow-sm text-[11px] whitespace-nowrap"
+                    >
+                      🚪 Sair
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Conteúdo Dinâmico */}
-              {isDevFeaturesEnabled() && activeSection === 'dashboard' && (
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-1">
-                    <ResumoCaixas />
+              {/* DADOS ROLAM APENAS AQUI */}
+              <div className="flex-1 min-h-0 overflow-y-auto mt-1 lg:overflow-hidden">
+                <div className="bg-white rounded-md shadow-sm border border-gray-200 p-1 lg:h-full lg:min-h-0 lg:overflow-hidden">
+                  {/* Mobile: Abas Exclusivas - Caixa */}
+                  {activeTab === 'caixa' && (
+                    <div className="block lg:hidden flex flex-col">
+                      <CaixaMobileTab />
+                    </div>
+                  )}
+
+                  {/* Mobile: Abas Exclusivas - Transações */}
+                  {activeTab === 'transacoes' && (
+                    <div className="block lg:hidden flex flex-col">
+                      <TransacoesTab />
+                    </div>
+                  )}
+
+                  {/* Mobile: Abas Exclusivas - Dashboard */}
+                  {activeTab === 'dashboard' && (
+                    <div className="block lg:hidden flex flex-col">
+                      <DashboardFinanceiroTab />
+                    </div>
+                  )}
+
+                  {/* Mobile: Abas Exclusivas - Configurações */}
+                  {activeTab === 'configuracoes' && (
+                    <div className="block lg:hidden">
+                      <ModuloConfiguracoes />
+                    </div>
+                  )}
+
+                  {/* Desktop: Caixa + Transações lado a lado (scroll independente de verdade) */}
+                  {showDashboardDesktop ? (
+                    <div className="hidden lg:flex min-h-0 overflow-hidden h-full">
+                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-full">
+                        <div className="flex-1 min-h-0 h-full overflow-y-auto max-h-[calc(100dvh-95px)]">
+                          <DashboardFinanceiroTab />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="hidden lg:flex lg:gap-2 min-h-0 overflow-hidden h-full">
+                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-[33%]">
+                        <div className="flex-1 min-h-0 h-full overflow-y-auto max-h-[calc(100dvh-95px)]">
+                          <div className="h-full min-h-0">
+                            <CaixaMobileTab />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-[67%] max-h-[calc(100dvh-95px)] overflow-hidden">
+                        <div className="flex-1 min-h-0 h-full overflow-hidden">
+                          <div className="h-full min-h-0">
+                            <TransacoesTab />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Desktop: Configurações em painel separado */}
+                {showConfigDesktop && (
+                  <div className="hidden lg:block mt-2 bg-white rounded-lg border border-gray-200 shadow-sm p-2 overflow-y-auto">
+                    <ModuloConfiguracoes />
                   </div>
-                  <div className="col-span-2">
-                    {/* Espaço para futuros componentes */}
+                )}
+
+                {/* Debug - Mostrar apenas em dev */}
+                {isDevFeaturesEnabled() && (
+                  <div className="mt-4 p-2 bg-yellow-50 border border-yellow-300 rounded text-xs text-yellow-800">
+                    ℹ️ Modo desenvolvimento ativado
                   </div>
-                </div>
-              )}
-
-              {activeSection === 'casa' && (
-                <div>
-                  <CasaModulo />
-                </div>
-              )}
-
-              {activeSection === 'loja' && (
-                <div>
-                  <LojaModulo />
-                </div>
-              )}
-
-              {activeSection === 'configuracoes' && (
-                <div>
-                  <ModuloConfiguracoes />
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
-          {/* Atalhos Globais (Balões Flutuantes) */}
-          <AtalhosGlobais />
+
+          {/* Atalhos Globais (Somente botão superior) */}
+          {/* Removido o balão flutuante lateral para manter apenas o botão de lançamento no cabeçalho. */}
         </FormDraftProvider>
       </FilterProvider>
     </DadosFinanceirosProvider>

@@ -30,11 +30,11 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
   const valorPago = modalPagar.valorPago ?? valorOriginal
   const diff = valorPago - valorOriginal
 
-  const fecharModal = () => setModalPagar({ 
-    aberto: false, 
-    lancamento: null, 
+  const fecharModal = () => setModalPagar({
+    aberto: false,
+    lancamento: null,
     passo: 'inicial',
-    valorPago: null, 
+    valorPago: null,
     dataPagamento: getDataAtualBrasil(),
     novaDataVencimento: getDataAtualBrasil(),
     pagarTotal: true
@@ -79,7 +79,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <h3 className="text-lg font-bold text-gray-900 mb-2">Confirmar Pagamento</h3>
               <div className="h-1 w-12 bg-green-500 rounded"></div>
             </div>
-            
+
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded text-xs space-y-1">
               <p><span className="font-semibold text-gray-700">Lançamento:</span> {lancamento.descricao}</p>
               <p><span className="font-semibold text-gray-700">Valor Total:</span> <span className="text-lg font-bold text-blue-700">R$ {lancamento.valor.toFixed(2)}</span></p>
@@ -109,7 +109,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
                 </label>
               </div>
             </div>
-            
+
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 onClick={fecharModal}
@@ -136,7 +136,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               <h3 className="text-lg font-bold text-gray-900 mb-2">Pagamento Parcial</h3>
               <div className="h-1 w-12 bg-yellow-500 rounded"></div>
             </div>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">Quanto você está pagando? *</label>
               <input
@@ -150,7 +150,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
               />
               <p className="text-xs text-gray-500 mt-2">Valor original: R$ {lancamento.valor.toFixed(2)}</p>
             </div>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => avancarPasso('inicial')}
@@ -256,7 +256,7 @@ export default function ModalPagarAvancado({ modalPagar, setModalPagar, processa
                 Valor da nova parcela: <span className="font-bold text-red-600">R$ {Math.abs(valorOriginal - valorPago).toFixed(2)}</span>
               </p>
             </div>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => avancarPasso('decisao')}

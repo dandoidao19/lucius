@@ -4,9 +4,6 @@ import { useState } from 'react'
 import ControleCDC from './ControleCDC'
 import LimparTransacoes from './LimparTransacoes'
 import ImportacaoExcel from './ImportacaoExcel'
-import MenuCategorias from './MenuCategorias'
-import ConfiguracaoLogos from './ConfiguracaoLogos'
-import ImportacaoExcelLoja from './ImportacaoExcelLoja'
 import EdicaoEmLote from './EdicaoEmLote'
 import LogAuditoria from './LogAuditoria'
 
@@ -20,15 +17,6 @@ const gruposConfig = [
       { id: 'edicao-lote', title: 'Edição em Lote', component: EdicaoEmLote },
       { id: 'limpeza', title: 'Limpar Transações', component: LimparTransacoes },
       { id: 'importacao', title: 'Importar Excel', component: ImportacaoExcel },
-    ]
-  },
-  {
-    id: 'loja',
-    titulo: '🏪 LOJA',
-    submenus: [
-      { id: 'logos', title: 'Logomarcas e PDFs', component: ConfiguracaoLogos },
-      { id: 'categorias', title: 'Categorias', component: MenuCategorias },
-      { id: 'importacao-loja', title: 'Importar Dados', component: ImportacaoExcelLoja },
     ]
   },
   {
@@ -62,16 +50,10 @@ export default function ModuloConfiguracoes() {
         return <ControleCDC onDataChange={handleDataChange} />
       case 'edicao-lote':
         return <EdicaoEmLote onDataChange={handleDataChange} />
-      case 'categorias':
-        return <MenuCategorias />
-      case 'logos':
-        return <ConfiguracaoLogos />
       case 'limpeza':
         return <LimparTransacoes onDataChange={handleDataChange} />
       case 'importacao':
         return <ImportacaoExcel onImportacaoConcluida={handleImportacaoConcluida} />
-      case 'importacao-loja':
-        return <ImportacaoExcelLoja onImportacaoConcluida={handleImportacaoConcluida} />
       case 'auditoria':
         return <LogAuditoria />
       default:

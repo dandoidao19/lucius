@@ -2,6 +2,7 @@
 
 import { supabase } from '@/lib/supabase'
 import { useState, useEffect } from 'react'
+import { User } from '@supabase/supabase-js'
 
 interface Lancamento {
   id: string
@@ -34,7 +35,7 @@ export default function EdicaoEmLote({ onDataChange }: EdicaoEmLoteProps) {
   const [centrosCusto, setCentrosCusto] = useState<CentroCusto[]>([])
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([])
   const [loading, setLoading] = useState(false)
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   
   // Filtros de busca
   const [filtroDescricao, setFiltroDescricao] = useState('')
@@ -159,9 +160,9 @@ export default function EdicaoEmLote({ onDataChange }: EdicaoEmLoteProps) {
       
       await carregarDados()
       onDataChange()
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Erro ao atualizar:', error)
-      setMensagem(`❌ Erro ao atualizar: ${error.message}`)
+      setMensagem(`❌ Erro ao atualizar: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
       setTipoMensagem('erro')
     } finally {
       setLoading(false)
@@ -347,7 +348,7 @@ export default function EdicaoEmLote({ onDataChange }: EdicaoEmLoteProps) {
           <li>✓ Selecione as transações usando os checkboxes</li>
           <li>✓ Escolha o novo Centro de Custo de destino</li>
           <li>✓ Clique em "Atualizar" para aplicar a mudança em lote</li>
-          <li>⚠️ Se filtrar por "Entrada", apenas transações RECEITA serão atualizadas</li>
+          <li>⚠️ Se filtrar por Entrada, apenas transações RECEITA serão atualizadas</li>
         </ul>
       </div>
     </div>

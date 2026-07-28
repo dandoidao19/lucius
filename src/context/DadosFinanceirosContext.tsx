@@ -5,14 +5,12 @@ import { createContext, useContext, ReactNode, useMemo, useCallback, useState } 
 import { useQueryClient } from '@tanstack/react-query'
 import { useCentrosDeCusto } from '@/hooks/useCentrosDeCusto'
 import { useLancamentosFinanceiros } from '@/hooks/useLancamentosFinanceiros'
-import { useTransacoesLoja } from '@/hooks/useTransacoesLoja'
-import { TransacaoLoja } from '@/types'
 
 // Tipos unificados para servir o contexto e os módulos consumidores (como CasaModulo)
 export interface CentroCusto {
   id: string;
   nome: string;
-  contexto: 'casa' | 'loja';
+  contexto: 'casa';
   tipo?: string;
   categoria?: string;
   recorrencia?: string;
@@ -30,21 +28,24 @@ export interface LancamentoFinanceiro {
   data_prevista?: string;
   data_lancamento?: string;
   centros_de_custo?: { nome: string };
-  parcelamento?: unknown;
-  recorrencia?: unknown;
+  parcelamento?: {
+    atual?: number;
+    total?: number;
+  } | null;
+  recorrencia?: {
+    tipo?: string;
+    qtd?: number;
+    prazo?: string;
+    dia?: string;
+  } | null;
   origem?: string;
 }
 
 interface DadosCache {
   centrosCustoCasa: CentroCusto[]
-  centrosCustoLoja: CentroCusto[]
   lancamentosCasa: LancamentoFinanceiro[]
-  lancamentosLoja: LancamentoFinanceiro[]
   todosLancamentosCasa: LancamentoFinanceiro[]
-  todosLancamentosLoja: LancamentoFinanceiro[]
-  transacoesLoja: TransacaoLoja[]
   caixaRealCasa: number
-  caixaRealLoja: number
   ultimaAtualizacao: number
 }
 
@@ -65,58 +66,63 @@ export function DadosFinanceirosProvider({ children }: { children: ReactNode }) 
   // 1. Buscar dados usando os novos hooks
   const { data: todosCentrosDeCusto = [], isLoading: carregandoCentros, dataUpdatedAt: centrosAtualizadoEm } = useCentrosDeCusto();
   const { data: todosLancamentos = [], isLoading: carregandoLancamentos, dataUpdatedAt: lancamentosAtualizadoEm } = useLancamentosFinanceiros();
-  const { data: todasTransacoesLoja = [], isLoading: carregandoTransacoes, dataUpdatedAt: transacoesAtualizadoEm } = useTransacoesLoja();
 
-  const carregando = carregandoCentros || carregandoLancamentos || carregandoTransacoes;
+  const carregando = carregandoCentros || carregandoLancamentos;
 
   // 2. Processar e memorizar os dados derivados
   const dados = useMemo<DadosCache>(() => {
     // Filtrar Centros de Custo
     const centrosCustoCasa = todosCentrosDeCusto.filter(c => c.contexto === 'casa')
-    const centrosCustoLoja = todosCentrosDeCusto.filter(c => c.contexto === 'loja')
     const idsCentrosCasa = new Set(centrosCustoCasa.map(c => c.id))
-    const idsCentrosLoja = new Set(centrosCustoLoja.map(c => c.id))
 
     // Filtrar Lançamentos
     const lancamentosCasa = todosLancamentos.filter(l => idsCentrosCasa.has(l.centro_custo_id))
-    const lancamentosLoja = todosLancamentos.filter(l => idsCentrosLoja.has(l.centro_custo_id))
 
-    // Calcular Caixa Real (lógica migrada da função original)
-    const caixaRealLoja = todasTransacoesLoja
-      .filter(t => t.status_pagamento === 'pago')
-      .reduce((acc, t) => acc + (t.tipo === 'entrada' ? (t.valor_pago ?? t.total) : -(t.valor_pago ?? t.total)), 0)
+    // Calcular Caixa Real (Casa)
+    const CAIXA_CASA_ID = '69bebc06-f495-4fed-b0b1-beafb50c017b'
 
-    const caixaRealCasa = todosLancamentos
-      .filter(l => l.status === 'realizado' && l.caixa_id === '69bebc06-f495-4fed-b0b1-beafb50c017b') // ID Caixa Casa
-      .reduce((acc, l) => acc + (l.tipo === 'entrada' ? l.valor : -l.valor), 0)
+    const normalizarStatus = (v: unknown) => String(v ?? '').trim().toLowerCase()
+    const normalizarTipo = (v: unknown) => String(v ?? '').trim().toLowerCase()
+    const normalizarCaixaId = (v: unknown) => String(v ?? '').trim()
+
+    // Filtrar apenas o que é 'realizado' para o Caixa Real
+    // Garantir que trabalhamos apenas com lançamentos do contexto CASA
+    const realizadosCasa = lancamentosCasa.filter(
+      l => normalizarStatus(l.status) === 'realizado'
+    )
+
+    const filtroComCaixaId = realizadosCasa.filter(
+      l => normalizarCaixaId(l.caixa_id) === CAIXA_CASA_ID
+    )
+
+    const somaRealizado = (lista: LancamentoFinanceiro[]) =>
+      lista.reduce((acc, l) => {
+        const tipo = normalizarTipo(l.tipo)
+        return acc + (tipo === 'entrada' ? l.valor : -l.valor)
+      }, 0)
+
+    // Se houver lançamentos com o ID do caixa específico, usa eles. 
+    // Caso contrário, usa todos os realizados que pertencem aos centros de custo da casa.
+    const caixaRealCasa = filtroComCaixaId.length > 0 
+      ? somaRealizado(filtroComCaixaId) 
+      : somaRealizado(realizadosCasa)
 
     return {
       centrosCustoCasa,
-      centrosCustoLoja,
       lancamentosCasa,
-      lancamentosLoja,
       todosLancamentosCasa: lancamentosCasa, // Adicionado para compatibilidade
-      todosLancamentosLoja: lancamentosLoja, // Adicionado para compatibilidade
-      transacoesLoja: todasTransacoesLoja,
       caixaRealCasa,
-      caixaRealLoja,
-      ultimaAtualizacao: Math.max(centrosAtualizadoEm, lancamentosAtualizadoEm, transacoesAtualizadoEm),
+      ultimaAtualizacao: Math.max(centrosAtualizadoEm, lancamentosAtualizadoEm),
     }
-  }, [todosCentrosDeCusto, todosLancamentos, todasTransacoesLoja, centrosAtualizadoEm, lancamentosAtualizadoEm, transacoesAtualizadoEm])
+  }, [todosCentrosDeCusto, todosLancamentos, centrosAtualizadoEm, lancamentosAtualizadoEm])
 
   // 3. Função para invalidar queries e forçar recarregamento
   const recarregarDados = useCallback(() => {
     console.log('🔄 Invalidando queries e recarregando dados...')
     queryClient.invalidateQueries({ queryKey: ['centros_de_custo'] })
     queryClient.invalidateQueries({ queryKey: ['lancamentos_financeiros'] })
-    queryClient.invalidateQueries({ queryKey: ['transacoes_loja'] })
-    // Também invalidar vendas, compras e condicionais se existirem queries para elas
-    queryClient.invalidateQueries({ queryKey: ['vendas'] })
-    queryClient.invalidateQueries({ queryKey: ['compras'] })
-    queryClient.invalidateQueries({ queryKey: ['transacoes_condicionais'] })
-    queryClient.invalidateQueries({ queryKey: ['pedidos_loja'] })
-    queryClient.invalidateQueries({ queryKey: ['itens_pedido_loja'] })
-    queryClient.invalidateQueries({ queryKey: ['produtos'] })
+    queryClient.invalidateQueries({ queryKey: ['lancamentos_financeiros_para_caixa'] })
+    queryClient.invalidateQueries({ queryKey: ['caixa_previsto_calculado_casa'] })
   }, [queryClient])
 
   const triggerRefresh = useCallback(() => {

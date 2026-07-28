@@ -10,7 +10,10 @@ export default function ModalNotasAtualizacao() {
   useEffect(() => {
     const versaoVisualizada = localStorage.getItem('lucius_versao_notas_lida')
     if (versaoVisualizada !== VERSAO_ATUAL) {
-      setAberto(true)
+      const timeout = window.setTimeout(() => {
+        setAberto(true)
+      }, 0)
+      return () => window.clearTimeout(timeout)
     }
   }, [])
 
@@ -22,8 +25,14 @@ export default function ModalNotasAtualizacao() {
   if (!aberto) return null
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-blue-200">
+    <div
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-300"
+      onClick={fechar}
+    >
+      <div
+        className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col border border-blue-200"
+        onClick={(event) => event.stopPropagation()}
+      >
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white px-6 py-4 flex justify-between items-center relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -117,7 +126,7 @@ export default function ModalNotasAtualizacao() {
 
           <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-center">
             <p className="text-blue-800 text-sm italic">
-              "Continuamos trabalhando para tornar o Lucius a ferramenta definitiva para o seu negócio."
+              &quot;Continuamos trabalhando para tornar o Lucius a ferramenta definitiva para o seu negócio.&quot;
             </p>
           </div>
         </div>

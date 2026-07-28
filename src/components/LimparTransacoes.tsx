@@ -25,7 +25,6 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
   const [mesesDisponiveis, setMesesDisponiveis] = useState<{ano: number, mes: number, label: string}[]>([])
   
   // Filtros
-  const [filtroContexto, setFiltroContexto] = useState<'todos' | 'casa' | 'loja'>('todos')
   const [filtroCentroCusto, setFiltroCentroCusto] = useState<string>('todos')
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'previsto' | 'realizado'>('todos')
   const [filtroTipo, setFiltroTipo] = useState<'todos' | 'entrada' | 'saida'>('todos')
@@ -165,20 +164,6 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
       if (filtroTipo !== 'todos') {
         query = query.eq('tipo', filtroTipo)
       }
-      
-      // Filtro de contexto (casa/loja)
-      if (filtroContexto !== 'todos') {
-        const centrosFiltrados = centrosCusto.filter(c => c.contexto === filtroContexto).map(c => c.id)
-        
-        if (centrosFiltrados.length === 0) {
-          setLancamentos([])
-          setStatusAtual('Nenhum centro de custo encontrado para o contexto selecionado.')
-          setLoading(false)
-          return
-        }
-        
-        query = query.in('centro_custo_id', centrosFiltrados)
-      }
 
       // Filtro de centro de custo específico
       if (filtroCentroCusto !== 'todos') {
@@ -224,7 +209,7 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
     } finally {
       setLoading(false)
     }
-  }, [user, filtroContexto, filtroCentroCusto, filtroStatus, filtroTipo, filtroPeriodo, mesSelecionado, dataInicio, dataFim, centrosCusto])
+  }, [user, filtroCentroCusto, filtroStatus, filtroTipo, filtroPeriodo, mesSelecionado, dataInicio, dataFim, centrosCusto])
 
   useEffect(() => {
     buscarLancamentos()
@@ -304,21 +289,7 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
         <h2 className="text-lg font-semibold mb-3 text-gray-800">Limpar Transações em Lote</h2>
         
         {/* Filtros - Layout mais compacto */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-          {/* Filtro Contexto */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-0.5">Contexto</label>
-            <select
-              value={filtroContexto}
-              onChange={(e) => setFiltroContexto(e.target.value as 'todos' | 'casa' | 'loja')}
-              className="w-full text-xs px-2 py-1.5 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
-            >
-              <option value="todos">Todos</option>
-              <option value="casa">Casa</option>
-              <option value="loja">Loja</option>
-            </select>
-          </div>
-          
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
           {/* Filtro Centro de Custo */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-0.5">Centro de Custo</label>
@@ -329,7 +300,6 @@ export default function LimparTransacoes({ onDataChange }: LimparTransacoesProps
             >
               <option value="todos">Todos</option>
               {centrosCusto
-                .filter(c => filtroContexto === 'todos' || c.contexto === filtroContexto)
                 .map(c => (
                   <option key={c.id} value={c.id}>{c.nome}</option>
                 ))}

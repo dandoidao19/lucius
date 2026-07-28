@@ -1,53 +1,53 @@
 // src/hooks/useLancamentosFinanceiros.ts
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
-import { LancamentoFinanceiro } from '@/types';
-import { subDays, format } from 'date-fns';
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
+import { LancamentoFinanceiro } from '@/types'
+const PAGE_SIZE = 1000
+const MAX_PAGES = 250 // guardrail alto
 
 const fetchLancamentosFinanceiros = async (): Promise<LancamentoFinanceiro[]> => {
-  const pageSize = 1000;
-  let offset = 0;
-  const allLancamentos: LancamentoFinanceiro[] = [];
+  const allLancamentos: LancamentoFinanceiro[] = []
+  let lastId: string | null = null
 
-  // Limita a busca inicial aos últimos 120 dias para performance
-  const dataLimite = format(subDays(new Date(), 120), 'yyyy-MM-dd');
-
-  while (true) {
-    const { data, error } = await supabase
+  for (let page = 0; page < MAX_PAGES; page++) {
+    let query = supabase
       .from('lancamentos_financeiros')
-      .select(`
+      .select(
+        `
         *,
         centros_de_custo(nome)
-      `)
-      .gte('data_prevista', dataLimite)
-      .order('data_prevista', { ascending: false })
-      .range(offset, offset + pageSize - 1);
+      `
+      )
+      .order('id', { ascending: false })
+      .limit(PAGE_SIZE)
+
+    if (lastId) {
+      query = query.lt('id', lastId)
+    }
+
+    const { data, error } = await query
 
     if (error) {
-      console.error('Erro ao buscar lançamentos financeiros:', error);
-      throw new Error('Não foi possível buscar os lançamentos financeiros');
+      console.error('Erro ao buscar lançamentos financeiros:', error)
+      throw new Error('Não foi possível buscar os lançamentos financeiros')
     }
 
-    if (!data || data.length === 0) {
-      break;
-    }
+    if (!data || data.length === 0) break
 
-    // Cast seguro para LancamentoFinanceiro[] considerando que centros_de_custo(nome) está presente
-    allLancamentos.push(...(data as unknown as LancamentoFinanceiro[]));
+    allLancamentos.push(...(data as unknown as LancamentoFinanceiro[]))
 
-    if (data.length < pageSize) {
-      break;
-    }
+    const lastRow = data[data.length - 1] as { id: string }
+    lastId = lastRow.id
 
-    offset += pageSize;
+    if (data.length < PAGE_SIZE) break
   }
 
-  return allLancamentos;
-};
+  return allLancamentos
+}
 
 export function useLancamentosFinanceiros() {
   return useQuery<LancamentoFinanceiro[]>({
     queryKey: ['lancamentos_financeiros'],
     queryFn: fetchLancamentosFinanceiros,
-  });
+  })
 }

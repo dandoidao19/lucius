@@ -4,9 +4,10 @@ import { useCaixaPrevisto } from './useCaixaPrevisto'
 import { getDataAtualBrasil, formatarDataParaExibicao } from '@/lib/dateUtils'
 
 type Filtro = '30dias' | 'mes' | 'tudo'
-type Modulo = 'loja' | 'casa' | 'geral'
+type Modulo = 'casa'
 
-export function useCaixaUniversal(modulo: Modulo = 'geral') {
+export function useCaixaUniversal(modulo: Modulo = 'casa') {
+  void modulo
   const [filtro, setFiltro] = useState<Filtro>('30dias')
   const [mesFiltro, setMesFiltro] = useState(() => {
     const hoje = new Date()
@@ -25,10 +26,8 @@ export function useCaixaUniversal(modulo: Modulo = 'geral') {
   // 2. Selecionar os dados específicos do módulo solicitado
   const dadosModulo = useMemo(() => {
     if (!dadosCalculados) return null
-    if (modulo === 'loja') return dadosCalculados.loja
-    if (modulo === 'casa') return dadosCalculados.casa
-    return dadosCalculados.geral
-  }, [dadosCalculados, modulo])
+    return dadosCalculados.casa
+  }, [dadosCalculados])
 
   // 3. Aplicar filtros sobre a série de dados do módulo
   const caixaPrevistoFiltrado = useMemo(() => {
@@ -59,9 +58,7 @@ export function useCaixaUniversal(modulo: Modulo = 'geral') {
   }, [dadosModulo, filtro, mesFiltro, calcularDataNDias])
 
   return {
-    // Totais Reais (Independente do módulo selecionado para a série prevista)
-    caixaRealGeral: dadosCalculados?.caixaRealGeral ?? 0,
-    caixaRealLoja: dadosCalculados?.caixaRealLoja ?? 0,
+    // Totais Reais (Casa)
     caixaRealCasa: dadosCalculados?.caixaRealCasa ?? 0,
 
     // Dados específicos do módulo para a previsão
