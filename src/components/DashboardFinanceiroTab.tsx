@@ -1,13 +1,13 @@
 'use client'
 
 import { useCallback, useMemo, useState } from 'react'
-import { BarChart3, CalendarDays, RotateCcw, TrendingDown, TrendingUp, WalletCards } from 'lucide-react'
+import { CalendarDays, RotateCcw, TrendingDown, TrendingUp, WalletCards, ChevronDown, ChevronUp, Filter, Eye, EyeOff } from 'lucide-react'
 import { useDadosFinanceiros, type LancamentoFinanceiro } from '@/context/DadosFinanceirosContext'
 import { getMesAtualParaInput } from '@/lib/dateUtils'
 
 type TipoCentro = 'RECEITA' | 'DESPESA'
 type FiltroTipo = 'todos' | TipoCentro
-type MetricaComparativo = FiltroTipo | 'SALDO'
+type RangeComparativo = 'padrao' | 'ano' | 'tudo'
 
 type LinhaCentroCusto = {
   id: string
@@ -47,14 +47,12 @@ const getDataBase = (lancamento: LancamentoFinanceiro) =>
 
 const getMesLancamento = (lancamento: LancamentoFinanceiro) => getDataBase(lancamento).slice(0, 7)
 
-const getMesesParaComparacao = (mesSelecionado: string) => {
-  const [ano, mes] = mesSelecionado.split('-').map(Number)
+const getMesesPadrao = (mesCentral: string) => {
+  const [ano, mes] = mesCentral.split('-').map(Number)
   const base = new Date(ano, mes - 1, 1, 12)
-
-  return Array.from({ length: 6 }, (_, index) => {
+  return Array.from({ length: 7 }, (_, index) => {
     const data = new Date(base)
-    data.setMonth(base.getMonth() - (5 - index))
-
+    data.setMonth(base.getMonth() - (3 - index))
     return {
       mes: `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}`,
       label: `${nomesMeses[data.getMonth()]}/${String(data.getFullYear()).slice(2)}`,
@@ -62,11 +60,22 @@ const getMesesParaComparacao = (mesSelecionado: string) => {
   })
 }
 
+const formatarData = (data: string) => {
+  if (!data) return ''
+  const [ano, mes, dia] = data.split('-')
+  return `${dia}/${mes}/${ano}`
+}
+
 export default function DashboardFinanceiroTab() {
   const { dados, carregando } = useDadosFinanceiros()
   const [mesSelecionado, setMesSelecionado] = useState(getMesAtualParaInput())
   const [centrosSelecionadosIds, setCentrosSelecionadosIds] = useState<string[]>([])
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('todos')
+  const [showCdcSelector, setShowCdcSelector] = useState(false)
+  const [rangeComparativo, setRangeComparativo] = useState<RangeComparativo>('padrao')
+  const [dataInicio, setDataInicio] = useState('')
+  const [dataFim, setDataFim] = useState('')
+  const [showFilters, setShowFilters] = useState(true)
 
   const centrosPorId = useMemo(() => {
     const mapa = new Map<string, { nome: string; tipo: TipoCentro }>()
@@ -98,10 +107,12 @@ export default function DashboardFinanceiroTab() {
   const lancamentosFiltrados = useMemo(() => {
     return dados.todosLancamentosCasa.filter(lancamento => {
       const atendeMes = getMesLancamento(lancamento) === mesSelecionado
+      const dataBase = getDataBase(lancamento)
+      const atendePeriodo = (!dataInicio || dataBase >= dataInicio) && (!dataFim || dataBase <= dataFim)
       const atendeCentro = centrosSelecionadosIds.length === 0 || centrosSelecionadosIds.includes(lancamento.centro_custo_id)
-      return atendeMes && atendeCentro && lancamentoCombinaComCentro(lancamento)
+      return atendeMes && atendePeriodo && atendeCentro && lancamentoCombinaComCentro(lancamento)
     })
-  }, [centrosSelecionadosIds, dados.todosLancamentosCasa, lancamentoCombinaComCentro, mesSelecionado])
+  }, [centrosSelecionadosIds, dados.todosLancamentosCasa, lancamentoCombinaComCentro, mesSelecionado, dataInicio, dataFim])
 
   const resumoMes = useMemo(() => {
     return lancamentosFiltrados.reduce(
@@ -158,16 +169,46 @@ export default function DashboardFinanceiroTab() {
 
     return Array.from(mapa.values())
       .filter(linha => linha.quantidade > 0 || centrosSelecionadosIds.includes(linha.id))
-      .sort((a, b) => (b.receitas + b.despesas) - (a.receitas + a.despesas))
+      .sort((a, b) => {
+        if (a.tipo !== b.tipo) return a.tipo === 'RECEITA' ? -1 : 1
+        return (b.receitas + b.despesas) - (a.receitas + a.despesas)
+      })
   }, [centrosPorId, centrosSelecionadosIds, dados.centrosCustoCasa, filtroTipo, lancamentosFiltrados])
 
-  const tipoUnicoSelecionado = centrosSelecionados.length > 0
-    ? centrosSelecionados.every(centro => centro.tipo === centrosSelecionados[0].tipo) ? centrosSelecionados[0].tipo : null
-    : null
-  const metricaComparativo: MetricaComparativo = tipoUnicoSelecionado ?? filtroTipo
+  const receitasCDC = useMemo(() => rankingCentros.filter(r => r.tipo === 'RECEITA'), [rankingCentros])
+  const despesasCDC = useMemo(() => rankingCentros.filter(r => r.tipo === 'DESPESA'), [rankingCentros])
+
+  const mesAtualStr = getMesAtualParaInput()
 
   const comparativoMeses = useMemo<LinhaMes[]>(() => {
-    const meses = getMesesParaComparacao(mesSelecionado)
+    let meses: { mes: string; label: string }[]
+
+    if (rangeComparativo === 'padrao') {
+      meses = getMesesPadrao(mesAtualStr)
+    } else if (rangeComparativo === 'ano') {
+      const ano = mesAtualStr.split('-')[0]
+      meses = Array.from({ length: 12 }, (_, i) => ({
+        mes: `${ano}-${String(i + 1).padStart(2, '0')}`,
+        label: `${nomesMeses[i]}/${ano.slice(2)}`,
+      }))
+    } else {
+      const mesesSet = new Set<string>()
+      dados.todosLancamentosCasa.forEach(l => {
+        const mLanc = getMesLancamento(l)
+        if (mLanc) mesesSet.add(mLanc)
+      })
+      meses = Array.from(mesesSet).sort().map(m => {
+        const [anoM, mesM] = m.split('-').map(Number)
+        return {
+          mes: m,
+          label: `${nomesMeses[mesM - 1]}/${String(anoM).slice(2)}`,
+        }
+      })
+      if (meses.length === 0) {
+        meses = getMesesPadrao(mesAtualStr)
+      }
+    }
+
     const mapa = new Map<string, LinhaMes>()
 
     meses.forEach(item => {
@@ -175,9 +216,6 @@ export default function DashboardFinanceiroTab() {
     })
 
     dados.todosLancamentosCasa.forEach(lancamento => {
-      if (centrosSelecionadosIds.length > 0 && !centrosSelecionadosIds.includes(lancamento.centro_custo_id)) return
-      if (!lancamentoCombinaComCentro(lancamento)) return
-
       const linha = mapa.get(getMesLancamento(lancamento))
       if (!linha) return
 
@@ -188,41 +226,15 @@ export default function DashboardFinanceiroTab() {
     })
 
     return meses.map(item => mapa.get(item.mes)!).filter(Boolean)
-  }, [centrosSelecionadosIds, dados.todosLancamentosCasa, lancamentoCombinaComCentro, mesSelecionado])
+  }, [dados.todosLancamentosCasa, mesAtualStr, rangeComparativo])
 
-  const getValorComparativo = (linha: LinhaMes) => {
-    if (metricaComparativo === 'RECEITA') return linha.receitas
-    if (metricaComparativo === 'DESPESA') return linha.despesas
-    return linha.saldo
-  }
+  const maiorValorComparativo = Math.max(1, ...comparativoMeses.map(item => Math.abs(item.saldo)))
 
-  const getCorComparativo = (valor: number) => {
-    if (metricaComparativo === 'RECEITA') return 'bg-emerald-500'
-    if (metricaComparativo === 'DESPESA') return 'bg-red-500'
-    return valor >= 0 ? 'bg-blue-500' : 'bg-red-500'
-  }
-
-  const getTextoComparativo = (valor: number) => {
-    if (metricaComparativo === 'RECEITA') return 'text-emerald-700'
-    if (metricaComparativo === 'DESPESA') return 'text-red-700'
-    return valor >= 0 ? 'text-blue-700' : 'text-red-700'
-  }
-
-  const maiorValorComparativo = Math.max(1, ...comparativoMeses.map(item => Math.abs(getValorComparativo(item))))
-  const maiorValorCentro = Math.max(1, ...rankingCentros.map(linha => linha.tipo === 'RECEITA' ? linha.receitas : linha.despesas))
-
-  const mesAnterior = comparativoMeses[comparativoMeses.length - 2]
-  const valorAtualComparativo = metricaComparativo === 'RECEITA'
-    ? resumoMes.receitas
-    : metricaComparativo === 'DESPESA'
-      ? resumoMes.despesas
-      : saldoMes
-  const variacaoComparativo = mesAnterior ? valorAtualComparativo - getValorComparativo(mesAnterior) : 0
-  const labelMetrica = metricaComparativo === 'RECEITA'
-    ? 'Somente receitas'
-    : metricaComparativo === 'DESPESA'
-      ? 'Somente despesas'
-      : 'Saldo consolidado'
+  const mesAtualComparativo = comparativoMeses.find(m => m.mes === mesAtualStr)
+  const mesAnterior = comparativoMeses.length >= 2 ? comparativoMeses[comparativoMeses.length - 2] : null
+  const variacaoComparativo = mesAnterior && mesAtualComparativo
+    ? mesAtualComparativo.saldo - mesAnterior.saldo
+    : 0
 
   const handleMudarTipo = (novoTipo: FiltroTipo) => {
     setFiltroTipo(novoTipo)
@@ -244,7 +256,13 @@ export default function DashboardFinanceiroTab() {
     setMesSelecionado(getMesAtualParaInput())
     setFiltroTipo('todos')
     setCentrosSelecionadosIds([])
+    setShowCdcSelector(false)
+    setRangeComparativo('padrao')
+    setDataInicio('')
+    setDataFim('')
   }
+
+  const temFiltroPeriodo = dataInicio || dataFim
 
   if (carregando) {
     return (
@@ -258,93 +276,166 @@ export default function DashboardFinanceiroTab() {
   }
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-120px)] flex-col overflow-hidden px-0 lg:min-h-0">
+    <div className="flex h-full min-h-[calc(100vh-120px)] flex-col overflow-hidden px-1 lg:min-h-0 lg:px-2">
       <div className="flex-none border border-gray-300 rounded-lg overflow-hidden z-30 bg-white shadow-sm">
-        <div className="p-1.5 space-y-1.5 bg-white">
+        <div className="p-2 space-y-2 bg-white">
           <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
+            <div className="min-w-0 flex items-center gap-2">
               <p className="text-xs font-bold text-slate-900 leading-tight">Dashboard financeiro</p>
-              <p className="text-[10px] text-slate-500 leading-tight">Totais por filtros e por CDC</p>
+              <p className="text-[10px] text-slate-500 leading-tight hidden sm:inline">Totais por filtros e por CDC</p>
             </div>
-            <button
-              onClick={limparFiltros}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-100"
-              title="Limpar filtros"
-            >
-              <RotateCcw size={12} />
-              Limpar
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-3">
-            <div>
-              <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Mes</label>
-              <input
-                type="month"
-                value={mesSelecionado}
-                onChange={(event) => setMesSelecionado(event.target.value || getMesAtualParaInput())}
-                className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Tipo</label>
-              <select
-                value={filtroTipo}
-                onChange={(event) => handleMudarTipo(event.target.value as FiltroTipo)}
-                className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-100"
+                title={showFilters ? 'Esconder filtros' : 'Mostrar filtros'}
               >
-                <option value="todos">Todos</option>
-                <option value="RECEITA">Receitas</option>
-                <option value="DESPESA">Despesas</option>
-              </select>
-            </div>
-
-            <div className="hidden lg:flex lg:items-end lg:justify-end">
-              <div className="inline-flex items-center justify-center h-8 w-8 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
-                <BarChart3 size={16} />
-              </div>
+                {showFilters ? <EyeOff size={12} /> : <Eye size={12} />}
+                {showFilters ? 'Filtros' : 'Mostrar'}
+              </button>
+              <button
+                onClick={limparFiltros}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-100"
+                title="Limpar filtros"
+              >
+                <RotateCcw size={12} />
+                Limpar
+              </button>
             </div>
           </div>
 
-          <div>
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <label className="block text-[10px] font-semibold text-gray-700">CDCs</label>
-              <span className="text-[10px] font-medium text-slate-500">
-                {centrosSelecionadosIds.length === 0 ? 'Todos' : `${centrosSelecionadosIds.length} selecionado${centrosSelecionadosIds.length > 1 ? 's' : ''}`}
-              </span>
-            </div>
+          {showFilters && (
+            <>
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Mês</label>
+                  <input
+                    type="month"
+                    value={mesSelecionado}
+                    onChange={(event) => setMesSelecionado(event.target.value || getMesAtualParaInput())}
+                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+                  />
+                </div>
 
-            <div className="flex max-h-20 flex-wrap gap-1 overflow-y-auto pr-1">
-              {centrosFiltrados.map(centro => {
-                const selecionado = centrosSelecionadosIds.includes(centro.id)
-                const tipo = normalizarTipoCentro(centro.tipo)
-                const isReceita = tipo === 'RECEITA'
-
-                return (
-                  <button
-                    key={centro.id}
-                    onClick={() => alternarCentro(centro.id)}
-                    className={`rounded-md border px-1.5 py-1 text-[10px] font-medium leading-tight transition-colors ${
-                      selecionado
-                        ? isReceita
-                          ? 'border-emerald-500 bg-emerald-100 text-emerald-900'
-                          : 'border-red-500 bg-red-100 text-red-900'
-                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                    }`}
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Tipo</label>
+                  <select
+                    value={filtroTipo}
+                    onChange={(event) => handleMudarTipo(event.target.value as FiltroTipo)}
+                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
                   >
-                    {centro.nome}
+                    <option value="todos">Todos</option>
+                    <option value="RECEITA">Receitas</option>
+                    <option value="DESPESA">Despesas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Período início</label>
+                  <input
+                    type="date"
+                    value={dataInicio}
+                    onChange={(e) => setDataInicio(e.target.value)}
+                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Período fim</label>
+                  <input
+                    type="date"
+                    value={dataFim}
+                    onChange={(e) => setDataFim(e.target.value)}
+                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <div className="flex-1">
+                  <label className="block text-[10px] font-semibold text-gray-700 mb-0.5">Mês a mês</label>
+                  <select
+                    value={rangeComparativo}
+                    onChange={(e) => setRangeComparativo(e.target.value as RangeComparativo)}
+                    className="w-full px-1.5 py-1 border border-gray-300 rounded text-xs"
+                  >
+                    <option value="padrao">Padrão (3+1+3)</option>
+                    <option value="ano">Ano atual</option>
+                    <option value="tudo">Tudo</option>
+                  </select>
+                </div>
+
+                <div className="flex-1 flex items-end">
+                  <button
+                    onClick={() => setShowCdcSelector(!showCdcSelector)}
+                    className="w-full inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Filter size={12} />
+                    CDCs
+                    {showCdcSelector ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                   </button>
-                )
-              })}
-            </div>
-          </div>
+                </div>
+              </div>
+
+              {showCdcSelector && (
+                <div>
+                  <div className="mb-1 flex items-center justify-between gap-2">
+                    <label className="block text-[10px] font-semibold text-gray-700">Selecionar CDCs</label>
+                    <span className="text-[10px] font-medium text-slate-500">
+                      {centrosSelecionadosIds.length === 0 ? 'Todos' : `${centrosSelecionadosIds.length} selecionado${centrosSelecionadosIds.length > 1 ? 's' : ''}`}
+                    </span>
+                  </div>
+
+                  <div className="flex max-h-20 flex-wrap gap-1 overflow-y-auto pr-1">
+                    {centrosFiltrados.map(centro => {
+                      const selecionado = centrosSelecionadosIds.includes(centro.id)
+                      const tipo = normalizarTipoCentro(centro.tipo)
+                      const isReceita = tipo === 'RECEITA'
+
+                      return (
+                        <button
+                          key={centro.id}
+                          onClick={() => alternarCentro(centro.id)}
+                          className={`rounded-md border px-1.5 py-1 text-[10px] font-medium leading-tight transition-colors ${
+                            selecionado
+                              ? isReceita
+                                ? 'border-emerald-500 bg-emerald-100 text-emerald-900'
+                                : 'border-red-500 bg-red-100 text-red-900'
+                              : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          {centro.nome}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      <div className="mt-1.5 flex-1 min-h-0 overflow-y-auto space-y-1.5 pr-1">
-        <div className="grid grid-cols-3 gap-1.5">
-          <div className={`rounded-lg border px-1.5 py-2 shadow-sm ${
+      <div className="mt-1.5 flex-1 min-h-0 overflow-y-auto space-y-1.5 px-0.5">
+        <div className="grid grid-cols-3 gap-2">
+          <div className={`rounded-lg border px-2 py-2 shadow-sm ${
+            temFiltroPeriodo ? 'border-amber-200 bg-amber-50' : 'border-blue-200 bg-blue-50'
+          }`}>
+            <div className="flex items-center gap-1" style={{ color: temFiltroPeriodo ? '#d97706' : '#1d4ed8' }}>
+              <WalletCards size={13} />
+              <p className="text-[10px] uppercase font-semibold leading-tight">Saldo</p>
+            </div>
+            <p className={`mt-1 text-sm font-medium leading-tight truncate ${saldoMes >= 0 ? (temFiltroPeriodo ? 'text-amber-900' : 'text-blue-900') : 'text-red-700'}`}>
+              {formatarMoeda(saldoMes)}
+            </p>
+            {temFiltroPeriodo && (
+              <p className="text-[8px] text-amber-600 leading-tight mt-0.5">
+                {formatarData(dataInicio) || '...'} até {formatarData(dataFim) || '...'}
+              </p>
+            )}
+          </div>
+
+          <div className={`rounded-lg border px-2 py-2 shadow-sm ${
             filtroTipo === 'DESPESA' ? 'border-slate-200 bg-slate-50 opacity-60' : 'border-emerald-200 bg-emerald-50'
           }`}>
             <div className="flex items-center gap-1 text-emerald-700">
@@ -354,7 +445,7 @@ export default function DashboardFinanceiroTab() {
             <p className="mt-1 text-sm font-medium text-emerald-800 leading-tight truncate">{formatarMoeda(resumoMes.receitas)}</p>
           </div>
 
-          <div className={`rounded-lg border px-1.5 py-2 shadow-sm ${
+          <div className={`rounded-lg border px-2 py-2 shadow-sm ${
             filtroTipo === 'RECEITA' ? 'border-slate-200 bg-slate-50 opacity-60' : 'border-red-200 bg-red-50'
           }`}>
             <div className="flex items-center gap-1 text-red-700">
@@ -363,106 +454,123 @@ export default function DashboardFinanceiroTab() {
             </div>
             <p className="mt-1 text-sm font-medium text-red-800 leading-tight truncate">{formatarMoeda(resumoMes.despesas)}</p>
           </div>
-
-          <div className="rounded-lg border border-blue-200 bg-blue-50 px-1.5 py-2 shadow-sm">
-            <div className="flex items-center gap-1 text-blue-700">
-              <WalletCards size={13} />
-              <p className="text-[10px] uppercase font-semibold leading-tight">Saldo</p>
-            </div>
-            <p className={`mt-1 text-sm font-medium leading-tight truncate ${saldoMes >= 0 ? 'text-blue-900' : 'text-red-700'}`}>
-              {formatarMoeda(saldoMes)}
-            </p>
-          </div>
         </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-1.5 shadow-sm">
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <p className="text-xs font-bold text-slate-900 leading-tight">Por CDC</p>
-            <span className="text-[10px] font-semibold text-slate-500">
-              Individuais: {rankingCentros.length}
-            </span>
-          </div>
-
-          {rankingCentros.length === 0 ? (
-            <div className="rounded-md bg-gray-50 border border-gray-200 p-3 text-center">
-              <p className="text-xs text-gray-600">Nenhum lancamento encontrado para este filtro.</p>
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_1fr] gap-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+            <div className="mb-1.5 flex items-center justify-between gap-1">
+              <div className="min-w-0">
+                <p className="text-base font-bold text-slate-900 leading-tight">Mês a mês</p>
+                <p className="text-[11px] font-medium text-slate-500 leading-tight truncate">Saldo consolidado</p>
+              </div>
+              <CalendarDays size={16} className="text-slate-500 flex-none" />
             </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 xl:grid-cols-4">
-              {rankingCentros.map(linha => {
-                const isReceita = linha.tipo === 'RECEITA'
-                const valorPrincipal = isReceita ? linha.receitas : linha.despesas
-                const larguraBarra = Math.max(8, Math.min(100, (valorPrincipal / maiorValorCentro) * 100))
+
+            <div className="space-y-1">
+              {comparativoMeses.map(linha => {
+                const isAtual = linha.mes === mesAtualStr
+                const isFiltrado = linha.mes === mesSelecionado && mesSelecionado !== mesAtualStr
+                const larguraBarra = Math.max(4, (Math.abs(linha.saldo) / maiorValorComparativo) * 100)
+
+                let rowStyle = 'bg-slate-50'
+                if (isAtual) {
+                  rowStyle = 'bg-blue-100 border-2 border-blue-400 ring-2 ring-blue-300 shadow-md'
+                } else if (isFiltrado) {
+                  rowStyle = 'bg-purple-50 border border-purple-300 ring-1 ring-purple-200'
+                }
 
                 return (
                   <div
-                    key={linha.id}
-                    className={`rounded-md border px-1.5 py-1.5 shadow-sm ${
-                      isReceita ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50'
-                    }`}
+                    key={linha.mes}
+                    className={`grid grid-cols-[54px_1fr_110px] items-center gap-1.5 rounded-md px-1.5 py-1.5 ${rowStyle}`}
                   >
-                    <div className="flex items-start justify-between gap-1">
-                      <p className="min-w-0 flex-1 text-[11px] font-semibold text-slate-900 leading-tight line-clamp-2">{linha.nome}</p>
-                      <span className={`rounded px-1 py-0.5 text-[8px] font-bold leading-tight ${
-                        isReceita ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {isReceita ? 'REC' : 'DESP'}
-                      </span>
+                    <span className={`text-xs font-medium ${isAtual ? 'text-blue-900 font-bold' : isFiltrado ? 'text-purple-800 font-bold' : 'text-slate-700'}`}>
+                      {linha.label}
+                      {isAtual && <span className="ml-1.5 text-[10px] font-bold text-blue-700">◄ atual</span>}
+                      {isFiltrado && <span className="ml-1.5 text-[10px] font-bold text-purple-600">◄ filtro</span>}
+                    </span>
+                    <div className="h-3 rounded-full bg-white overflow-hidden border border-slate-100">
+                      <div
+                        className={`h-full rounded-full ${linha.saldo >= 0 ? 'bg-blue-500' : 'bg-red-500'}`}
+                        style={{ width: `${larguraBarra}%` }}
+                      />
                     </div>
-
-                    <p className={`mt-1 text-sm font-semibold leading-tight ${isReceita ? 'text-emerald-800' : 'text-red-800'}`}>
-                      {formatarMoeda(valorPrincipal)}
-                    </p>
-
-                    <div className="mt-1 flex items-center gap-1">
-                      <div className="h-1.5 flex-1 rounded-full bg-white overflow-hidden">
-                        <div
-                          className={`h-full rounded-full ${isReceita ? 'bg-emerald-500' : 'bg-red-500'}`}
-                          style={{ width: `${larguraBarra}%` }}
-                        />
-                      </div>
-                      <span className="text-[8px] font-semibold text-slate-500">{linha.quantidade}x</span>
-                    </div>
+                    <span className={`text-right text-xs font-semibold ${linha.saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                      {formatarMoeda(linha.saldo)}
+                    </span>
                   </div>
                 )
               })}
             </div>
-          )}
-        </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white p-1.5 shadow-sm">
-          <div className="mb-1.5 flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-900 leading-tight">Mes a mes</p>
-              <p className="text-xs font-medium text-slate-500 leading-tight truncate">{labelMetrica}</p>
+            {mesAnterior && mesAtualComparativo && (
+              <div className="mt-1.5 rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-600">
+                <span className="font-medium">Variação (último mês):</span>{' '}
+                <span className={variacaoComparativo >= 0 ? 'font-medium text-emerald-700' : 'font-medium text-red-700'}>
+                  {variacaoComparativo >= 0 ? '+' : '-'} {formatarMoeda(Math.abs(variacaoComparativo))}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-lg border border-emerald-200 bg-white p-1.5 shadow-sm">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <TrendingUp size={13} className="text-emerald-600" />
+                <p className="text-xs font-bold uppercase text-emerald-700">CDC Receitas</p>
+              </div>
+              <span className="text-xs font-semibold text-slate-500">{receitasCDC.length}</span>
             </div>
-            <CalendarDays size={16} className="text-slate-500 flex-none" />
-          </div>
 
-          <div className="space-y-1.5">
-            {comparativoMeses.map(linha => {
-              const valor = getValorComparativo(linha)
-              const larguraBarra = Math.max(6, (Math.abs(valor) / maiorValorComparativo) * 100)
-
-              return (
-                <div key={linha.mes} className="grid grid-cols-[54px_1fr_110px] items-center gap-1.5 rounded-md bg-slate-50 px-1.5 py-1.5">
-                  <span className="text-xs font-medium text-slate-700">{linha.label}</span>
-                  <div className="h-2.5 rounded-full bg-white overflow-hidden border border-slate-100">
-                    <div className={`h-full rounded-full ${getCorComparativo(valor)}`} style={{ width: `${larguraBarra}%` }} />
+            {receitasCDC.length === 0 ? (
+              <div className="rounded-md bg-gray-50 border border-gray-200 p-2 text-center">
+                <p className="text-xs text-gray-600">Nenhuma receita.</p>
+              </div>
+            ) : (
+              <div className="space-y-0.5 max-h-60 overflow-y-auto">
+                {receitasCDC.map(linha => (
+                  <div
+                    key={linha.id}
+                    className="flex items-center justify-between rounded-md bg-emerald-50/60 px-1 py-0.5 hover:bg-emerald-50"
+                  >
+                    <span className="text-xs font-medium text-slate-800 truncate mr-1.5">{linha.nome}</span>
+                    <span className="text-xs font-semibold text-emerald-700 whitespace-nowrap">
+                      {formatarMoeda(linha.receitas)}
+                    </span>
                   </div>
-                  <span className={`text-right text-sm font-medium ${getTextoComparativo(valor)}`}>
-                    {formatarMoeda(valor)}
-                  </span>
-                </div>
-              )
-            })}
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="mt-1.5 rounded-md bg-slate-50 px-2 py-1.5 text-xs text-slate-600">
-            <span className="font-medium">Variacao:</span>{' '}
-            <span className={variacaoComparativo >= 0 ? 'font-medium text-emerald-700' : 'font-medium text-red-700'}>
-              {variacaoComparativo >= 0 ? '+' : '-'} {formatarMoeda(Math.abs(variacaoComparativo))}
-            </span>
+          <div className="rounded-lg border border-red-200 bg-white p-1.5 shadow-sm">
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1">
+                <TrendingDown size={13} className="text-red-600" />
+                <p className="text-xs font-bold uppercase text-red-700">CDC Despesas</p>
+              </div>
+              <span className="text-xs font-semibold text-slate-500">{despesasCDC.length}</span>
+            </div>
+
+            {despesasCDC.length === 0 ? (
+              <div className="rounded-md bg-gray-50 border border-gray-200 p-2 text-center">
+                <p className="text-xs text-gray-600">Nenhuma despesa.</p>
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {despesasCDC.map(linha => (
+                  <div
+                    key={linha.id}
+                    className="flex items-center justify-between rounded-md bg-red-50/60 px-1 py-0.5 hover:bg-red-50"
+                  >
+                    <span className="text-xs font-medium text-slate-800 truncate mr-1.5">{linha.nome}</span>
+                    <span className="text-xs font-semibold text-red-700 whitespace-nowrap">
+                      {formatarMoeda(linha.despesas)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -179,13 +179,6 @@ export default function Dashboard() {
               {/* DADOS ROLAM APENAS AQUI */}
               <div className="flex-1 min-h-0 overflow-y-auto mt-1 lg:overflow-hidden">
                 <div className="bg-white rounded-md shadow-sm border border-gray-200 p-1 lg:h-full lg:min-h-0 lg:overflow-hidden">
-                  {/* Mobile: Abas Exclusivas - Caixa */}
-                  {activeTab === 'caixa' && (
-                    <div className="block lg:hidden flex flex-col">
-                      <CaixaMobileTab />
-                    </div>
-                  )}
-
                   {/* Mobile: Abas Exclusivas - Transações */}
                   {activeTab === 'transacoes' && (
                     <div className="block lg:hidden flex flex-col">
