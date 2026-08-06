@@ -14,6 +14,7 @@ import { isDevFeaturesEnabled } from '@/lib/envUtils'
 import CaixaMobileTab from '@/components/CaixaMobileTab'
 import TransacoesTab from '@/components/TransacoesTab'
 import DashboardFinanceiroTab from '@/components/DashboardFinanceiroTab'
+import CaixaGeralDashboard from '@/components/CaixaGeralDashboard'
 import ModuloConfiguracoes from '@/components/ModuloConfiguracoes'
 import ModalNotasAtualizacao from '@/components/ModalNotasAtualizacao'
 
@@ -197,7 +198,10 @@ export default function Dashboard() {
                   {/* Mobile: Abas Exclusivas - Dashboard */}
                   {activeTab === 'dashboard' && (
                     <div className="block lg:hidden flex flex-col">
-                      <DashboardFinanceiroTab />
+                      <CaixaGeralDashboard inicialMinimizado />
+                      <div className="mt-2">
+                        <DashboardFinanceiroTab />
+                      </div>
                     </div>
                   )}
 
@@ -210,10 +214,20 @@ export default function Dashboard() {
 
                   {/* Desktop: Caixa + Transações lado a lado (scroll independente de verdade) */}
                   {showDashboardDesktop ? (
-                    <div className="hidden lg:flex min-h-0 overflow-hidden h-full">
-                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-full">
-                        <div className="flex-1 min-h-0 h-full overflow-y-auto max-h-[calc(100dvh-95px)]">
-                          <DashboardFinanceiroTab />
+                    <div className="hidden lg:flex lg:gap-2 min-h-0 overflow-hidden h-full">
+                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-[30%] max-h-[calc(100dvh-95px)] overflow-hidden">
+                        <div className="flex-1 min-h-0 h-full overflow-hidden">
+                          <div className="h-full min-h-0">
+                            <CaixaGeralDashboard />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col min-h-0 h-full bg-white rounded-lg border border-gray-200 shadow-sm p-1.5 w-[70%] max-h-[calc(100dvh-95px)] overflow-hidden">
+                        <div className="flex-1 min-h-0 h-full overflow-hidden">
+                          <div className="h-full min-h-0">
+                            <DashboardFinanceiroTab />
+                          </div>
                         </div>
                       </div>
                     </div>
